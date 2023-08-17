@@ -24,9 +24,8 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	kmc "kmodules.xyz/client-go/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func NewCmdCopySecret() *cobra.Command {
@@ -88,7 +87,6 @@ func createSecret(secret *core.Secret) error {
 			return in
 		},
 	)
-
 	if err != nil {
 		return err
 	}

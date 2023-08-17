@@ -19,7 +19,6 @@ package pkg
 import (
 	"github.com/spf13/cobra"
 	v "gomodules.xyz/x/version"
-
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 )
