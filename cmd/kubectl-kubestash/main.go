@@ -24,8 +24,7 @@ import (
 	_ "k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/klog/v2"
-
-	"stash.appscode.dev/cli/pkg" // remove this
+	"kubestash.dev/cli/pkg"
 )
 
 func main() {

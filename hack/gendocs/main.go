@@ -25,13 +25,12 @@ import (
 	"strings"
 	"text/template"
 
-	"k8s.io/klog/v2"
-	"stash.appscode.dev/cli/pkg" // remove this
-
 	"github.com/spf13/cobra/doc"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"gomodules.xyz/runtime"
+	"k8s.io/klog/v2"
+	"kubestash.dev/cli/pkg"
 )
 
 var (
