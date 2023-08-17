@@ -19,27 +19,14 @@ package pkg
 import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	restclient "k8s.io/client-go/rest"
-	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
-	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-)
 
-var (
-	klient       client.Client
-	dstNamespace string
-	scrNamespace string
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "cp",
-		Short:             `Copy stash resources from one namespace to another namespace`,
+		Short:             `Copy kubestash resources from one namespace to another namespace`,
 		DisableAutoGenTag: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := clientGetter.ToRESTConfig()
@@ -48,6 +35,9 @@ func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 			}
 
 			scrNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
+			if err != nil {
+				return err
+			}
 
 			klient, err = newRuntimeClient(cfg)
 			if err != nil {
@@ -62,25 +52,4 @@ func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 
 	cmd.PersistentFlags().StringVar(&dstNamespace, "to-namespace", dstNamespace, "Destination namespace.")
 	return cmd
-}
-
-func newRuntimeClient(config *restclient.Config) (client.Client, error) {
-	scheme := runtime.NewScheme()
-	utilruntime.Must(coreapi.AddToScheme(scheme))
-	utilruntime.Must(storageapi.AddToScheme(scheme))
-	utilruntime.Must(core.AddToScheme(scheme))
-
-	mapper, err := apiutil.NewDynamicRESTMapper(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return client.New(config, client.Options{
-		Scheme: scheme,
-		Mapper: mapper,
-		Opts: client.WarningHandlerOptions{
-			SuppressWarnings:   false,
-			AllowDuplicateLogs: false,
-		},
-	})
 }

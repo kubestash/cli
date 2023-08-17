@@ -25,6 +25,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	kmc "kmodules.xyz/client-go/client"
 )
 
 func NewCmdCopySecret() *cobra.Command {
@@ -40,17 +42,20 @@ func NewCmdCopySecret() *cobra.Command {
 
 			secretName := args[0]
 
-			// get source secret from current namespace
-			// if found then copy the secret to the destination namespace
-			return ensureSecret(secretName)
+			secret, err := getSecret(secretName)
+			if err != nil {
+				return err
+			}
+
+			klog.Infof("Copying Storage Secret %s to %s namespace", secret.Namespace, dstNamespace)
+			return createSecret(secret)
 		},
 	}
 
 	return cmd
 }
 
-func ensureSecret(name string) error {
-	// get source Secret
+func getSecret(name string) (*core.Secret, error) {
 	secret := &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -58,30 +63,36 @@ func ensureSecret(name string) error {
 		},
 	}
 	if err := klient.Get(context.TODO(), client.ObjectKeyFromObject(secret), secret); err != nil {
-		return err
+		return nil, err
 	}
 
-	klog.Infof("Copying Storage Secret %s to %s namespace", secret.Namespace, dstNamespace)
-	// copy the Secret to the destination namespace
-	meta := metav1.ObjectMeta{
-		Name:        secret.Name,
-		Namespace:   dstNamespace,
-		Labels:      secret.Labels,
-		Annotations: secret.Annotations,
+	return secret, nil
+}
+
+func createSecret(secret *core.Secret) error {
+	newSecret := &core.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        secret.Name,
+			Namespace:   dstNamespace,
+			Labels:      secret.Labels,
+			Annotations: secret.Annotations,
+		},
 	}
-	_, err := createSecret(secret, meta)
+	_, err := kmc.CreateOrPatch(
+		context.Background(),
+		klient,
+		newSecret,
+		func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*core.Secret)
+			in.Data = secret.Data
+			return in
+		},
+	)
+
 	if err != nil {
 		return err
 	}
 
 	klog.Infof("Secret %s/%s has been copied to %s namespace successfully.", secret.Namespace, secret.Name, dstNamespace)
-	return err
-}
-
-func createSecret(secret *core.Secret, meta metav1.ObjectMeta) (*core.Secret, error) {
-	//secret, _, err := (context.TODO(), kubeClient, meta, func(in *core.Secret) *core.Secret {
-	//	in.Data = secret.Data
-	//	return in
-	//}, metav1.PatchOptions{})
-	return secret, nil
+	return nil
 }
