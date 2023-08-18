@@ -17,10 +17,14 @@ limitations under the License.
 package pkg
 
 import (
+	"context"
+
 	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	restclient "k8s.io/client-go/rest"
+	kmc "kmodules.xyz/client-go/client"
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,4 +50,28 @@ func newRuntimeClient(config *restclient.Config) (client.Client, error) {
 			AllowDuplicateLogs: false,
 		},
 	})
+}
+
+func setBackupConfigurationPausedField(value bool) error {
+	backupConfig := &coreapi.BackupConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      backupConfigName,
+			Namespace: srcNamespace,
+		},
+	}
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(backupConfig), backupConfig); err != nil {
+		return err
+	}
+
+	_, err := kmc.CreateOrPatch(
+		context.Background(),
+		klient,
+		backupConfig,
+		func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*coreapi.BackupConfiguration)
+			in.Spec.Paused = value
+			return in
+		},
+	)
+	return err
 }

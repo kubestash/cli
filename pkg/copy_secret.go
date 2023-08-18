@@ -58,7 +58,7 @@ func getSecret(name string) (*core.Secret, error) {
 	secret := &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: scrNamespace,
+			Namespace: srcNamespace,
 		},
 	}
 	if err := klient.Get(context.TODO(), client.ObjectKeyFromObject(secret), secret); err != nil {

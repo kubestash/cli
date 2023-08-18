@@ -23,6 +23,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"strings"
 )
 
 // log is for logging in this package.
@@ -114,6 +115,13 @@ func (r *HookTemplate) validateExecutorInfo() error {
 		}
 		if r.Spec.Executor.Pod.Selector == "" {
 			return fmt.Errorf("selector field can not be empty for pod type executor")
+		}
+
+		selectors := strings.Split(r.Spec.Executor.Pod.Selector, ",")
+		for _, sel := range selectors {
+			if len(strings.Split(strings.Trim(sel, " "), "=")) < 2 {
+				return fmt.Errorf("invalid selector is provided for pod type executor")
+			}
 		}
 	}
 	return nil

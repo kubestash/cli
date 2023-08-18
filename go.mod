@@ -16,7 +16,7 @@ require (
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kubectl v0.25.1
 	kmodules.xyz/client-go v0.25.27
-	kubestash.dev/apimachinery v0.1.1-0.20230817064557-2da68a26967a
+	kubestash.dev/apimachinery v0.1.1-0.20230818091025-c710c2f0850e
 	sigs.k8s.io/controller-runtime v0.13.1
 )
 
@@ -101,6 +101,8 @@ require (
 	gomodules.xyz/envsubst v0.2.0 // indirect
 	gomodules.xyz/flags v0.1.3 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
+	gomodules.xyz/mergo v0.3.13 // indirect
+	gomodules.xyz/pointer v0.1.0 // indirect
 	gomodules.xyz/sets v0.2.1 // indirect
 	gomodules.xyz/wait v0.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

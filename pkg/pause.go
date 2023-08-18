@@ -22,10 +22,10 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
+func NewCmdPause(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "cp",
-		Short:             `Copy kubestash resources from one namespace to another namespace`,
+		Use:               "pause",
+		Short:             `Pause KubeStash backup temporarily`,
 		DisableAutoGenTag: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := clientGetter.ToRESTConfig()
@@ -46,9 +46,7 @@ func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 			return nil
 		},
 	}
-
-	cmd.AddCommand(NewCmdCopySecret())
-
-	cmd.PersistentFlags().StringVar(&dstNamespace, "to-namespace", dstNamespace, "Destination namespace.")
+	cmd.AddCommand(NewCmdPauseBackup())
+	cmd.PersistentFlags().StringVar(&backupConfigName, "backupconfig", backupConfigName, "Name of the BackupConfiguration to pause")
 	return cmd
 }

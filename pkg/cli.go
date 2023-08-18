@@ -22,5 +22,7 @@ var (
 	klient client.Client
 
 	dstNamespace string
-	scrNamespace string
+	srcNamespace string
+
+	backupConfigName string
 )
