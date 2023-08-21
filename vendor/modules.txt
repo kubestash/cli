@@ -36,6 +36,9 @@ github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 ## explicit
 github.com/PuerkitoBio/urlesc
+# github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
+## explicit
+github.com/armon/circbuf
 # github.com/beorn7/perks v1.0.1
 ## explicit; go 1.11
 github.com/beorn7/perks/quantile
@@ -48,6 +51,9 @@ github.com/chai2010/gettext-go
 github.com/chai2010/gettext-go/mo
 github.com/chai2010/gettext-go/plural
 github.com/chai2010/gettext-go/po
+# github.com/codegangsta/inject v0.0.0-20150114235600-33e0aa1cb7c0
+## explicit
+github.com/codegangsta/inject
 # github.com/cpuguy83/go-md2man/v2 v2.0.2
 ## explicit; go 1.11
 github.com/cpuguy83/go-md2man/v2/md2man
@@ -334,6 +340,9 @@ gomodules.xyz/envsubst/path
 # gomodules.xyz/flags v0.1.3
 ## explicit; go 1.16
 gomodules.xyz/flags
+# gomodules.xyz/go-sh v0.1.0
+## explicit; go 1.15
+gomodules.xyz/go-sh
 # gomodules.xyz/jsonpatch/v2 v2.3.0
 ## explicit; go 1.20
 gomodules.xyz/jsonpatch/v2
@@ -787,6 +796,9 @@ kmodules.xyz/client-go/conditions
 kmodules.xyz/client-go/core/v1
 kmodules.xyz/client-go/meta
 kmodules.xyz/client-go/tools/clusterid
+# kmodules.xyz/objectstore-api v0.25.1
+## explicit; go 1.18
+kmodules.xyz/objectstore-api/api/v1
 # kmodules.xyz/offshoot-api v0.25.2
 ## explicit; go 1.18
 kmodules.xyz/offshoot-api/api/v1
@@ -796,9 +808,11 @@ kmodules.xyz/prober/api/v1
 # kubestash.dev/apimachinery v0.1.1-0.20230818091025-c710c2f0850e
 ## explicit; go 1.18
 kubestash.dev/apimachinery/apis
+kubestash.dev/apimachinery/apis/config/v1alpha1
 kubestash.dev/apimachinery/apis/core/v1alpha1
 kubestash.dev/apimachinery/apis/storage/v1alpha1
 kubestash.dev/apimachinery/crds
+kubestash.dev/apimachinery/pkg/restic
 # sigs.k8s.io/controller-runtime v0.13.1
 ## explicit; go 1.17
 sigs.k8s.io/controller-runtime
