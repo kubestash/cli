@@ -29,7 +29,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
-	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg/restic"
@@ -76,6 +75,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				return err
 			}
 
+			// get snapshot
 			snapshot := &storageapi.Snapshot{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      snapshotName,
@@ -86,6 +86,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				return err
 			}
 
+			// get repository
 			repository := &storageapi.Repository{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      snapshot.Spec.Repository,
@@ -96,6 +97,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				return err
 			}
 
+			// get backupStorage
 			backupStorage := &storageapi.BackupStorage{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      repository.Spec.StorageRef.Name,
@@ -110,7 +112,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				return fmt.Errorf("can't restore from repository with local backend")
 			}
 
-			if err = downloadOpt.prepareDownloadDir(); err != nil {
+			if err = downloadOpt.prepareDestinationDir(); err != nil {
 				return err
 			}
 
@@ -125,14 +127,9 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				}
 
 				setupOptions := restic.SetupOptions{
-					Client:    klient,
-					Directory: filepath.Join(repository.Spec.Path, comp.Path),
-					BackupStorage: &kmapi.TypedObjectReference{
-						APIGroup:  backupStorage.GroupVersionKind().Group,
-						Kind:      backupStorage.Kind,
-						Name:      backupStorage.Name,
-						Namespace: backupStorage.Namespace,
-					},
+					Client:           klient,
+					Directory:        filepath.Join(repository.Spec.Path, comp.Path),
+					BackupStorage:    &repository.Spec.StorageRef,
 					EncryptionSecret: repository.Spec.EncryptionSecret,
 				}
 
@@ -193,7 +190,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 	return cmd
 }
 
-func (opt *downloadOptions) prepareDownloadDir() (err error) {
+func (opt *downloadOptions) prepareDestinationDir() (err error) {
 	// if destination flag is not specified, restore in current directory
 	if opt.destinationDir == "" {
 		if opt.destinationDir, err = os.Getwd(); err != nil {
@@ -240,10 +237,10 @@ func (opt *downloadOptions) runRestoreViaDocker(componentName string) error {
 		args := append(restoreArgs, resticStat.Id, "--target", filepath.Join(destinationPath, resticStat.Id[:8]))
 		klog.Infoln("Running docker with args:", args)
 		out, err := exec.Command("docker", args...).CombinedOutput()
+		klog.Infoln("Output:", string(out))
 		if err != nil {
 			return err
 		}
-		klog.Infoln("Output:", string(out))
 	}
 	return nil
 }
@@ -259,10 +256,4 @@ func (opt *downloadOptions) shouldRestoreComponent(componentName string) bool {
 		}
 	}
 	return false
-}
-
-func init() {
-	imgRestic.Registry = ResticRegistry
-	imgRestic.Image = ResticImage
-	imgRestic.Tag = ResticTag
 }

@@ -40,9 +40,10 @@ func NewCmdTriggerBackup(clientGetter genericclioptions.RESTClientGetter) *cobra
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 || args[0] == "" {
-				return fmt.Errorf("BackupConfiguration name not found")
+				return fmt.Errorf("backupconfiguration name not found")
 			}
-			backupConfigName = args[0]
+
+			backupConfigName := args[0]
 
 			cfg, err := clientGetter.ToRESTConfig()
 			if err != nil {

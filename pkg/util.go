@@ -38,10 +38,14 @@ var (
 	dstNamespace string
 	srcNamespace string
 
-	backupConfigName string
-
 	imgRestic configapi.Docker
 )
+
+func init() {
+	imgRestic.Registry = ResticRegistry
+	imgRestic.Image = ResticImage
+	imgRestic.Tag = ResticTag
+}
 
 func newRuntimeClient(config *restclient.Config) (client.Client, error) {
 	scheme := runtime.NewScheme()
@@ -64,10 +68,10 @@ func newRuntimeClient(config *restclient.Config) (client.Client, error) {
 	})
 }
 
-func setBackupConfigurationPausedField(value bool) error {
+func setBackupConfigurationPausedField(value bool, name string) error {
 	backupConfig := &coreapi.BackupConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      backupConfigName,
+			Name:      name,
 			Namespace: srcNamespace,
 		},
 	}

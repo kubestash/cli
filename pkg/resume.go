@@ -17,17 +17,27 @@ limitations under the License.
 package pkg
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/klog/v2"
 )
 
 func NewCmdResume(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "resume",
-		Short:             `Resume Stash backup`,
+		Short:             `Resume KubeStash backup`,
+		Long:              `Resume backup by setting "paused" field of BackupConfiguration to "false"`,
 		DisableAutoGenTag: true,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 || args[0] == "" {
+				return fmt.Errorf("backupconfiguration name not found")
+			}
+
+			backupConfigName := args[0]
+
 			cfg, err := clientGetter.ToRESTConfig()
 			if err != nil {
 				return errors.Wrap(err, "failed to read kubeconfig")
@@ -43,10 +53,14 @@ func NewCmdResume(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 				return err
 			}
 
+			if err = setBackupConfigurationPausedField(false, backupConfigName); err != nil {
+				return err
+			}
+
+			klog.Infof("BackupConfiguration %s/%s has been resumed successfully.", srcNamespace, backupConfigName)
+
 			return nil
 		},
 	}
-	cmd.AddCommand(NewCmdResumeBackup())
-	cmd.PersistentFlags().StringVar(&backupConfigName, "backupconfig", backupConfigName, "Name of the Backupconfiguration")
 	return cmd
 }
