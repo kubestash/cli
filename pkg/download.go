@@ -36,8 +36,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type downloadOptions struct {
+	configDir      string // temp dir
+	destinationDir string // user provided or, current working dir
+
+	resticStats []storageapi.ResticStats
+	components  []string
+	extraArgs   []string
+	exclude     []string
+	include     []string
+}
+
 func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
-	localDirs := &cliLocalDirectories{}
+	downloadOpt := &downloadOptions{}
 	cmd := &cobra.Command{
 		Use:               "download",
 		Short:             `Download components`,
@@ -99,7 +110,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				return fmt.Errorf("can't restore from repository with local backend")
 			}
 
-			if err = localDirs.prepareDownloadDir(); err != nil {
+			if err = downloadOpt.prepareDownloadDir(); err != nil {
 				return err
 			}
 
@@ -108,9 +119,11 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 			}
 			defer os.RemoveAll(ScratchDir)
 
-			for name, comp := range snapshot.Status.Components {
+			for compName, comp := range snapshot.Status.Components {
+				if !downloadOpt.shouldRestoreComponent(compName) {
+					continue
+				}
 
-				localDirs.componentDir = name
 				setupOptions := restic.SetupOptions{
 					Client:    klient,
 					Directory: filepath.Join(repository.Spec.Path, comp.Path),
@@ -139,45 +152,58 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 					return err
 				}
 
-				localDirs.configDir = filepath.Join(ScratchDir, configDirName)
+				downloadOpt.configDir = filepath.Join(ScratchDir, configDirName)
 				// dump restic's environments into `restic-env` file.
 				// we will pass this env file to restic docker container.
-				err = w.DumpEnv(localDirs.configDir, ResticEnvs)
+				err = w.DumpEnv(downloadOpt.configDir, ResticEnvs)
 				if err != nil {
 					return err
 				}
 
-				extraArgs := []string{
+				downloadOpt.extraArgs = []string{
 					"--no-cache",
 				}
 
 				// For TLS secured Minio/REST server, specify cert path
 				if w.GetCaPath() != "" {
-					extraArgs = append(extraArgs, "--cacert", w.GetCaPath())
+					downloadOpt.extraArgs = append(downloadOpt.extraArgs, "--cacert", w.GetCaPath())
 				}
 
-				var resticSnapshots []string
-				for _, resticStat := range comp.ResticStats {
-					resticSnapshots = append(resticSnapshots, resticStat.Id)
-				}
+				downloadOpt.resticStats = comp.ResticStats
 
 				// run restore inside docker
-				if err = runRestoreViaDocker(*localDirs, extraArgs, resticSnapshots); err != nil {
+				if err = downloadOpt.runRestoreViaDocker(compName); err != nil {
 					return err
 				}
-				klog.Infof("Snapshots: %v of Repository %s/%s restored in path %s", resticSnapshots, srcNamespace, repository.Name, localDirs.downloadDir)
+				klog.Infof("Component: %v of Snapshot %s/%s restored in path %s", compName, srcNamespace, snapshotName, downloadOpt.destinationDir)
 			}
 
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVar(&localDirs.downloadDir, "destination", localDirs.downloadDir, "Destination path where components will be restored.")
+	cmd.Flags().StringVar(&downloadOpt.destinationDir, "destination", downloadOpt.destinationDir, "Destination path where components will be restored.")
+	cmd.Flags().StringSliceVar(&downloadOpt.components, "components", downloadOpt.components, "List of components to restore")
+	cmd.Flags().StringSliceVar(&downloadOpt.exclude, "exclude", downloadOpt.exclude, "List of pattern for directory/file to ignore during restore")
+	cmd.Flags().StringSliceVar(&downloadOpt.include, "include", downloadOpt.include, "List of pattern for directory/file to restore")
+
+	cmd.Flags().StringVar(&imgRestic.Registry, "docker-registry", imgRestic.Registry, "Docker image registry for restic cli")
+	cmd.Flags().StringVar(&imgRestic.Tag, "image-tag", imgRestic.Tag, "Restic docker image tag")
 
 	return cmd
 }
 
-func runRestoreViaDocker(localDirs cliLocalDirectories, extraArgs []string, snapshots []string) error {
+func (opt *downloadOptions) prepareDownloadDir() (err error) {
+	// if destination flag is not specified, restore in current directory
+	if opt.destinationDir == "" {
+		if opt.destinationDir, err = os.Getwd(); err != nil {
+			return err
+		}
+	}
+	return os.MkdirAll(opt.destinationDir, 0o755)
+}
+
+func (opt *downloadOptions) runRestoreViaDocker(componentName string) error {
 	// get current user
 	currentUser, err := user.Current()
 	if err != nil {
@@ -188,17 +214,30 @@ func runRestoreViaDocker(localDirs cliLocalDirectories, extraArgs []string, snap
 		"--rm",
 		"-u", currentUser.Uid,
 		"-v", ScratchDir + ":" + ScratchDir,
-		"-v", localDirs.downloadDir + ":" + DestinationDir,
+		"-v", opt.destinationDir + ":" + DestinationDir,
 		"--env", "HTTP_PROXY=" + os.Getenv("HTTP_PROXY"),
 		"--env", "HTTPS_PROXY=" + os.Getenv("HTTPS_PROXY"),
-		"--env-file", filepath.Join(localDirs.configDir, ResticEnvs),
+		"--env-file", filepath.Join(opt.configDir, ResticEnvs),
 		imgRestic.ToContainerImage(),
 	}
 
-	restoreArgs = append(restoreArgs, extraArgs...)
+	restoreArgs = append(restoreArgs, opt.extraArgs...)
 	restoreArgs = append(restoreArgs, "restore")
-	for _, snapshot := range snapshots {
-		args := append(restoreArgs, snapshot, "--target", filepath.Join(DestinationDir, localDirs.componentDir))
+
+	for _, include := range opt.include {
+		restoreArgs = append(restoreArgs, "--include")
+		restoreArgs = append(restoreArgs, include)
+	}
+
+	for _, exclude := range opt.exclude {
+		restoreArgs = append(restoreArgs, "--exclude")
+		restoreArgs = append(restoreArgs, exclude)
+	}
+
+	destinationPath := filepath.Join(DestinationDir, componentName)
+
+	for _, resticStat := range opt.resticStats {
+		args := append(restoreArgs, resticStat.Id, "--target", filepath.Join(destinationPath, resticStat.Id[:8]))
 		klog.Infoln("Running docker with args:", args)
 		out, err := exec.Command("docker", args...).CombinedOutput()
 		if err != nil {
@@ -207,4 +246,23 @@ func runRestoreViaDocker(localDirs cliLocalDirectories, extraArgs []string, snap
 		klog.Infoln("Output:", string(out))
 	}
 	return nil
+}
+
+func (opt *downloadOptions) shouldRestoreComponent(componentName string) bool {
+	if opt.components == nil {
+		return true
+	}
+
+	for _, comp := range opt.components {
+		if comp == componentName {
+			return true
+		}
+	}
+	return false
+}
+
+func init() {
+	imgRestic.Registry = ResticRegistry
+	imgRestic.Image = ResticImage
+	imgRestic.Tag = ResticTag
 }

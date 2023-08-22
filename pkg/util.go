@@ -25,10 +25,22 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	restclient "k8s.io/client-go/rest"
 	kmc "kmodules.xyz/client-go/client"
+	configapi "kubestash.dev/apimachinery/apis/config/v1alpha1"
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+)
+
+var (
+	klient client.Client
+
+	dstNamespace string
+	srcNamespace string
+
+	backupConfigName string
+
+	imgRestic configapi.Docker
 )
 
 func newRuntimeClient(config *restclient.Config) (client.Client, error) {
