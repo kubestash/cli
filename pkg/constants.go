@@ -26,7 +26,10 @@ const (
 	ResticRegistry = "restic"
 	ResticImage    = "restic"
 	ResticTag      = "0.15.1"
+)
 
+// Constants for debugging
+const (
 	Condition       = "Condition"
 	Snapshot        = "Snapshot"
 	Session         = "Session"
