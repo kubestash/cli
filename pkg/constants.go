@@ -26,4 +26,10 @@ const (
 	ResticRegistry = "restic"
 	ResticImage    = "restic"
 	ResticTag      = "0.15.1"
+
+	Condition       = "Condition"
+	Snapshot        = "Snapshot"
+	Session         = "Session"
+	Component       = "Component"
+	RetentionPolicy = "RetentionPolicy"
 )
