@@ -37,6 +37,8 @@ import (
 type backupDebugOptions struct {
 	backupConfig  *coreapi.BackupConfiguration
 	backupSession coreapi.BackupSession
+	sessions      []string
+	latest        bool
 }
 
 func NewCmdDebugBackup() *cobra.Command {
@@ -69,23 +71,33 @@ func NewCmdDebugBackup() *cobra.Command {
 				return debugOpt.showTableForNotReadyBackupConfig()
 			}
 
-			backupSessions, err := debugOpt.getOwnedBackupSessions()
+			backupSessions, err := debugOpt.getOwnedFailedBackupSessions()
 			if err != nil {
 				return err
 			}
 
+			if debugOpt.latest {
+				if err := debugOpt.debugLatestBackupSessions(backupSessions); err != nil {
+					return err
+				}
+				return nil
+			}
+
 			for _, bs := range backupSessions {
-				if bs.Status.Phase == coreapi.BackupSessionFailed {
-					debugOpt.backupSession = bs
-					if err := debugOpt.showTableForFailedBackupSession(bs); err != nil {
-						return err
-					}
+				if !debugOpt.shouldDebugSession() {
+					continue
+				}
+				debugOpt.backupSession = bs
+				if err := debugOpt.showTableForFailedBackupSession(); err != nil {
+					return err
 				}
 			}
 
 			return nil
 		},
 	}
+	cmd.Flags().StringSliceVar(&debugOpt.sessions, "sessions", debugOpt.sessions, "List of sessions to debug")
+	cmd.Flags().BoolVar(&debugOpt.latest, "latest", true, "Debug only latest BackupSessions")
 
 	return cmd
 }
@@ -128,46 +140,99 @@ func (opt *backupDebugOptions) showTableForNotReadyBackupConfig() error {
 	return createTable(data)
 }
 
-func (opt *backupDebugOptions) getOwnedBackupSessions() ([]coreapi.BackupSession, error) {
+func (opt *backupDebugOptions) getOwnedFailedBackupSessions() ([]coreapi.BackupSession, error) {
 	var bsList coreapi.BackupSessionList
 	opts := []client.ListOption{client.InNamespace(srcNamespace)}
 	if err := klient.List(context.Background(), &bsList, opts...); err != nil {
 		return nil, err
 	}
 
-	var ownedBackupSessions []coreapi.BackupSession
+	var ownedFailedBackupSessions []coreapi.BackupSession
 	for i := range bsList.Items {
-		if owned, _ := core_util.IsOwnedBy(&bsList.Items[i], opt.backupConfig); owned {
-			ownedBackupSessions = append(ownedBackupSessions, bsList.Items[i])
+		if owned, _ := core_util.IsOwnedBy(&bsList.Items[i], opt.backupConfig); owned &&
+			bsList.Items[i].Status.Phase == coreapi.BackupSessionFailed {
+			ownedFailedBackupSessions = append(ownedFailedBackupSessions, bsList.Items[i])
 		}
 	}
-	return ownedBackupSessions, nil
+	return ownedFailedBackupSessions, nil
 }
 
-func (opt *backupDebugOptions) showTableForFailedBackupSession(bs coreapi.BackupSession) error {
+func (opt *backupDebugOptions) debugLatestBackupSessions(backupSessions []coreapi.BackupSession) error {
+	if len(opt.sessions) == 0 {
+		for _, session := range opt.backupConfig.Spec.Sessions {
+			opt.backupSession = opt.getLatestBackupSession(session.Name, backupSessions)
+			if err := opt.showTableForFailedBackupSession(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	for _, session := range opt.sessions {
+		opt.backupSession = opt.getLatestBackupSession(session, backupSessions)
+		if err := opt.showTableForFailedBackupSession(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (opt *backupDebugOptions) getLatestBackupSession(session string, backupSessions []coreapi.BackupSession) coreapi.BackupSession {
+	var bs coreapi.BackupSession
+	var tm *metav1.Time
+	for _, backupSession := range backupSessions {
+		if backupSession.Spec.Session != session {
+			continue
+		}
+
+		if tm == nil {
+			tm = &metav1.Time{Time: backupSession.CreationTimestamp.Time}
+			bs = backupSession
+		} else if tm.Before(&metav1.Time{Time: backupSession.CreationTimestamp.Time}) {
+			tm = &metav1.Time{Time: backupSession.CreationTimestamp.Time}
+			bs = backupSession
+		}
+	}
+	return bs
+}
+
+func (opt *backupDebugOptions) shouldDebugSession() bool {
+	if len(opt.sessions) == 0 {
+		return true
+	}
+
+	for _, session := range opt.sessions {
+		if opt.backupSession.Spec.Session == session {
+			return true
+		}
+	}
+	return false
+}
+
+func (opt *backupDebugOptions) showTableForFailedBackupSession() error {
 	var data [][]string
 
-	for _, cond := range bs.Status.Conditions {
+	for _, cond := range opt.backupSession.Status.Conditions {
 		if cond.Status == metav1.ConditionFalse {
 			data = append(data, []string{Condition, cond.Message})
 		}
 	}
 
 	var failedSnapStatus []coreapi.SnapshotStatus
-	for _, snap := range bs.Status.Snapshots {
+	for _, snap := range opt.backupSession.Status.Snapshots {
 		if snap.Phase == storageapi.SnapshotFailed {
 			data = append(data, []string{Snapshot, fmt.Sprintf("Snapshot %s failed", snap.Name)})
 			failedSnapStatus = append(failedSnapStatus, snap)
 		}
 	}
 
-	for _, rp := range bs.Status.RetentionPolicies {
+	for _, rp := range opt.backupSession.Status.RetentionPolicies {
 		if rp.Phase == coreapi.RetentionPolicyFailedToApply {
 			data = append(data, []string{RetentionPolicy, rp.Error})
 		}
 	}
 
-	_, err := fmt.Fprintf(os.Stdout, "Debugging BackupSession: %s/%s\n", bs.Namespace, bs.Name)
+	_, err := fmt.Fprintf(os.Stdout, "Debugging BackupSession: %s/%s\n", opt.backupSession.Namespace, opt.backupSession.Name)
 	if err != nil {
 		return err
 	}

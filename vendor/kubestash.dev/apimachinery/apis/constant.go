@@ -94,6 +94,14 @@ const (
 	KindDeployment  = "Deployment"
 )
 
+// PersistentVolumeClaim  related constants
+const (
+	KindPersistentVolumeClaim = "PersistentVolumeClaim"
+	KeyPodOrdinal             = "POD_ORDINAL"
+	ComponentPVC              = "pvc"
+	PVCName                   = "PVC_NAME"
+)
+
 const (
 	PrefixTrigger         = "trigger"
 	PrefixInit            = "init"
