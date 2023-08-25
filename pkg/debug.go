@@ -48,6 +48,7 @@ func NewCmdDebug(clientGetter genericclioptions.RESTClientGetter) *cobra.Command
 	}
 	cmd.AddCommand(NewCmdDebugBackup())
 	cmd.AddCommand(NewCmdDebugRestore())
+	cmd.AddCommand(NewCmdDebugOperator())
 
 	return cmd
 }

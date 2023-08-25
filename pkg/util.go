@@ -18,7 +18,11 @@ package pkg
 
 import (
 	"context"
+	"fmt"
+	"os"
 
+	"github.com/olekukonko/tablewriter"
+	"gomodules.xyz/go-sh"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -90,4 +94,29 @@ func setBackupConfigurationPausedField(value bool, name string) error {
 		},
 	)
 	return err
+}
+
+func createTable(data [][]string) error {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Item", "Reason"})
+	table.SetAutoMergeCells(true)
+	table.SetRowLine(true)
+	table.AppendBulk(data)
+	table.Render()
+
+	_, err := fmt.Fprintf(os.Stdout, "\n\n")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func showLogs(pod core.Pod, args ...string) error {
+	_, err := fmt.Fprintf(os.Stdout, "==================[ Logs from pod: %s/%s ]==================\n", pod.Namespace, pod.Name)
+	if err != nil {
+		return err
+	}
+	cmdArgs := []string{"logs", "-n", pod.Namespace, pod.Name}
+	cmdArgs = append(cmdArgs, args...)
+	return sh.Command("kubectl", cmdArgs).Run()
 }

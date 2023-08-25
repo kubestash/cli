@@ -21,9 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
-	"gomodules.xyz/go-sh"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -311,29 +309,4 @@ func (opt *backupDebugOptions) getLabels() map[string]string {
 	labels := opt.backupSession.OffshootLabels()
 	labels[meta_util.ComponentLabelKey] = apis.KubeStashBackupComponent
 	return labels
-}
-
-func createTable(data [][]string) error {
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Item", "Reason"})
-	table.SetAutoMergeCells(true)
-	table.SetRowLine(true)
-	table.AppendBulk(data)
-	table.Render()
-
-	_, err := fmt.Fprintf(os.Stdout, "\n\n")
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func showLogs(pod core.Pod, args ...string) error {
-	_, err := fmt.Fprintf(os.Stdout, "==================[ Logs from pod: %s/%s ]==================\n", pod.Namespace, pod.Name)
-	if err != nil {
-		return err
-	}
-	cmdArgs := []string{"logs", "-n", pod.Namespace, pod.Name}
-	cmdArgs = append(cmdArgs, args...)
-	return sh.Command("kubectl", cmdArgs).Run()
 }
