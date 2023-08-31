@@ -20,70 +20,70 @@ import (
 	"context"
 	"fmt"
 
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
 	"github.com/spf13/cobra"
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 	kmc "kmodules.xyz/client-go/client"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewCmdCopySecret() *cobra.Command {
+func NewCmdCopyVolumeSnapshot() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "secret",
-		Short:             `Copy Secret`,
-		Long:              `Copy Secret from one namespace to another namespace`,
+		Use:               "volumesnapshot",
+		Short:             `Copy VolumeSnapshot`,
+		Long:              `Copy VolumeSnapshot from one namespace to another namespace`,
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 || args[0] == "" {
-				return fmt.Errorf("secret name is not found")
+				return fmt.Errorf("VolumeSnapshot name is not found")
 			}
 
-			secretName := args[0]
+			volumeSnapshotName := args[0]
 
-			secret, err := getSecret(secretName)
+			volumeSnapshot, err := getVolumeSnapshot(volumeSnapshotName)
 			if err != nil {
 				return err
 			}
 
-			klog.Infof("Copying Storage Secret %s to %s namespace", secret.Namespace, dstNamespace)
-			return createSecret(secret)
+			klog.Infof("Copying VolumeSnapshot %s to %s namespace", volumeSnapshot.Namespace, dstNamespace)
+			return createVolumeSnapshot(volumeSnapshot)
 		},
 	}
 
 	return cmd
 }
 
-func getSecret(name string) (*core.Secret, error) {
-	secret := &core.Secret{
+func getVolumeSnapshot(name string) (*vsapi.VolumeSnapshot, error) {
+	volumeSnapshot := &vsapi.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: srcNamespace,
 		},
 	}
-	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(secret), secret); err != nil {
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(volumeSnapshot), volumeSnapshot); err != nil {
 		return nil, err
 	}
 
-	return secret, nil
+	return volumeSnapshot, nil
 }
 
-func createSecret(secret *core.Secret) error {
-	newSecret := &core.Secret{
+func createVolumeSnapshot(vs *vsapi.VolumeSnapshot) error {
+	newVS := &vsapi.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        secret.Name,
+			Name:        vs.Name,
 			Namespace:   dstNamespace,
-			Labels:      secret.Labels,
-			Annotations: secret.Annotations,
+			Labels:      vs.Labels,
+			Annotations: vs.Annotations,
 		},
 	}
 	_, err := kmc.CreateOrPatch(
 		context.Background(),
 		klient,
-		newSecret,
+		newVS,
 		func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*core.Secret)
-			in.Data = secret.Data
+			in := obj.(*vsapi.VolumeSnapshot)
+			in.Spec = newVS.Spec
 			return in
 		},
 	)
@@ -91,6 +91,6 @@ func createSecret(secret *core.Secret) error {
 		return err
 	}
 
-	klog.Infof("Secret %s/%s has been copied to %s namespace successfully.", secret.Namespace, secret.Name, dstNamespace)
+	klog.Infof("VolumeSnapshot %s/%s has been copied to %s namespace successfully.", vs.Namespace, vs.Name, dstNamespace)
 	return nil
 }

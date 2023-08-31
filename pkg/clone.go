@@ -22,10 +22,10 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
+func NewCmdClone(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "cp",
-		Short:             `Copy kubestash resources from one namespace to another namespace`,
+		Use:               "clone",
+		Short:             `Clone Kubernetes resources`,
 		DisableAutoGenTag: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := clientGetter.ToRESTConfig()
@@ -47,8 +47,7 @@ func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 		},
 	}
 
-	cmd.AddCommand(NewCmdCopySecret())
-	cmd.AddCommand(NewCmdCopyVolumeSnapshot())
+	cmd.AddCommand(NewCmdClonePVC())
 
 	cmd.PersistentFlags().StringVar(&dstNamespace, "to-namespace", dstNamespace, "Destination namespace.")
 	return cmd

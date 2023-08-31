@@ -3,6 +3,7 @@ module kubestash.dev/cli
 go 1.18
 
 require (
+	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.7.0

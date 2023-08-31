@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
 	"github.com/olekukonko/tablewriter"
 	"gomodules.xyz/go-sh"
 	core "k8s.io/api/core/v1"
@@ -56,6 +57,7 @@ func newRuntimeClient(config *restclient.Config) (client.Client, error) {
 	utilruntime.Must(coreapi.AddToScheme(scheme))
 	utilruntime.Must(storageapi.AddToScheme(scheme))
 	utilruntime.Must(core.AddToScheme(scheme))
+	utilruntime.Must(vsapi.AddToScheme(scheme))
 
 	mapper, err := apiutil.NewDynamicRESTMapper(config)
 	if err != nil {

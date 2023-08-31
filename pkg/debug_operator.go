@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	"gomodules.xyz/go-sh"
 	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -48,9 +49,8 @@ func showVersionInformation() error {
 	if err := showKubernetesVersion(); err != nil {
 		return err
 	}
-	return nil
-	// TODO: need to add version in kubestash binary
-	// return showKubeStashVersion()
+
+	return showKubeStashVersion()
 }
 
 func showKubernetesVersion() error {
@@ -60,7 +60,6 @@ func showKubernetesVersion() error {
 
 func showKubeStashVersion() error {
 	pod, err := getOperatorPod()
-	fmt.Println(pod.Name)
 	if err != nil {
 		return err
 	}
@@ -75,10 +74,19 @@ func showKubeStashVersion() error {
 }
 
 func getOperatorPod() (core.Pod, error) {
-	// TODO: get operator namespace
-	ns := "kubestash"
 	var podList core.PodList
-	opts := client.ListOption(client.InNamespace(ns))
+
+	// TODO: change the labels?
+	sel, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"app.kubernetes.io/name": "kubestash-operator",
+		},
+	})
+	if err != nil {
+		return core.Pod{}, err
+	}
+
+	opts := client.ListOption(client.MatchingLabelsSelector{Selector: sel})
 	if err := klient.List(context.Background(), &podList, opts); err != nil {
 		return core.Pod{}, err
 	}
