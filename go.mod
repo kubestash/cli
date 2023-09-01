@@ -18,6 +18,7 @@ require (
 	k8s.io/client-go v0.25.1
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kubectl v0.25.1
+	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73
 	kmodules.xyz/client-go v0.25.27
 	kmodules.xyz/offshoot-api v0.25.2
 	kubestash.dev/apimachinery v0.1.1-0.20230823061616-55275ca5f58d
@@ -120,7 +121,6 @@ require (
 	k8s.io/apiextensions-apiserver v0.25.1 // indirect
 	k8s.io/component-base v0.25.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
-	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73 // indirect
 	kmodules.xyz/objectstore-api v0.25.1 // indirect
 	kmodules.xyz/prober v0.25.0 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
