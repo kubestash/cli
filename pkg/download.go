@@ -133,6 +133,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 					Directory:        filepath.Join(repository.Spec.Path, comp.Path),
 					BackupStorage:    &repository.Spec.StorageRef,
 					EncryptionSecret: repository.Spec.EncryptionSecret,
+					ScratchDir:       ScratchDir,
 				}
 
 				// apply nice, ionice settings from env
