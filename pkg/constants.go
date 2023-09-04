@@ -43,3 +43,13 @@ const (
 	PullInterval = time.Second * 2
 	WaitTimeOut  = time.Minute * 10
 )
+
+// Constants for PVC cloning
+const (
+	PVCAddon       = "pvc-addon"
+	PVCBackupTask  = "pvc-backup"
+	PVCRestoreTask = "pvc-restore"
+	PVCSession     = "pvc-session"
+	PVCSchedule    = "*/59 * * * *"
+	LatestSnapshot = "latest"
+)
