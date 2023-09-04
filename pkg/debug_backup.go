@@ -45,12 +45,9 @@ func NewCmdDebugBackup() *cobra.Command {
 		Use:               "backup",
 		Short:             `Debug backup`,
 		Long:              `Debug common KubeStash backup issues`,
+		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || args[0] == "" {
-				return fmt.Errorf("backupconfiguration name not found")
-			}
-
 			debugOpt.backupConfig = &coreapi.BackupConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      args[0],

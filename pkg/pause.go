@@ -17,8 +17,6 @@ limitations under the License.
 package pkg
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -30,12 +28,9 @@ func NewCmdPause(clientGetter genericclioptions.RESTClientGetter) *cobra.Command
 		Use:               "pause",
 		Short:             `Pause KubeStash backup temporarily`,
 		Long:              `Pause backup by setting "paused" field of BackupConfiguration to "true"`,
+		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || args[0] == "" {
-				return fmt.Errorf("backupconfiguration name not found")
-			}
-
 			backupConfigName := args[0]
 
 			cfg, err := clientGetter.ToRESTConfig()

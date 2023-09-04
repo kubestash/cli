@@ -52,12 +52,9 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 		Use:               "download",
 		Short:             `Download components`,
 		Long:              `Download components of a snapshot`,
+		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || args[0] == "" {
-				return fmt.Errorf("snapshot name not found")
-			}
-
 			snapshotName := args[0]
 
 			cfg, err := clientGetter.ToRESTConfig()
@@ -119,7 +116,12 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 			if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
 				return err
 			}
-			defer os.RemoveAll(ScratchDir)
+			defer func() {
+				err := os.RemoveAll(ScratchDir)
+				if err != nil {
+					klog.Errorf("failed to remove scratch dir. Reason: %w", err)
+				}
+			}()
 
 			for compName, comp := range snapshot.Status.Components {
 				if !downloadOpt.shouldRestoreComponent(compName) {
@@ -186,6 +188,12 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 
 	cmd.Flags().StringVar(&imgRestic.Registry, "docker-registry", imgRestic.Registry, "Docker image registry for restic cli")
 	cmd.Flags().StringVar(&imgRestic.Tag, "image-tag", imgRestic.Tag, "Restic docker image tag")
+
+	err := cmd.MarkFlagRequired("destination")
+	if err != nil {
+		return nil
+	}
+	cmd.MarkFlagsMutuallyExclusive("exclude", "include")
 
 	return cmd
 }

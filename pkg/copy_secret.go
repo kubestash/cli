@@ -18,7 +18,6 @@ package pkg
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
@@ -33,12 +32,9 @@ func NewCmdCopySecret() *cobra.Command {
 		Use:               "secret",
 		Short:             `Copy Secret`,
 		Long:              `Copy Secret from one namespace to another namespace`,
+		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || args[0] == "" {
-				return fmt.Errorf("secret name is not found")
-			}
-
 			secretName := args[0]
 
 			secret, err := getSecret(secretName)

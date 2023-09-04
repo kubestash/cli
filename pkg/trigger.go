@@ -18,7 +18,6 @@ package pkg
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -37,12 +36,9 @@ func NewCmdTriggerBackup(clientGetter genericclioptions.RESTClientGetter) *cobra
 		Use:               "trigger",
 		Short:             `Trigger a backup`,
 		Long:              `Trigger a backup by creating BackupSession`,
+		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || args[0] == "" {
-				return fmt.Errorf("backupconfiguration name not found")
-			}
-
 			backupConfigName := args[0]
 
 			cfg, err := clientGetter.ToRESTConfig()

@@ -50,5 +50,9 @@ func NewCmdClone(clientGetter genericclioptions.RESTClientGetter) *cobra.Command
 	cmd.AddCommand(NewCmdClonePVC())
 
 	cmd.PersistentFlags().StringVar(&dstNamespace, "to-namespace", dstNamespace, "Destination namespace.")
+	err := cmd.MarkPersistentFlagRequired("to-namespace")
+	if err != nil {
+		return nil
+	}
 	return cmd
 }

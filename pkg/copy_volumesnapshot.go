@@ -18,7 +18,6 @@ package pkg
 
 import (
 	"context"
-	"fmt"
 
 	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
 	"github.com/spf13/cobra"
@@ -33,12 +32,9 @@ func NewCmdCopyVolumeSnapshot() *cobra.Command {
 		Use:               "volumesnapshot",
 		Short:             `Copy VolumeSnapshot`,
 		Long:              `Copy VolumeSnapshot from one namespace to another namespace`,
+		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || args[0] == "" {
-				return fmt.Errorf("VolumeSnapshot name is not found")
-			}
-
 			volumeSnapshotName := args[0]
 
 			volumeSnapshot, err := getVolumeSnapshot(volumeSnapshotName)

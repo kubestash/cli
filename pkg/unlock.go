@@ -48,12 +48,9 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 		Use:               "unlock",
 		Short:             `Unlock Restic Repository`,
 		Long:              `Unlock Restic Repository`,
+		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || args[0] == "" {
-				return fmt.Errorf("repository name not found")
-			}
-
 			repoName := args[0]
 
 			cfg, err := clientGetter.ToRESTConfig()
@@ -102,6 +99,11 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 	}
 
 	cmd.Flags().StringSliceVar(&unlockOpt.paths, "paths", unlockOpt.paths, "List of paths for restic repository to unlock")
+
+	err := cmd.MarkFlagRequired("paths")
+	if err != nil {
+		return nil
+	}
 
 	return cmd
 }

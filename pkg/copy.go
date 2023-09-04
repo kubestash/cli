@@ -24,7 +24,8 @@ import (
 
 func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "cp",
+		Use:               "copy",
+		Aliases:           []string{"cp"},
 		Short:             `Copy kubestash resources from one namespace to another namespace`,
 		DisableAutoGenTag: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -51,5 +52,9 @@ func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 	cmd.AddCommand(NewCmdCopyVolumeSnapshot())
 
 	cmd.PersistentFlags().StringVar(&dstNamespace, "to-namespace", dstNamespace, "Destination namespace.")
+	err := cmd.MarkPersistentFlagRequired("to-namespace")
+	if err != nil {
+		return nil
+	}
 	return cmd
 }

@@ -16,6 +16,8 @@ limitations under the License.
 
 package pkg
 
+import "time"
+
 // These variables will be set during build time
 const (
 	ScratchDir     = "/tmp/scratch"
@@ -35,4 +37,9 @@ const (
 	Session         = "Session"
 	Component       = "Component"
 	RetentionPolicy = "RetentionPolicy"
+)
+
+const (
+	PullInterval = time.Second * 2
+	WaitTimeOut  = time.Minute * 10
 )

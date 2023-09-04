@@ -35,12 +35,9 @@ func NewCmdDebugRestore() *cobra.Command {
 		Use:               "restore",
 		Short:             `Debug restore`,
 		Long:              `Debug common KubeStash restore issues`,
+		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || args[0] == "" {
-				return fmt.Errorf("restoresession name not found")
-			}
-
 			rs := &coreapi.RestoreSession{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      args[0],

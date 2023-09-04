@@ -55,12 +55,9 @@ func NewCmdClonePVC() *cobra.Command {
 		Use:               "pvc",
 		Short:             `Clone PVC`,
 		Long:              `Use Backup and Restore process for cloning PVC`,
+		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || args[0] == "" {
-				return fmt.Errorf("PVC name is not found")
-			}
-
 			pvcName := args[0]
 
 			pvc, err := getPVC(pvcName)
@@ -107,6 +104,30 @@ func NewCmdClonePVC() *cobra.Command {
 	cmd.Flags().StringVar(&storageOpt.encryptSecret, "encrypt-secret", storageOpt.encryptSecret, "Name of the Encryption Secret")
 	cmd.Flags().StringVar(&storageOpt.prefix, "prefix", storageOpt.prefix, "Prefix denotes the directory inside the backend")
 	cmd.Flags().StringVar(&storageOpt.deletionPolicy, "deletion-policy", storageOpt.deletionPolicy, "DeletionPolicy specifies what to do when BackupStorage is deleted")
+
+	err := cmd.MarkFlagRequired("provider")
+	if err != nil {
+		return nil
+	}
+	err = cmd.MarkFlagRequired("bucket")
+	if err != nil {
+		return nil
+	}
+	err = cmd.MarkFlagRequired("storage-secret")
+	if err != nil {
+		return nil
+	}
+	err = cmd.MarkFlagRequired("encrypt-secret")
+	if err != nil {
+		return nil
+	}
+
+	if storageOpt.provider == string(storageapi.ProviderS3) {
+		err = cmd.MarkFlagRequired("endpoint")
+		if err != nil {
+			return nil
+		}
+	}
 
 	return cmd
 }
@@ -231,11 +252,6 @@ func (opt *storageOption) createStorage(storage *storageapi.BackupStorage) error
 	)
 	return err
 }
-
-const (
-	PullInterval = time.Second * 2
-	WaitTimeOut  = time.Minute * 10
-)
 
 func waitUntilBackupStorageIsReady(storage *storageapi.BackupStorage) error {
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
