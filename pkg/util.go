@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	"github.com/olekukonko/tablewriter"
 	"gomodules.xyz/go-sh"
 	core "k8s.io/api/core/v1"
