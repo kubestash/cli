@@ -72,6 +72,7 @@ func createVolumeSnapshot(vs *vsapi.VolumeSnapshot) error {
 			Labels:      vs.Labels,
 			Annotations: vs.Annotations,
 		},
+		Spec: vs.Spec,
 	}
 	_, err := kmc.CreateOrPatch(
 		context.Background(),
