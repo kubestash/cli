@@ -32,11 +32,13 @@ const (
 
 // Constants for debugging
 const (
-	Condition       = "Condition"
-	Snapshot        = "Snapshot"
-	Session         = "Session"
-	Component       = "Component"
-	RetentionPolicy = "RetentionPolicy"
+	Condition       = "Conditions"
+	Snapshot        = "Snapshots"
+	Session         = "Sessions"
+	Component       = "Components"
+	RetentionPolicy = "RetentionPolicies"
+	Target          = "Target"
+	Backend         = "Backends"
 )
 
 const (

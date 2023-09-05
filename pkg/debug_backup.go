@@ -92,7 +92,7 @@ func NewCmdDebugBackup() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringSliceVar(&debugOpt.sessions, "sessions", debugOpt.sessions, "List of sessions to debug")
-	cmd.Flags().BoolVar(&debugOpt.latest, "latest", true, "Debug only latest BackupSessions")
+	cmd.Flags().BoolVar(&debugOpt.latest, "latest", false, "Debug only latest BackupSessions")
 
 	return cmd
 }
@@ -100,7 +100,8 @@ func NewCmdDebugBackup() *cobra.Command {
 func (opt *backupDebugOptions) showTableForInvalidBackupConfig() error {
 	var data [][]string
 	for _, cond := range opt.backupConfig.Status.Conditions {
-		if cond.Type == coreapi.TypeValidationPassed {
+		if cond.Type == coreapi.TypeValidationPassed &&
+			cond.Status == metav1.ConditionFalse {
 			data = append(data, []string{Condition, cond.Message})
 		}
 	}
@@ -115,16 +116,34 @@ func (opt *backupDebugOptions) showTableForInvalidBackupConfig() error {
 
 func (opt *backupDebugOptions) showTableForNotReadyBackupConfig() error {
 	var data [][]string
-	for _, status := range opt.backupConfig.Status.Sessions {
-		for _, cond := range status.Conditions {
-			if cond.Type == coreapi.TypeSchedulerEnsured {
-				data = append(data, []string{Session, cond.Message})
-			}
+	// check target existence
+	if opt.backupConfig.Status.TargetFound == nil || !*opt.backupConfig.Status.TargetFound {
+		data = append(data, []string{Target, fmt.Sprintf("%s/%s not found", opt.backupConfig.Spec.Target.Namespace, opt.backupConfig.Spec.Target.Name)})
+	}
+
+	// check if backend ready
+	if len(opt.backupConfig.Status.Backends) != len(opt.backupConfig.Spec.Backends) {
+		data = append(data, []string{Backend, "one or more backends are not ready"})
+	}
+
+	for _, backend := range opt.backupConfig.Status.Backends {
+		if !*backend.Ready {
+			data = append(data, []string{Backend, fmt.Sprintf("%s not ready", backend.Name)})
 		}
 	}
 
+	// check if session ready
 	if len(opt.backupConfig.Spec.Sessions) != len(opt.backupConfig.Status.Sessions) {
 		data = append(data, []string{Session, "one or more sessions are not ready"})
+	}
+
+	for _, status := range opt.backupConfig.Status.Sessions {
+		for _, cond := range status.Conditions {
+			if cond.Type == coreapi.TypeSchedulerEnsured &&
+				cond.Status == metav1.ConditionFalse {
+				data = append(data, []string{Session, cond.Message})
+			}
+		}
 	}
 
 	_, err := fmt.Fprintf(os.Stdout, "Debugging BackupConfiguration: %s/%s\n", opt.backupConfig.Namespace, opt.backupConfig.Name)
@@ -216,7 +235,7 @@ func (opt *backupDebugOptions) showTableForFailedBackupSession() error {
 	var failedSnapStatus []coreapi.SnapshotStatus
 	for _, snap := range opt.backupSession.Status.Snapshots {
 		if snap.Phase == storageapi.SnapshotFailed {
-			data = append(data, []string{Snapshot, fmt.Sprintf("Snapshot %s failed", snap.Name)})
+			data = append(data, []string{Snapshot, fmt.Sprintf("%s failed", snap.Name)})
 			failedSnapStatus = append(failedSnapStatus, snap)
 		}
 	}

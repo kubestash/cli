@@ -66,7 +66,8 @@ func NewCmdDebugRestore() *cobra.Command {
 func showTableForInvalidRestore(rs *coreapi.RestoreSession) error {
 	var data [][]string
 	for _, cond := range rs.Status.Conditions {
-		if cond.Type == coreapi.TypeValidationPassed {
+		if cond.Type == coreapi.TypeValidationPassed &&
+			cond.Status == metav1.ConditionFalse {
 			data = append(data, []string{Condition, cond.Message})
 		}
 	}
@@ -89,10 +90,10 @@ func showTableForFailedRestore(rs *coreapi.RestoreSession) error {
 	}
 
 	componentFailed := false
-	for _, rp := range rs.Status.Components {
-		if rp.Phase == coreapi.RestoreFailed {
+	for name, comp := range rs.Status.Components {
+		if comp.Phase == coreapi.RestoreFailed {
 			componentFailed = true
-			data = append(data, []string{Component, rp.Error})
+			data = append(data, []string{Component, fmt.Sprintf("%s: %s", name, comp.Error)})
 		}
 	}
 
