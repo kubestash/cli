@@ -189,7 +189,7 @@ func (opt *unlockOptions) runCmdViaDocker() error {
 	args = append(args, opt.extraArgs...)
 	klog.Infoln("Running docker with args:", args)
 	out, err := exec.Command("docker", args...).CombinedOutput()
-	if out == nil {
+	if len(out) == 0 {
 		return fmt.Errorf("lock not stale")
 	}
 	klog.Infoln("Output:", string(out))
