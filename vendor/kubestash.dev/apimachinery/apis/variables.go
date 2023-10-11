@@ -24,34 +24,11 @@ const (
 	InvokerKind = "invokerKind"
 	InvokerName = "invokerName"
 
-	RestoreNamespace  = "restoreNamespace"
-	RestoreTargetKind = "targetKind"
-
-	MongoYaml   = "mongoYaml"
-	MongoDBName = "mongoDBName"
-
-	PostgresYaml = "pgYaml"
-	PostgresName = "pgName"
-
-	AuthSecretYaml = "authSecretYaml"
-	AuthSecretName = "authSecretName"
-
-	ConfigSecretYaml = "configSecretYaml"
-	ConfigSecretName = "configSecretName"
-
-	IssuerRefName = "issuerRefName"
-
-	SnapshotName = "snapshotName"
+	Snapshot = "snapshot"
 
 	Namespace      = "namespace"
 	BackupSession  = "backupSession"
 	RestoreSession = "restoreSession"
-
-	TargetName      = "targetName"
-	TargetKind      = "targetKind"
-	TargetNamespace = "targetNamespace"
-	TargetMountPath = "targetMountPath"
-	TargetPaths     = "targetPaths"
 
 	// EnableCache is false when TmpDir.DisableCaching is true in backupConfig/restoreSession
 	// default is true

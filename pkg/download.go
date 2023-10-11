@@ -23,19 +23,27 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
+	prober "kmodules.xyz/prober/api/v1"
+	"kmodules.xyz/prober/probe"
+	"kubestash.dev/apimachinery/apis"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg/restic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type downloadOptions struct {
+	restConfig     *rest.Config
 	configDir      string // temp dir
 	destinationDir string // user provided or, current working dir
 
@@ -57,7 +65,8 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 		RunE: func(cmd *cobra.Command, args []string) error {
 			snapshotName := args[0]
 
-			cfg, err := clientGetter.ToRESTConfig()
+			var err error
+			downloadOpt.restConfig, err = clientGetter.ToRESTConfig()
 			if err != nil {
 				return errors.Wrap(err, "failed to read kubeconfig")
 			}
@@ -67,50 +76,54 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				return err
 			}
 
-			klient, err = newRuntimeClient(cfg)
+			klient, err = newRuntimeClient(downloadOpt.restConfig)
 			if err != nil {
 				return err
 			}
 
-			// get snapshot
-			snapshot := &storageapi.Snapshot{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      snapshotName,
-					Namespace: srcNamespace,
-				},
-			}
-			if err = klient.Get(context.Background(), client.ObjectKeyFromObject(snapshot), snapshot); err != nil {
+			snapshot, err := downloadOpt.getSnapshot(snapshotName)
+			if err != nil {
 				return err
 			}
 
-			// get repository
-			repository := &storageapi.Repository{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      snapshot.Spec.Repository,
-					Namespace: srcNamespace,
-				},
-			}
-			if err = klient.Get(context.Background(), client.ObjectKeyFromObject(repository), repository); err != nil {
+			repository, err := downloadOpt.getRepository(snapshot.Spec.Repository)
+			if err != nil {
 				return err
 			}
 
-			// get backupStorage
-			backupStorage := &storageapi.BackupStorage{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      repository.Spec.StorageRef.Name,
-					Namespace: repository.Spec.StorageRef.Namespace,
-				},
-			}
-			if err = klient.Get(context.Background(), client.ObjectKeyFromObject(backupStorage), backupStorage); err != nil {
+			backupStorage, err := downloadOpt.getBackupStorage(repository.Spec.StorageRef)
+			if err != nil {
 				return err
-			}
-
-			if backupStorage.Spec.Storage.Local != nil {
-				return fmt.Errorf("can't restore from repository with local backend")
 			}
 
 			if err = downloadOpt.prepareDestinationDir(); err != nil {
 				return err
+			}
+
+			if backupStorage.Spec.Storage.Local != nil {
+				if !backupStorage.LocalNetworkVolume() {
+					return fmt.Errorf("can't restore from local backend of type: %s", backupStorage.Spec.Storage.Local.String())
+				}
+
+				accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
+				if err != nil {
+					return err
+				}
+
+				if err := downloadOpt.runRestoreViaPod(accessorPod, snapshotName); err != nil {
+					return err
+				}
+
+				if err := downloadOpt.copyDownloadedDataToDestination(accessorPod); err != nil {
+					return err
+				}
+
+				if err := downloadOpt.clearDataFromPod(accessorPod); err != nil {
+					return err
+				}
+
+				klog.Infof("Snapshot %s/%s restored in path %s", srcNamespace, snapshotName, downloadOpt.destinationDir)
+				return nil
 			}
 
 			if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
@@ -172,7 +185,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				downloadOpt.resticStats = comp.ResticStats
 
 				// run restore inside docker
-				if err = downloadOpt.runRestoreViaDocker(compName); err != nil {
+				if err = downloadOpt.runRestoreViaDocker(filepath.Join(DestinationDir, snapshotName, compName)); err != nil {
 					return err
 				}
 				klog.Infof("Component: %v of Snapshot %s/%s restored in path %s", compName, srcNamespace, snapshotName, downloadOpt.destinationDir)
@@ -190,13 +203,97 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 	cmd.Flags().StringVar(&imgRestic.Registry, "docker-registry", imgRestic.Registry, "Docker image registry for restic cli")
 	cmd.Flags().StringVar(&imgRestic.Tag, "image-tag", imgRestic.Tag, "Restic docker image tag")
 
-	err := cmd.MarkFlagRequired("destination")
-	if err != nil {
-		return nil
-	}
 	cmd.MarkFlagsMutuallyExclusive("exclude", "include")
 
 	return cmd
+}
+
+func (opt *downloadOptions) getSnapshot(snapshotName string) (*storageapi.Snapshot, error) {
+	snapshot := &storageapi.Snapshot{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      snapshotName,
+			Namespace: srcNamespace,
+		},
+	}
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(snapshot), snapshot); err != nil {
+		return nil, err
+	}
+	return snapshot, nil
+}
+
+func (opt *downloadOptions) getRepository(repoName string) (*storageapi.Repository, error) {
+	repository := &storageapi.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      repoName,
+			Namespace: srcNamespace,
+		},
+	}
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(repository), repository); err != nil {
+		return nil, err
+	}
+	return repository, nil
+}
+
+func (opt *downloadOptions) getBackupStorage(storage kmapi.TypedObjectReference) (*storageapi.BackupStorage, error) {
+	backupStorage := &storageapi.BackupStorage{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      storage.Name,
+			Namespace: storage.Namespace,
+		},
+	}
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(backupStorage), backupStorage); err != nil {
+		return nil, err
+	}
+	return backupStorage, nil
+}
+
+func (opt *downloadOptions) runRestoreViaPod(pod *core.Pod, snapshotName string) error {
+	command := []string{
+		"/kubestash",
+		"download", snapshotName,
+		"--namespace", srcNamespace,
+		"--destination", getPodDirForSnapshot(),
+	}
+
+	if len(opt.components) != 0 {
+		command = append(command, []string{"--components", strings.Join(opt.components, ",")}...)
+	}
+
+	if len(opt.exclude) != 0 {
+		command = append(command, []string{"--exclude", strings.Join(opt.exclude, ",")}...)
+	}
+
+	if len(opt.include) != 0 {
+		command = append(command, []string{"--include", strings.Join(opt.include, ",")}...)
+	}
+
+	action := &prober.Handler{
+		Exec:          &core.ExecAction{Command: command},
+		ContainerName: apis.AccessorContainerName,
+	}
+
+	return probe.RunProbe(opt.restConfig, action, pod.Name, pod.Namespace)
+}
+
+func (opt *downloadOptions) copyDownloadedDataToDestination(pod *core.Pod) error {
+	_, err := exec.Command(CmdKubectl, "cp", "--namespace", pod.Namespace, fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, getPodDirForSnapshot()), opt.destinationDir).CombinedOutput()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (opt *downloadOptions) clearDataFromPod(pod *core.Pod) error {
+	cmd := []string{"rm", "-rf", getPodDirForSnapshot()}
+	action := &prober.Handler{
+		Exec:          &core.ExecAction{Command: cmd},
+		ContainerName: apis.AccessorContainerName, // TODO: need to change for different pod
+	}
+	return probe.RunProbe(opt.restConfig, action, pod.Name, pod.Namespace)
+}
+
+func getPodDirForSnapshot() string {
+	return filepath.Join(apis.ScratchDirMountPath, apis.SnapshotDownloadDir)
 }
 
 func (opt *downloadOptions) prepareDestinationDir() (err error) {
@@ -209,7 +306,7 @@ func (opt *downloadOptions) prepareDestinationDir() (err error) {
 	return os.MkdirAll(opt.destinationDir, 0o755)
 }
 
-func (opt *downloadOptions) runRestoreViaDocker(componentName string) error {
+func (opt *downloadOptions) runRestoreViaDocker(destination string) error {
 	// get current user
 	currentUser, err := user.Current()
 	if err != nil {
@@ -240,10 +337,8 @@ func (opt *downloadOptions) runRestoreViaDocker(componentName string) error {
 		restoreArgs = append(restoreArgs, exclude)
 	}
 
-	destinationPath := filepath.Join(DestinationDir, componentName)
-
 	for _, resticStat := range opt.resticStats {
-		args := append(restoreArgs, resticStat.Id, "--target", filepath.Join(destinationPath, resticStat.Id[:8]))
+		args := append(restoreArgs, resticStat.Id, "--target", destination)
 		klog.Infoln("Running docker with args:", args)
 		out, err := exec.Command("docker", args...).CombinedOutput()
 		klog.Infoln("Output:", string(out))

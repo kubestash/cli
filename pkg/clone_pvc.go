@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"gomodules.xyz/flags"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -47,9 +48,13 @@ type storageOption struct {
 	region           string
 	maxConnections   int64
 	timeConst        string
+
+	storage *storageapi.BackupStorage
+	pvc     *corev1.PersistentVolumeClaim
 }
 
 func NewCmdClonePVC() *cobra.Command {
+	var storageName, storageNamespace string
 	storageOpt := storageOption{}
 	cmd := &cobra.Command{
 		Use:               "pvc",
@@ -58,41 +63,61 @@ func NewCmdClonePVC() *cobra.Command {
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			flags.EnsureRequiredFlags(cmd, "provider", "bucket", "encrypt-secret", "encrypt-secret-namespace")
+			if storageOpt.provider == string(storageapi.ProviderS3) {
+				flags.EnsureRequiredFlags(cmd, "endpoint")
+			}
+
 			pvcName := args[0]
 
-			pvc, err := getPVC(pvcName)
+			var err error
+			storageOpt.pvc, err = getPVC(kmapi.ObjectReference{
+				Name:      pvcName,
+				Namespace: srcNamespace,
+			})
 			if err != nil {
 				return err
 			}
-			klog.Infof("PVC %s/%s needs to be cloned to namespace %s.", pvc.Namespace, pvc.Name, dstNamespace)
+			klog.Infof("Start cloning PVC %s/%s to namespace %s.", storageOpt.pvc.Namespace, storageOpt.pvc.Name, dstNamespace)
 
-			storageOpt.timeConst = fmt.Sprintf("%d", time.Now().Unix())
+			if storageName == "" {
+				storageOpt.timeConst = fmt.Sprintf("%d", time.Now().Unix())
+				storageOpt.storage = storageOpt.newStorage()
+				klog.Infof("Creating BackupStorage %s/%s.", storageOpt.storage.Namespace, storageOpt.storage.Name)
+				if err = storageOpt.createStorage(); err != nil {
+					return err
+				}
+				if err = storageOpt.waitUntilBackupStorageIsReady(); err != nil {
+					return err
+				}
+				klog.Infof("BackupStorage %s/%s has been created successfully.", storageOpt.storage.Namespace, storageOpt.storage.Name)
 
-			storage := storageOpt.newStorage()
-			if err = storageOpt.createStorage(storage); err != nil {
+				defer func() {
+					if err = klient.Delete(context.Background(), storageOpt.storage); err != nil {
+						klog.Errorf("Failed to delete BackupStorage %s/%s. Reason: %w", storageOpt.storage.Namespace, storageOpt.storage.Name, err)
+						return
+					}
+					klog.Infof("BackupStorage %s/%s has been deleted successfully.", storageOpt.storage.Namespace, storageOpt.storage.Name)
+				}()
+			} else {
+				storageOpt.storage, err = getBackupStorage(kmapi.ObjectReference{
+					Name:      storageName,
+					Namespace: storageNamespace,
+				})
+				if err != nil {
+					return err
+				}
+			}
+
+			if err = storageOpt.backupPVC(); err != nil {
 				return err
 			}
-			if err = waitUntilBackupStorageIsReady(storage); err != nil {
+			klog.Infof("PVC %s/%s has been successfully taken backup.", storageOpt.pvc.Namespace, storageOpt.pvc.Name)
+
+			if err = storageOpt.restorePVC(); err != nil {
 				return err
 			}
-			klog.Infof("BackupStorage has been created successfully.")
-
-			if err = storageOpt.backupPVC(pvc, storage); err != nil {
-				return err
-			}
-			klog.Infof("PVC has been successfully taken backup.")
-
-			if err = storageOpt.restorePVC(pvc); err != nil {
-				return err
-			}
-			klog.Infof("PVC has been successfully taken restored.")
-
-			if err = klient.Delete(context.Background(), storage); err != nil {
-				return err
-			}
-			klog.Infof("BackupStorage has been deleted successfully.")
-
-			klog.Infof("PVC %s/%s is cloned to namespace %s successfully.", pvc.Namespace, pvc.Name, dstNamespace)
+			klog.Infof("PVC %s/%s is cloned to namespace %s successfully.", storageOpt.pvc.Namespace, storageOpt.pvc.Name, dstNamespace)
 
 			return nil
 		},
@@ -104,61 +129,20 @@ func NewCmdClonePVC() *cobra.Command {
 	cmd.Flags().Int64Var(&storageOpt.maxConnections, "max-connections", storageOpt.maxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
 	cmd.Flags().StringVar(&storageOpt.storageSecret, "storage-secret", storageOpt.storageSecret, "Name of the Storage Secret")
 	cmd.Flags().StringVar(&storageOpt.encryptSecret, "encrypt-secret", storageOpt.encryptSecret, "Name of the Encryption Secret")
-	cmd.Flags().StringVar(&storageOpt.encryptNamespace, "encrypt-secret-namespace", storageOpt.encryptNamespace, "Namespace of the Encryption Secret")
+	cmd.Flags().StringVar(&storageOpt.encryptNamespace, "encrypt-secret-namespace", "default", "Namespace of the Encryption Secret")
 	cmd.Flags().StringVar(&storageOpt.prefix, "prefix", storageOpt.prefix, "Prefix denotes the directory inside the backend")
 
-	err := cmd.MarkFlagRequired("provider")
-	if err != nil {
-		return nil
-	}
-	err = cmd.MarkFlagRequired("bucket")
-	if err != nil {
-		return nil
-	}
-	err = cmd.MarkFlagRequired("storage-secret")
-	if err != nil {
-		return nil
-	}
-	err = cmd.MarkFlagRequired("encrypt-secret")
-	if err != nil {
-		return nil
-	}
-	err = cmd.MarkFlagRequired("encrypt-secret-namespace")
-	if err != nil {
-		return nil
-	}
-
-	if storageOpt.provider == string(storageapi.ProviderS3) {
-		err = cmd.MarkFlagRequired("endpoint")
-		if err != nil {
-			return nil
-		}
-	}
+	cmd.Flags().StringVar(&storageName, "backup-storage", storageName, "Name of the BackupStorage")
+	cmd.Flags().StringVar(&storageNamespace, "backup-storage-namespace", "default", "Namespace of the BackupStorage")
 
 	return cmd
 }
 
-func getPVC(name string) (*corev1.PersistentVolumeClaim, error) {
-	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: srcNamespace,
-		},
-	}
-	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(pvc), pvc); err != nil {
-		return nil, err
-	}
-
-	return pvc, nil
-}
-
 func (opt *storageOption) newStorage() *storageapi.BackupStorage {
-	storageName := fmt.Sprintf("%s-%s-%s", opt.provider, "storage", opt.timeConst)
-	klog.Infof("Creating Repository: %s to the Namespace: %s", storageName, srcNamespace)
 	fromAllNameSpace := apis.NamespacesFromAll
 	storage := &storageapi.BackupStorage{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      storageName,
+			Name:      fmt.Sprintf("%s-%s-%s", opt.provider, "storage", opt.timeConst),
 			Namespace: srcNamespace,
 		},
 		Spec: storageapi.BackupStorageSpec{
@@ -241,27 +225,27 @@ func (opt *storageOption) getBackendInfo() storageapi.Backend {
 	return backend
 }
 
-func (opt *storageOption) createStorage(storage *storageapi.BackupStorage) error {
+func (opt *storageOption) createStorage() error {
 	_, err := kmc.CreateOrPatch(
 		context.Background(),
 		klient,
-		storage,
+		opt.storage,
 		func(obj client.Object, createOp bool) client.Object {
 			in := obj.(*storageapi.BackupStorage)
-			in.Spec = storage.Spec
+			in.Spec = opt.storage.Spec
 			return in
 		},
 	)
 	return err
 }
 
-func waitUntilBackupStorageIsReady(storage *storageapi.BackupStorage) error {
+func (opt *storageOption) waitUntilBackupStorageIsReady() error {
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if err := klient.Get(context.Background(), client.ObjectKeyFromObject(storage), storage); err != nil {
+		if err := klient.Get(context.Background(), client.ObjectKeyFromObject(opt.storage), opt.storage); err != nil {
 			return false, nil
 		}
 
-		if storage.Status.Phase == storageapi.BackupStorageReady {
+		if opt.storage.Status.Phase == storageapi.BackupStorageReady {
 			return true, nil
 		}
 
@@ -269,54 +253,54 @@ func waitUntilBackupStorageIsReady(storage *storageapi.BackupStorage) error {
 	})
 }
 
-func (opt *storageOption) backupPVC(pvc *corev1.PersistentVolumeClaim, storage *storageapi.BackupStorage) error {
-	retentionPolicy := opt.newRetentionPolicy(pvc.Name)
-	klog.Infof("Creating RetentionPolicy: %s to the namespace: %s", retentionPolicy.Name, retentionPolicy.Namespace)
+func (opt *storageOption) backupPVC() error {
+	retentionPolicy := opt.newRetentionPolicy()
+	klog.Infof("Creating RetentionPolicy %s/%s.", retentionPolicy.Namespace, retentionPolicy.Name)
 	if err := opt.createRetentionPolicy(retentionPolicy); err != nil {
 		return err
 	}
-	klog.Infof("RetentionPolicy has been created successfully.")
+	klog.Infof("RetentionPolicy %s/%s has been created successfully.", retentionPolicy.Namespace, retentionPolicy.Name)
 
-	backupConfig := opt.newBackupConfig(pvc.Name, storage)
-	klog.Infof("Creating BackupConfiguration: %s to the namespace: %s", backupConfig.Name, backupConfig.Namespace)
+	backupConfig := opt.newBackupConfig()
+	klog.Infof("Creating BackupConfiguration %s/%s.", backupConfig.Namespace, backupConfig.Name)
 	if err := opt.createBackupConfig(backupConfig); err != nil {
 		return err
 	}
 	if err := waitUntilBackupConfigIsReady(backupConfig); err != nil {
 		return err
 	}
-	klog.Infof("BackupConfiguration has been created successfully.")
+	klog.Infof("BackupConfiguration %s/%s has been created successfully.", backupConfig.Namespace, backupConfig.Name)
 
+	klog.Infof("Triggering BackupSession to backup PVC %s/%s", opt.pvc.Namespace, opt.pvc.Name)
 	backupSession, err := triggerBackup(backupConfig, backupConfig.Spec.Sessions[0])
 	if err != nil {
 		return err
 	}
-
 	if err = waitUntilBackupSessionCompleted(backupSession); err != nil {
 		return err
 	}
-	klog.Infof("BackupSession has been succeeded.")
+	klog.Infof("BackupSession %s/%s succeeded.", backupSession.Namespace, backupSession.Name)
 
 	// delete backupConfig
 	if err = klient.Delete(context.Background(), backupConfig); err != nil {
 		return err
 	}
-	klog.Infof("BackupConfiguration has been deleted successfully.")
+	klog.Infof("BackupConfiguration %s/%s has been deleted successfully.", backupConfig.Namespace, backupConfig.Name)
 
 	// delete retentionPolicy
 	if err = klient.Delete(context.Background(), retentionPolicy); err != nil {
 		return err
 	}
-	klog.Infof("RetentionPolicy has been deleted successfully.")
+	klog.Infof("RetentionPolicy %s/%s has been deleted successfully.", retentionPolicy.Namespace, retentionPolicy.Name)
 
 	return nil
 }
 
-func (opt *storageOption) newRetentionPolicy(pvcName string) *storageapi.RetentionPolicy {
+func (opt *storageOption) newRetentionPolicy() *storageapi.RetentionPolicy {
 	fromAllNameSpace := apis.NamespacesFromAll
 	return &storageapi.RetentionPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", pvcName, "retention-policy"),
+			Name:      fmt.Sprintf("%s-%s", opt.pvc.Name, "retention-policy"),
 			Namespace: dstNamespace,
 		},
 		Spec: storageapi.RetentionPolicySpec{
@@ -351,29 +335,29 @@ func (opt *storageOption) createRetentionPolicy(rp *storageapi.RetentionPolicy) 
 	return err
 }
 
-func (opt *storageOption) newBackupConfig(pvcName string, storage *storageapi.BackupStorage) *coreapi.BackupConfiguration {
+func (opt *storageOption) newBackupConfig() *coreapi.BackupConfiguration {
 	return &coreapi.BackupConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", pvcName, "backup"),
+			Name:      fmt.Sprintf("%s-%s", opt.pvc.Name, "backup"),
 			Namespace: dstNamespace,
 		},
 		Spec: coreapi.BackupConfigurationSpec{
 			Target: &kmapi.TypedObjectReference{
 				Kind:      apis.KindPersistentVolumeClaim,
-				Name:      pvcName,
+				Name:      opt.pvc.Name,
 				Namespace: srcNamespace,
 			},
 			Backends: []coreapi.BackendReference{
 				{
-					Name: storage.Name,
+					Name: opt.storage.Name,
 					StorageRef: kmapi.TypedObjectReference{
 						APIGroup:  storageapi.GroupVersion.Group,
 						Kind:      storageapi.ResourceKindBackupStorage,
-						Name:      storage.Name,
-						Namespace: storage.Namespace,
+						Name:      opt.storage.Name,
+						Namespace: opt.storage.Namespace,
 					},
 					RetentionPolicy: &kmapi.ObjectReference{
-						Name:      fmt.Sprintf("%s-%s", pvcName, "retention-policy"),
+						Name:      fmt.Sprintf("%s-%s", opt.pvc.Name, "retention-policy"),
 						Namespace: dstNamespace,
 					},
 				},
@@ -397,13 +381,14 @@ func (opt *storageOption) newBackupConfig(pvcName string, storage *storageapi.Ba
 					},
 					Repositories: []coreapi.RepositoryInfo{
 						{
-							Name:      fmt.Sprintf("%s-%s-%s", pvcName, "pvc-storage", opt.timeConst),
-							Backend:   storage.Name,
-							Directory: filepath.Join("pvc", pvcName),
+							Name:      fmt.Sprintf("%s-%s-%s", opt.pvc.Name, "pvc-storage", opt.timeConst),
+							Backend:   opt.storage.Name,
+							Directory: filepath.Join("pvc", opt.pvc.Name),
 							EncryptionSecret: &kmapi.ObjectReference{
 								Name:      opt.encryptSecret,
 								Namespace: opt.encryptNamespace,
 							},
+							DeletionPolicy: storageapi.DeletionPolicyWipeOut,
 						},
 					},
 					Addon: &coreapi.AddonInfo{
@@ -469,40 +454,41 @@ func waitUntilBackupSessionCompleted(bs *coreapi.BackupSession) error {
 	})
 }
 
-func (opt *storageOption) restorePVC(pvc *corev1.PersistentVolumeClaim) error {
-	if err := opt.createPVC(pvc); err != nil {
+func (opt *storageOption) restorePVC() error {
+	if err := opt.createPVC(); err != nil {
 		return err
 	}
-	klog.Infof("PVC %s/%s has been created successfully.", dstNamespace, pvc.Name)
+	klog.Infof("PVC %s/%s has been created successfully.", dstNamespace, opt.pvc.Name)
 
-	restoreSession := opt.newRestoreSession(pvc)
-	klog.Infof("Creating RestoreSession: %s to the namespace: %s", restoreSession.Name, restoreSession.Namespace)
+	restoreSession := opt.newRestoreSession()
+	klog.Infof("Creating RestoreSession %s/%s.", restoreSession.Namespace, restoreSession.Name)
 	if err := opt.createRestoreSession(restoreSession); err != nil {
 		return err
 	}
+	klog.Infof("RestoreSession %s/%s has been created successfully.", restoreSession.Namespace, restoreSession.Name)
 	if err := waitUntilRestoreSessionCompleted(restoreSession); err != nil {
 		return err
 	}
-	klog.Infof("RestoreSession has been created successfully.")
+	klog.Infof("RestoreSession %s/%s succeeded.", restoreSession.Namespace, restoreSession.Name)
 
 	if err := klient.Delete(context.Background(), restoreSession); err != nil {
 		return err
 	}
-	klog.Infof("RestoreSession has been deleted successfully.")
+	klog.Infof("RestoreSession %s/%s has been deleted successfully.", restoreSession.Namespace, restoreSession.Name)
 
 	return nil
 }
 
-func (opt *storageOption) createPVC(pvc *corev1.PersistentVolumeClaim) error {
+func (opt *storageOption) createPVC() error {
 	newPVC := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      pvc.Name,
+			Name:      opt.pvc.Name,
 			Namespace: dstNamespace,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes:      pvc.Spec.AccessModes,
-			Resources:        pvc.Spec.Resources,
-			StorageClassName: pvc.Spec.StorageClassName,
+			AccessModes:      opt.pvc.Spec.AccessModes,
+			Resources:        opt.pvc.Spec.Resources,
+			StorageClassName: opt.pvc.Spec.StorageClassName,
 		},
 	}
 
@@ -519,20 +505,20 @@ func (opt *storageOption) createPVC(pvc *corev1.PersistentVolumeClaim) error {
 	return err
 }
 
-func (opt *storageOption) newRestoreSession(pvc *corev1.PersistentVolumeClaim) *coreapi.RestoreSession {
+func (opt *storageOption) newRestoreSession() *coreapi.RestoreSession {
 	return &coreapi.RestoreSession{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      pvc.Name,
+			Name:      opt.pvc.Name,
 			Namespace: dstNamespace,
 		},
 		Spec: coreapi.RestoreSessionSpec{
 			Target: &kmapi.TypedObjectReference{
 				Kind:      apis.KindPersistentVolumeClaim,
-				Name:      pvc.Name,
+				Name:      opt.pvc.Name,
 				Namespace: dstNamespace,
 			},
 			DataSource: &coreapi.RestoreDataSource{
-				Repository: fmt.Sprintf("%s-%s-%s", pvc.Name, "pvc-storage", opt.timeConst),
+				Repository: fmt.Sprintf("%s-%s-%s", opt.pvc.Name, "pvc-storage", opt.timeConst),
 				Snapshot:   LatestSnapshot,
 				EncryptionSecret: &kmapi.ObjectReference{
 					Name:      opt.encryptSecret,

@@ -17,29 +17,35 @@ limitations under the License.
 package pkg
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"gomodules.xyz/flags"
+	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
+	prober "kmodules.xyz/prober/api/v1"
+	"kmodules.xyz/prober/probe"
+	"kubestash.dev/apimachinery/apis"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg/restic"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type unlockOptions struct {
-	repo      *storageapi.Repository
-	configDir string
-	extraArgs []string
-	paths     []string
+	restConfig *rest.Config
+	repo       *storageapi.Repository
+	configDir  string
+	extraArgs  []string
+	paths      []string
 }
 
 func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
@@ -51,9 +57,12 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			flags.EnsureRequiredFlags(cmd, "paths")
+
 			repoName := args[0]
 
-			cfg, err := clientGetter.ToRESTConfig()
+			var err error
+			unlockOpt.restConfig, err = clientGetter.ToRESTConfig()
 			if err != nil {
 				return errors.Wrap(err, "failed to read kubeconfig")
 			}
@@ -63,35 +72,38 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 				return err
 			}
 
-			klient, err = newRuntimeClient(cfg)
+			klient, err = newRuntimeClient(unlockOpt.restConfig)
 			if err != nil {
 				return err
 			}
 
-			// get repository
-			unlockOpt.repo = &storageapi.Repository{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      repoName,
-					Namespace: srcNamespace,
-				},
-			}
-			if err = klient.Get(context.Background(), client.ObjectKeyFromObject(unlockOpt.repo), unlockOpt.repo); err != nil {
+			unlockOpt.repo, err = getRepository(kmapi.ObjectReference{
+				Name:      repoName,
+				Namespace: srcNamespace,
+			})
+			if err != nil {
 				return err
 			}
 
-			// get backupStorage
-			backupStorage := &storageapi.BackupStorage{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      unlockOpt.repo.Spec.StorageRef.Name,
-					Namespace: unlockOpt.repo.Spec.StorageRef.Namespace,
-				},
-			}
-			if err = klient.Get(context.Background(), client.ObjectKeyFromObject(backupStorage), backupStorage); err != nil {
+			backupStorage, err := getBackupStorage(kmapi.ObjectReference{
+				Name:      unlockOpt.repo.Spec.StorageRef.Name,
+				Namespace: unlockOpt.repo.Spec.StorageRef.Namespace,
+			})
+			if err != nil {
 				return err
 			}
 
 			if backupStorage.Spec.Storage.Local != nil {
-				return unlockOpt.unlockLocalRepository()
+				if !backupStorage.LocalNetworkVolume() {
+					return fmt.Errorf("can't unlock from local backend of type: %s", backupStorage.Spec.Storage.Local.String())
+				}
+
+				accessorPod, err := getLocalBackendAccessorPod(unlockOpt.repo.Spec.StorageRef)
+				if err != nil {
+					return err
+				}
+
+				return unlockOpt.unlockLocalRepository(accessorPod)
 			}
 
 			return unlockOpt.unlockRepository()
@@ -100,17 +112,23 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 
 	cmd.Flags().StringSliceVar(&unlockOpt.paths, "paths", unlockOpt.paths, "List of paths for restic repository to unlock")
 
-	err := cmd.MarkFlagRequired("paths")
-	if err != nil {
-		return nil
-	}
-
 	return cmd
 }
 
-func (opt *unlockOptions) unlockLocalRepository() error {
-	// TODO: will be added later
-	return nil
+func (opt *unlockOptions) unlockLocalRepository(pod *core.Pod) error {
+	command := []string{
+		"/kubestash",
+		"unlock", opt.repo.Name,
+		"--namespace", opt.repo.Namespace,
+		"--paths", strings.Join(opt.paths, ","),
+	}
+
+	action := &prober.Handler{
+		Exec:          &core.ExecAction{Command: command},
+		ContainerName: apis.AccessorContainerName,
+	}
+
+	return probe.RunProbe(opt.restConfig, action, pod.Name, pod.Namespace)
 }
 
 func (opt *unlockOptions) unlockRepository() error {

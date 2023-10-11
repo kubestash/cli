@@ -25,6 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
 	core_util "kmodules.xyz/client-go/core/v1"
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
@@ -56,14 +57,11 @@ func NewCmdTriggerBackup(clientGetter genericclioptions.RESTClientGetter) *cobra
 				return err
 			}
 
-			// get backupConfiguration
-			backupConfig := &coreapi.BackupConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      backupConfigName,
-					Namespace: namespace,
-				},
-			}
-			if err := klient.Get(context.Background(), client.ObjectKeyFromObject(backupConfig), backupConfig); err != nil {
+			backupConfig, err := getBackupConfiguration(kmapi.ObjectReference{
+				Name:      backupConfigName,
+				Namespace: namespace,
+			})
+			if err != nil {
 				return err
 			}
 

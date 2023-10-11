@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kubestash.dev/apimachinery/apis"
@@ -48,13 +49,12 @@ func NewCmdDebugBackup() *cobra.Command {
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			debugOpt.backupConfig = &coreapi.BackupConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      args[0],
-					Namespace: srcNamespace,
-				},
-			}
-			if err := klient.Get(context.Background(), client.ObjectKeyFromObject(debugOpt.backupConfig), debugOpt.backupConfig); err != nil {
+			var err error
+			debugOpt.backupConfig, err = getBackupConfiguration(kmapi.ObjectReference{
+				Name:      args[0],
+				Namespace: srcNamespace,
+			})
+			if err != nil {
 				return err
 			}
 

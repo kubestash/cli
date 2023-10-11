@@ -44,6 +44,8 @@ const (
 	KubeStashInvokerName      = "kubestash.com/invoker-name"
 	KubeStashInvokerNamespace = "kubestash.com/invoker-namespace"
 	KubeStashInvokerKind      = "kubestash.com/invoker-kind"
+
+	KubeStashApp = "kubestash.com/app"
 )
 
 // Keys for structure logging
@@ -70,10 +72,11 @@ const (
 	KindClusterRole = "ClusterRole"
 	KindRole        = "Role"
 
-	KubeStashBackupJobClusterRole  = "kubestash-backup-job"
-	KubeStashRestoreJobClusterRole = "kubestash-restore-job"
-	KubeStashCronJobClusterRole    = "kubestash-cron-job"
-	KubeStashBackendJobClusterRole = "kubestash-backend-job"
+	KubeStashBackupJobClusterRole       = "kubestash-backup-job"
+	KubeStashRestoreJobClusterRole      = "kubestash-restore-job"
+	KubeStashCronJobClusterRole         = "kubestash-cron-job"
+	KubeStashBackendJobClusterRole      = "kubestash-backend-job"
+	KubeStashBackendAccessorClusterRole = "kubestash-backend-accessor"
 )
 
 // Reconciliation related constants
@@ -94,7 +97,7 @@ const (
 	KindDeployment  = "Deployment"
 )
 
-// PersistentVolumeClaim  related constants
+// PersistentVolumeClaim related constants
 const (
 	KindPersistentVolumeClaim = "PersistentVolumeClaim"
 	KeyPodOrdinal             = "POD_ORDINAL"
@@ -108,4 +111,18 @@ const (
 	PrefixUpload          = "upload"
 	PrefixCleanup         = "cleanup"
 	PrefixRetentionPolicy = "retentionpolicy"
+)
+
+// InterimVolume related constants
+const (
+	InterimVolume = "interim-volume"
+)
+
+// Local Network Volume Accessor related constants
+const (
+	KubeStashNetVolAccessor = "kubestash-netvol-accessor"
+	ScratchDirVolumeName    = "stash-scratch-dir"
+	ScratchDirMountPath     = "/tmp"
+	SnapshotDownloadDir     = "snapshot"
+	AccessorContainerName   = "kubestash"
 )

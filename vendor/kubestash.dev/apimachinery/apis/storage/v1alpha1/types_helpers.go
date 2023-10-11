@@ -16,7 +16,10 @@ limitations under the License.
 
 package v1alpha1
 
-import core "k8s.io/api/core/v1"
+import (
+	"gomodules.xyz/x/filepath"
+	core "k8s.io/api/core/v1"
+)
 
 // ToVolumeAndMount returns volumes and mounts for local backend
 func (l LocalSpec) ToVolumeAndMount(volName string) (core.Volume, core.VolumeMount) {
@@ -30,4 +33,9 @@ func (l LocalSpec) ToVolumeAndMount(volName string) (core.Volume, core.VolumeMou
 		SubPath:   l.SubPath,
 	}
 	return vol, mnt
+}
+
+func (l LocalSpec) ToLocalMountPath(volName string) (string, error) {
+	_, mnt := l.ToVolumeAndMount(volName)
+	return filepath.SecureJoin("/", volName, mnt.MountPath)
 }

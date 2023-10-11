@@ -23,6 +23,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,7 +38,10 @@ func NewCmdCopySecret() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			secretName := args[0]
 
-			secret, err := getSecret(secretName)
+			secret, err := getSecret(kmapi.ObjectReference{
+				Name:      secretName,
+				Namespace: srcNamespace,
+			})
 			if err != nil {
 				return err
 			}
@@ -48,20 +52,6 @@ func NewCmdCopySecret() *cobra.Command {
 	}
 
 	return cmd
-}
-
-func getSecret(name string) (*core.Secret, error) {
-	secret := &core.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: srcNamespace,
-		},
-	}
-	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(secret), secret); err != nil {
-		return nil, err
-	}
-
-	return secret, nil
 }
 
 func createSecret(secret *core.Secret) error {

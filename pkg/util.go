@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	"github.com/olekukonko/tablewriter"
@@ -29,7 +30,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	restclient "k8s.io/client-go/rest"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
+	meta_util "kmodules.xyz/client-go/meta"
+	"kubestash.dev/apimachinery/apis"
 	configapi "kubestash.dev/apimachinery/apis/config/v1alpha1"
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
@@ -74,18 +78,121 @@ func newRuntimeClient(config *restclient.Config) (client.Client, error) {
 	})
 }
 
-func setBackupConfigurationPausedField(value bool, name string) error {
-	backupConfig := &coreapi.BackupConfiguration{
+func getSecret(ref kmapi.ObjectReference) (*core.Secret, error) {
+	secret := &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: srcNamespace,
+			Name:      ref.Name,
+			Namespace: ref.Namespace,
 		},
 	}
-	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(backupConfig), backupConfig); err != nil {
+
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(secret), secret); err != nil {
+		return nil, err
+	}
+
+	return secret, nil
+}
+
+func getPVC(ref kmapi.ObjectReference) (*core.PersistentVolumeClaim, error) {
+	pvc := &core.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ref.Name,
+			Namespace: ref.Namespace,
+		},
+	}
+
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(pvc), pvc); err != nil {
+		return nil, err
+	}
+
+	return pvc, nil
+}
+
+func getVolumeSnapshot(ref kmapi.ObjectReference) (*vsapi.VolumeSnapshot, error) {
+	volumeSnapshot := &vsapi.VolumeSnapshot{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ref.Name,
+			Namespace: ref.Namespace,
+		},
+	}
+
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(volumeSnapshot), volumeSnapshot); err != nil {
+		return nil, err
+	}
+
+	return volumeSnapshot, nil
+}
+
+func getBackupStorage(ref kmapi.ObjectReference) (*storageapi.BackupStorage, error) {
+	storage := &storageapi.BackupStorage{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ref.Name,
+			Namespace: ref.Namespace,
+		},
+	}
+
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(storage), storage); err != nil {
+		return nil, err
+	}
+
+	return storage, nil
+}
+
+func getRepository(ref kmapi.ObjectReference) (*storageapi.Repository, error) {
+	repo := &storageapi.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ref.Name,
+			Namespace: ref.Namespace,
+		},
+	}
+
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(repo), repo); err != nil {
+		return nil, err
+	}
+
+	return repo, nil
+}
+
+func getBackupConfiguration(ref kmapi.ObjectReference) (*coreapi.BackupConfiguration, error) {
+	bc := &coreapi.BackupConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ref.Name,
+			Namespace: ref.Namespace,
+		},
+	}
+
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(bc), bc); err != nil {
+		return nil, err
+	}
+
+	return bc, nil
+}
+
+func getRestoreSession(ref kmapi.ObjectReference) (*coreapi.RestoreSession, error) {
+	rs := &coreapi.RestoreSession{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ref.Name,
+			Namespace: ref.Namespace,
+		},
+	}
+
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(rs), rs); err != nil {
+		return nil, err
+	}
+
+	return rs, nil
+}
+
+func setBackupConfigurationPausedField(value bool, name string) error {
+	backupConfig, err := getBackupConfiguration(kmapi.ObjectReference{
+		Name:      name,
+		Namespace: srcNamespace,
+	})
+	if err != nil {
 		return err
 	}
 
-	_, err := kmc.CreateOrPatch(
+	_, err = kmc.CreateOrPatch(
 		context.Background(),
 		klient,
 		backupConfig,
@@ -120,5 +227,84 @@ func showLogs(pod core.Pod, args ...string) error {
 	}
 	cmdArgs := []string{"logs", "-n", pod.Namespace, pod.Name}
 	cmdArgs = append(cmdArgs, args...)
-	return sh.Command("kubectl", cmdArgs).Run()
+	return sh.Command(CmdKubectl, cmdArgs).Run()
+}
+
+func getOperatorPod() (core.Pod, error) {
+	var podList core.PodList
+
+	// TODO: change the labels?
+	sel, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			meta_util.NameLabelKey: "kubestash-operator",
+		},
+	})
+	if err != nil {
+		return core.Pod{}, err
+	}
+
+	opts := client.ListOption(client.MatchingLabelsSelector{Selector: sel})
+	if err := klient.List(context.Background(), &podList, opts); err != nil {
+		return core.Pod{}, err
+	}
+
+	for i := range podList.Items {
+		if hasKubeStashContainer(&podList.Items[i]) {
+			return podList.Items[i], nil
+		}
+	}
+
+	return core.Pod{}, fmt.Errorf("operator pod not found")
+}
+
+func hasKubeStashContainer(pod *core.Pod) bool {
+	if strings.Contains(pod.Name, "kubestash") {
+		for _, c := range pod.Spec.Containers {
+			if c.Name == "operator" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func getLocalBackendAccessorPod(obj kmapi.TypedObjectReference) (*core.Pod, error) {
+	var pods core.PodList
+	appLabels := map[string]string{
+		apis.KubeStashApp: apis.KubeStashNetVolAccessor,
+	}
+	opts := []client.ListOption{client.InNamespace(obj.Namespace), client.MatchingLabels(appLabels)}
+	if err := klient.List(context.Background(), &pods, opts...); err != nil {
+		return nil, err
+	}
+
+	for i := range pods.Items {
+		if hasVolume(pods.Items[i].Spec.Volumes, obj.Name) {
+			for _, c := range pods.Items[i].Spec.Containers {
+				if hasVolumeMount(c.VolumeMounts, obj.Name) {
+					return &pods.Items[i], nil
+				}
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no local backend accessor pod found for BackupStorage: %s/%s", obj.Namespace, obj.Name)
+}
+
+func hasVolume(volumes []core.Volume, name string) bool {
+	for i := range volumes {
+		if volumes[i].Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func hasVolumeMount(mounts []core.VolumeMount, name string) bool {
+	for i := range mounts {
+		if mounts[i].Name == name {
+			return true
+		}
+	}
+	return false
 }

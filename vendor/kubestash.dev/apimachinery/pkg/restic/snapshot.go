@@ -40,3 +40,7 @@ func (w *ResticWrapper) GetSnapshotSize(snapshotID string) (uint64, error) {
 	}
 	return stat.TotalSize, nil
 }
+
+func (w *ResticWrapper) DownloadSnapshot(options RestoreOptions) error {
+	return w.runRestore(options)
+}

@@ -19,6 +19,7 @@ package pkg
 import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gomodules.xyz/flags"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -29,6 +30,8 @@ func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 		Short:             `Copy kubestash resources from one namespace to another namespace`,
 		DisableAutoGenTag: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			flags.EnsureRequiredFlags(cmd, "to-namespace")
+
 			cfg, err := clientGetter.ToRESTConfig()
 			if err != nil {
 				return errors.Wrap(err, "failed to read kubeconfig")
@@ -52,9 +55,6 @@ func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 	cmd.AddCommand(NewCmdCopyVolumeSnapshot())
 
 	cmd.PersistentFlags().StringVar(&dstNamespace, "to-namespace", dstNamespace, "Destination namespace.")
-	err := cmd.MarkPersistentFlagRequired("to-namespace")
-	if err != nil {
-		return nil
-	}
+
 	return cmd
 }

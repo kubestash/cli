@@ -55,3 +55,7 @@ const (
 	PVCSchedule    = "*/59 * * * *"
 	LatestSnapshot = "latest"
 )
+
+const (
+	CmdKubectl = "kubectl"
+)

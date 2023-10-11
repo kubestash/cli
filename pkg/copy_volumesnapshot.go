@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,7 +38,10 @@ func NewCmdCopyVolumeSnapshot() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			volumeSnapshotName := args[0]
 
-			volumeSnapshot, err := getVolumeSnapshot(volumeSnapshotName)
+			volumeSnapshot, err := getVolumeSnapshot(kmapi.ObjectReference{
+				Name:      volumeSnapshotName,
+				Namespace: srcNamespace,
+			})
 			if err != nil {
 				return err
 			}
@@ -48,20 +52,6 @@ func NewCmdCopyVolumeSnapshot() *cobra.Command {
 	}
 
 	return cmd
-}
-
-func getVolumeSnapshot(name string) (*vsapi.VolumeSnapshot, error) {
-	volumeSnapshot := &vsapi.VolumeSnapshot{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: srcNamespace,
-		},
-	}
-	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(volumeSnapshot), volumeSnapshot); err != nil {
-		return nil, err
-	}
-
-	return volumeSnapshot, nil
 }
 
 func createVolumeSnapshot(vs *vsapi.VolumeSnapshot) error {

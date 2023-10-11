@@ -17,16 +17,11 @@ limitations under the License.
 package pkg
 
 import (
-	"context"
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"gomodules.xyz/go-sh"
-	core "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func NewCmdDebugOperator() *cobra.Command {
@@ -55,7 +50,7 @@ func showVersionInformation() error {
 
 func showKubernetesVersion() error {
 	klog.Infoln("\n\n\n==================[ Kubernetes Version ]==================")
-	return sh.Command("kubectl", "version", "--short").Run()
+	return sh.Command(CmdKubectl, "version", "--short").Run()
 }
 
 func showKubeStashVersion() error {
@@ -70,45 +65,7 @@ func showKubeStashVersion() error {
 		kubestashBinary = "/kubestash"
 	}
 	klog.Infoln("\n\n\n==================[ KubeStash Version ]==================")
-	return sh.Command("kubectl", "exec", "-it", "-n", pod.Namespace, pod.Name, "-c", "operator", "--", kubestashBinary, "version").Run()
-}
-
-func getOperatorPod() (core.Pod, error) {
-	var podList core.PodList
-
-	// TODO: change the labels?
-	sel, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			"app.kubernetes.io/name": "kubestash-operator",
-		},
-	})
-	if err != nil {
-		return core.Pod{}, err
-	}
-
-	opts := client.ListOption(client.MatchingLabelsSelector{Selector: sel})
-	if err := klient.List(context.Background(), &podList, opts); err != nil {
-		return core.Pod{}, err
-	}
-
-	for i := range podList.Items {
-		if hasStashContainer(&podList.Items[i]) {
-			return podList.Items[i], nil
-		}
-	}
-
-	return core.Pod{}, fmt.Errorf("operator pod not found")
-}
-
-func hasStashContainer(pod *core.Pod) bool {
-	if strings.Contains(pod.Name, "stash") {
-		for _, c := range pod.Spec.Containers {
-			if c.Name == "operator" {
-				return true
-			}
-		}
-	}
-	return false
+	return sh.Command(CmdKubectl, "exec", "-it", "-n", pod.Namespace, pod.Name, "-c", "operator", "--", kubestashBinary, "version").Run()
 }
 
 func debugOperator() error {

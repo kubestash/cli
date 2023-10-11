@@ -311,14 +311,14 @@ func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 
 func (w *ResticWrapper) appendMaxConnectionsFlag(args []interface{}) []interface{} {
 	var maxConOption string
-	if w.config.maxConnections > 0 {
+	if w.config.MaxConnections > 0 {
 		switch w.config.provider {
 		case storage.ProviderGCS:
-			maxConOption = fmt.Sprintf("gs.connections=%d", w.config.maxConnections)
+			maxConOption = fmt.Sprintf("gs.connections=%d", w.config.MaxConnections)
 		case storage.ProviderAzure:
-			maxConOption = fmt.Sprintf("azure.connections=%d", w.config.maxConnections)
+			maxConOption = fmt.Sprintf("azure.connections=%d", w.config.MaxConnections)
 		case storage.ProviderB2:
-			maxConOption = fmt.Sprintf("b2.connections=%d", w.config.maxConnections)
+			maxConOption = fmt.Sprintf("b2.connections=%d", w.config.MaxConnections)
 		}
 	}
 	if maxConOption != "" {

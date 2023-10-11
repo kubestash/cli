@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kubestash.dev/apimachinery/apis"
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
@@ -38,13 +39,11 @@ func NewCmdDebugRestore() *cobra.Command {
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			rs := &coreapi.RestoreSession{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      args[0],
-					Namespace: srcNamespace,
-				},
-			}
-			if err := klient.Get(context.Background(), client.ObjectKeyFromObject(rs), rs); err != nil {
+			rs, err := getRestoreSession(kmapi.ObjectReference{
+				Name:      args[0],
+				Namespace: srcNamespace,
+			})
+			if err != nil {
 				return err
 			}
 

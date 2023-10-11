@@ -91,3 +91,11 @@ func (b *BackupStorage) OffshootLabels() map[string]string {
 func (b *BackupStorage) LocalProvider() bool {
 	return b.Spec.Storage.Provider == ProviderLocal
 }
+
+func (b *BackupStorage) LocalNetworkVolume() bool {
+	if b.Spec.Storage.Provider == ProviderLocal &&
+		b.Spec.Storage.Local.NFS != nil {
+		return true
+	}
+	return false
+}

@@ -38,6 +38,9 @@ type KubeStashConfig struct {
 
 	// Docker specifies the operator's  docker registry, image, and tag information
 	Docker Docker `json:"docker,omitempty"`
+
+	// NetVolAccessor specifies the network volume accessor's resource requirements
+	NetVolAccessor NetVolAccessor `json:"netVolAccessor,omitempty"`
 }
 
 type LicenseOptions struct {
@@ -70,6 +73,20 @@ type Docker struct {
 
 	// Tag specifies the Docker image tag
 	Tag string `json:"tag,omitempty"`
+}
+
+type NetVolAccessor struct {
+	// CPU specifies amount of CPU resource to allocate for each network volume accessor deployment
+	CPU string `json:"cpu,omitempty"`
+
+	// Memory specifies amount of Memory resource to allocate for each network volume accessor deployment
+	Memory string `json:"memory,omitempty"`
+
+	// User specifies the UID of each network volume accessor deployment
+	User int64 `json:"user,omitempty"`
+
+	// PrivilegedMode specifies whether each network volume accessor deployment should run in privileged mode or not
+	PrivilegedMode bool `json:"privilegedMode,omitempty"`
 }
 
 func (docker Docker) ToContainerImage() string {
