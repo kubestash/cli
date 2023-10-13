@@ -53,6 +53,10 @@ func (rs *RestoreSession) CalculatePhase() RestorePhase {
 		return componentsPhase
 	}
 
+	if componentsPhase == RestorePhaseUnknown {
+		return componentsPhase
+	}
+
 	return RestoreRunning
 }
 
@@ -72,6 +76,7 @@ func (rs *RestoreSession) getComponentsPhase() RestorePhase {
 
 	failedComponent := 0
 	successfulComponent := 0
+	unknownComponentPhase := 0
 
 	for _, c := range rs.Status.Components {
 		if c.Phase == RestoreSucceeded {
@@ -79,6 +84,9 @@ func (rs *RestoreSession) getComponentsPhase() RestorePhase {
 		}
 		if c.Phase == RestoreFailed {
 			failedComponent++
+		}
+		if c.Phase == RestorePhaseUnknown {
+			unknownComponentPhase++
 		}
 	}
 
@@ -88,8 +96,11 @@ func (rs *RestoreSession) getComponentsPhase() RestorePhase {
 		return RestoreSucceeded
 	}
 
-	if successfulComponent+failedComponent == totalComponents {
-		return RestoreFailed
+	if successfulComponent+failedComponent+unknownComponentPhase == totalComponents {
+		if failedComponent > 0 {
+			return RestoreFailed
+		}
+		return RestorePhaseUnknown
 	}
 
 	return RestoreRunning

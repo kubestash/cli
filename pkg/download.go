@@ -17,7 +17,6 @@ limitations under the License.
 package pkg
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -28,7 +27,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -39,7 +37,6 @@ import (
 	"kubestash.dev/apimachinery/apis"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg/restic"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type downloadOptions struct {
@@ -81,17 +78,26 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				return err
 			}
 
-			snapshot, err := downloadOpt.getSnapshot(snapshotName)
+			snapshot, err := getSnapshot(kmapi.ObjectReference{
+				Name:      snapshotName,
+				Namespace: srcNamespace,
+			})
 			if err != nil {
 				return err
 			}
 
-			repository, err := downloadOpt.getRepository(snapshot.Spec.Repository)
+			repository, err := getRepository(kmapi.ObjectReference{
+				Name:      snapshot.Spec.Repository,
+				Namespace: srcNamespace,
+			})
 			if err != nil {
 				return err
 			}
 
-			backupStorage, err := downloadOpt.getBackupStorage(repository.Spec.StorageRef)
+			backupStorage, err := getBackupStorage(kmapi.ObjectReference{
+				Name:      repository.Spec.StorageRef.Name,
+				Namespace: repository.Spec.StorageRef.Namespace,
+			})
 			if err != nil {
 				return err
 			}
@@ -110,20 +116,21 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 					return err
 				}
 
-				if err := downloadOpt.runRestoreViaPod(accessorPod, snapshotName); err != nil {
-					return err
-				}
+				return downloadOpt.runRestoreViaPod(accessorPod, snapshotName)
+			}
 
-				if err := downloadOpt.copyDownloadedDataToDestination(accessorPod); err != nil {
-					return err
-				}
+			operatorPod, err := getOperatorPod()
+			if err != nil {
+				return err
+			}
 
-				if err := downloadOpt.clearDataFromPod(accessorPod); err != nil {
-					return err
-				}
+			yes, err := isWorkloadIdentity(operatorPod)
+			if err != nil {
+				return err
+			}
 
-				klog.Infof("Snapshot %s/%s restored in path %s", srcNamespace, snapshotName, downloadOpt.destinationDir)
-				return nil
+			if yes {
+				return downloadOpt.runRestoreViaPod(&operatorPod, snapshotName)
 			}
 
 			if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
@@ -208,51 +215,29 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 	return cmd
 }
 
-func (opt *downloadOptions) getSnapshot(snapshotName string) (*storageapi.Snapshot, error) {
-	snapshot := &storageapi.Snapshot{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      snapshotName,
-			Namespace: srcNamespace,
-		},
-	}
-	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(snapshot), snapshot); err != nil {
-		return nil, err
-	}
-	return snapshot, nil
-}
-
-func (opt *downloadOptions) getRepository(repoName string) (*storageapi.Repository, error) {
-	repository := &storageapi.Repository{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      repoName,
-			Namespace: srcNamespace,
-		},
-	}
-	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(repository), repository); err != nil {
-		return nil, err
-	}
-	return repository, nil
-}
-
-func (opt *downloadOptions) getBackupStorage(storage kmapi.TypedObjectReference) (*storageapi.BackupStorage, error) {
-	backupStorage := &storageapi.BackupStorage{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      storage.Name,
-			Namespace: storage.Namespace,
-		},
-	}
-	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(backupStorage), backupStorage); err != nil {
-		return nil, err
-	}
-	return backupStorage, nil
-}
-
 func (opt *downloadOptions) runRestoreViaPod(pod *core.Pod, snapshotName string) error {
+	if err := opt.runProbe(pod, snapshotName); err != nil {
+		return err
+	}
+
+	if err := opt.copyDownloadedDataToDestination(pod); err != nil {
+		return err
+	}
+
+	if err := opt.clearDataFromPod(pod); err != nil {
+		return err
+	}
+
+	klog.Infof("Snapshot %s/%s restored in path %s", srcNamespace, snapshotName, opt.destinationDir)
+	return nil
+}
+
+func (opt *downloadOptions) runProbe(pod *core.Pod, snapshotName string) error {
 	command := []string{
 		"/kubestash",
 		"download", snapshotName,
 		"--namespace", srcNamespace,
-		"--destination", getPodDirForSnapshot(),
+		"--destination", SnapshotDownloadDir,
 	}
 
 	if len(opt.components) != 0 {
@@ -269,14 +254,14 @@ func (opt *downloadOptions) runRestoreViaPod(pod *core.Pod, snapshotName string)
 
 	action := &prober.Handler{
 		Exec:          &core.ExecAction{Command: command},
-		ContainerName: apis.AccessorContainerName,
+		ContainerName: apis.OperatorContainer,
 	}
 
 	return probe.RunProbe(opt.restConfig, action, pod.Name, pod.Namespace)
 }
 
 func (opt *downloadOptions) copyDownloadedDataToDestination(pod *core.Pod) error {
-	_, err := exec.Command(CmdKubectl, "cp", "--namespace", pod.Namespace, fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, getPodDirForSnapshot()), opt.destinationDir).CombinedOutput()
+	_, err := exec.Command(CmdKubectl, "cp", "--namespace", pod.Namespace, fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, SnapshotDownloadDir), opt.destinationDir).CombinedOutput()
 	if err != nil {
 		return err
 	}
@@ -284,16 +269,12 @@ func (opt *downloadOptions) copyDownloadedDataToDestination(pod *core.Pod) error
 }
 
 func (opt *downloadOptions) clearDataFromPod(pod *core.Pod) error {
-	cmd := []string{"rm", "-rf", getPodDirForSnapshot()}
+	cmd := []string{"rm", "-rf", SnapshotDownloadDir}
 	action := &prober.Handler{
 		Exec:          &core.ExecAction{Command: cmd},
-		ContainerName: apis.AccessorContainerName, // TODO: need to change for different pod
+		ContainerName: apis.OperatorContainer,
 	}
 	return probe.RunProbe(opt.restConfig, action, pod.Name, pod.Namespace)
-}
-
-func getPodDirForSnapshot() string {
-	return filepath.Join(apis.ScratchDirMountPath, apis.SnapshotDownloadDir)
 }
 
 func (opt *downloadOptions) prepareDestinationDir() (err error) {

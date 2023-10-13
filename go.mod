@@ -21,9 +21,9 @@ require (
 	k8s.io/kubectl v0.25.1
 	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73
 	kmodules.xyz/client-go v0.25.27
-	kmodules.xyz/offshoot-api v0.25.2
+	kmodules.xyz/offshoot-api v0.25.5-0.20231004063620-dff8fb030d57
 	kmodules.xyz/prober v0.25.0
-	kubestash.dev/apimachinery v0.1.1-0.20231010125857-fc7d815460f0
+	kubestash.dev/apimachinery v0.1.1-0.20231016090735-4ae6a0befe35
 	sigs.k8s.io/controller-runtime v0.13.1
 )
 

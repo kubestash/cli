@@ -200,10 +200,16 @@ spec:
                     volumeSnapshotterStats:
                       description: VolumeSnapshotterStats specifies the "VolumeSnapshotter"
                         driver specific information
-                      properties:
-                        volumeSnapshotName:
-                          type: string
-                      type: object
+                      items:
+                        description: VolumeSnapshotterStats specifies the "VolumeSnapshotter"
+                          driver specific information
+                        properties:
+                          pvcName:
+                            type: string
+                          volumeSnapshotName:
+                            type: string
+                        type: object
+                      type: array
                     walSegments:
                       description: WalSegments specifies a list of wall segment for
                         individual component

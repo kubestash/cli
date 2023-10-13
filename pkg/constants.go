@@ -20,9 +20,12 @@ import "time"
 
 // These variables will be set during build time
 const (
-	ScratchDir     = "/tmp/scratch"
-	DestinationDir = "/tmp/destination"
-	configDirName  = "config"
+	CmdKubectl = "kubectl"
+
+	ScratchDir          = "/tmp/scratch"
+	DestinationDir      = "/tmp/destination"
+	SnapshotDownloadDir = "/tmp/snapshot"
+	configDirName       = "config"
 
 	ResticEnvs     = "restic-envs"
 	ResticRegistry = "restic"
@@ -54,8 +57,4 @@ const (
 	PVCSession     = "pvc-session"
 	PVCSchedule    = "*/59 * * * *"
 	LatestSnapshot = "latest"
-)
-
-const (
-	CmdKubectl = "kubectl"
 )

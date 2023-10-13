@@ -103,10 +103,24 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 					return err
 				}
 
-				return unlockOpt.unlockLocalRepository(accessorPod)
+				return unlockOpt.unlockRepositoryViaPod(accessorPod)
 			}
 
-			return unlockOpt.unlockRepository()
+			operatorPod, err := getOperatorPod()
+			if err != nil {
+				return err
+			}
+
+			yes, err := isWorkloadIdentity(operatorPod)
+			if err != nil {
+				return err
+			}
+
+			if yes {
+				return unlockOpt.unlockRepositoryViaPod(&operatorPod)
+			}
+
+			return unlockOpt.unlockRepositoryViaDocker()
 		},
 	}
 
@@ -115,7 +129,7 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 	return cmd
 }
 
-func (opt *unlockOptions) unlockLocalRepository(pod *core.Pod) error {
+func (opt *unlockOptions) unlockRepositoryViaPod(pod *core.Pod) error {
 	command := []string{
 		"/kubestash",
 		"unlock", opt.repo.Name,
@@ -125,13 +139,13 @@ func (opt *unlockOptions) unlockLocalRepository(pod *core.Pod) error {
 
 	action := &prober.Handler{
 		Exec:          &core.ExecAction{Command: command},
-		ContainerName: apis.AccessorContainerName,
+		ContainerName: apis.OperatorContainer,
 	}
 
 	return probe.RunProbe(opt.restConfig, action, pod.Name, pod.Namespace)
 }
 
-func (opt *unlockOptions) unlockRepository() error {
+func (opt *unlockOptions) unlockRepositoryViaDocker() error {
 	for _, path := range opt.paths {
 		setupOptions := restic.SetupOptions{
 			Client:           klient,
@@ -207,9 +221,6 @@ func (opt *unlockOptions) runCmdViaDocker() error {
 	args = append(args, opt.extraArgs...)
 	klog.Infoln("Running docker with args:", args)
 	out, err := exec.Command("docker", args...).CombinedOutput()
-	if len(out) == 0 {
-		return fmt.Errorf("lock not stale")
-	}
 	klog.Infoln("Output:", string(out))
 	return err
 }

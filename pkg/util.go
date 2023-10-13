@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
@@ -93,6 +94,21 @@ func getSecret(ref kmapi.ObjectReference) (*core.Secret, error) {
 	return secret, nil
 }
 
+func getServiceAccount(ref kmapi.ObjectReference) (*core.ServiceAccount, error) {
+	sa := &core.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ref.Name,
+			Namespace: ref.Namespace,
+		},
+	}
+
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(sa), sa); err != nil {
+		return nil, err
+	}
+
+	return sa, nil
+}
+
 func getPVC(ref kmapi.ObjectReference) (*core.PersistentVolumeClaim, error) {
 	pvc := &core.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -151,6 +167,21 @@ func getRepository(ref kmapi.ObjectReference) (*storageapi.Repository, error) {
 	}
 
 	return repo, nil
+}
+
+func getSnapshot(ref kmapi.ObjectReference) (*storageapi.Snapshot, error) {
+	snap := &storageapi.Snapshot{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ref.Name,
+			Namespace: ref.Namespace,
+		},
+	}
+
+	if err := klient.Get(context.Background(), client.ObjectKeyFromObject(snap), snap); err != nil {
+		return nil, err
+	}
+
+	return snap, nil
 }
 
 func getBackupConfiguration(ref kmapi.ObjectReference) (*coreapi.BackupConfiguration, error) {
@@ -307,4 +338,34 @@ func hasVolumeMount(mounts []core.VolumeMount, name string) bool {
 		}
 	}
 	return false
+}
+
+func isWorkloadIdentity(pod core.Pod) (bool, error) {
+	azureLabel := "azure.workload.identity/use"
+	googleAnnotation := "iam.gke.io/gcp-service-account"
+	awsAnnotation := "eks.amazonaws.com/role-arn"
+
+	if value, exists := pod.Labels[azureLabel]; exists {
+		boolValue, err := strconv.ParseBool(value)
+		if err != nil {
+			return false, err
+		}
+		return boolValue, nil
+	}
+
+	sa, err := getServiceAccount(kmapi.ObjectReference{
+		Name:      pod.Spec.ServiceAccountName,
+		Namespace: pod.Namespace,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	if _, exists := sa.Annotations[googleAnnotation]; exists {
+		return true, nil
+	} else if _, exists := sa.Annotations[awsAnnotation]; exists {
+		return true, nil
+	}
+
+	return false, nil
 }

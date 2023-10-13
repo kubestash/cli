@@ -1931,6 +1931,12 @@ spec:
                         description: PodAnnotations are the annotations that will
                           be attached with the respective Pod
                         type: object
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: PodLabels are the labels that will be attached
+                          with the respective Pod
+                        type: object
                       priority:
                         description: The priority value. Various system components
                           use this field to find the priority of the pod. When Priority
@@ -2428,6 +2434,10 @@ spec:
                       secret:
                         description: Secret specifies the name of the Secret that
                           contains the access credential for this storage.
+                        type: string
+                      storageAccount:
+                        description: StorageAccount specifies the name of the Azure
+                          Storage Account
                         type: string
                     type: object
                   b2:

@@ -820,7 +820,7 @@ kmodules.xyz/client-go/tools/exec
 # kmodules.xyz/objectstore-api v0.25.1
 ## explicit; go 1.18
 kmodules.xyz/objectstore-api/api/v1
-# kmodules.xyz/offshoot-api v0.25.2
+# kmodules.xyz/offshoot-api v0.25.5-0.20231004063620-dff8fb030d57
 ## explicit; go 1.18
 kmodules.xyz/offshoot-api/api/v1
 # kmodules.xyz/prober v0.25.0
@@ -831,8 +831,8 @@ kmodules.xyz/prober/probe
 kmodules.xyz/prober/probe/exec
 kmodules.xyz/prober/probe/http
 kmodules.xyz/prober/probe/tcp
-# kubestash.dev/apimachinery v0.1.1-0.20231010125857-fc7d815460f0
-## explicit; go 1.18
+# kubestash.dev/apimachinery v0.1.1-0.20231016090735-4ae6a0befe35
+## explicit; go 1.20
 kubestash.dev/apimachinery/apis
 kubestash.dev/apimachinery/apis/config/v1alpha1
 kubestash.dev/apimachinery/apis/core/v1alpha1

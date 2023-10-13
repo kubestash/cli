@@ -56,7 +56,7 @@ ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 GO_VERSION       ?= 1.20
 BUILD_IMAGE      ?= ghcr.io/appscode/golang-dev:$(GO_VERSION)
 
-RESTIC_VER  := 0.15.1
+RESTIC_VER  := 0.16.0
 
 OUTBIN = bin/$(BIN)-$(OS)-$(ARCH)
 ifeq ($(OS),windows)

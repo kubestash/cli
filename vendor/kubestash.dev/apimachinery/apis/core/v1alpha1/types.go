@@ -38,7 +38,7 @@ type AddonInfo struct {
 	// +optional
 	ContainerRuntimeSettings *ofst.ContainerRuntimeSettings `json:"containerRuntimeSettings,omitempty"`
 
-	// JobTemplate specifies runtime configurations for the bakcup/restore Job
+	// JobTemplate specifies runtime configurations for the backup/restore Job
 	// +optional
 	JobTemplate *ofst.PodTemplateSpec `json:"jobTemplate,omitempty"`
 }

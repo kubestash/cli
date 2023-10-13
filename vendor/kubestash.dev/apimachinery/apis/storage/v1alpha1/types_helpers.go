@@ -22,20 +22,20 @@ import (
 )
 
 // ToVolumeAndMount returns volumes and mounts for local backend
-func (l LocalSpec) ToVolumeAndMount(volName string) (core.Volume, core.VolumeMount) {
+func (l LocalSpec) ToVolumeAndMount(storageName string) (core.Volume, core.VolumeMount) {
 	vol := core.Volume{
-		Name:         volName,
+		Name:         storageName,
 		VolumeSource: *l.VolumeSource.ToAPIObject(),
 	}
 	mnt := core.VolumeMount{
-		Name:      volName,
+		Name:      storageName,
 		MountPath: l.MountPath,
 		SubPath:   l.SubPath,
 	}
 	return vol, mnt
 }
 
-func (l LocalSpec) ToLocalMountPath(volName string) (string, error) {
-	_, mnt := l.ToVolumeAndMount(volName)
-	return filepath.SecureJoin("/", volName, mnt.MountPath)
+func (l LocalSpec) ToLocalMountPath(storageName string) (string, error) {
+	_, mnt := l.ToVolumeAndMount(storageName)
+	return filepath.SecureJoin("/", storageName, mnt.MountPath)
 }

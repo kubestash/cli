@@ -198,7 +198,7 @@ type Component struct {
 
 	// VolumeSnapshotterStats specifies the "VolumeSnapshotter" driver specific information
 	// +optional
-	VolumeSnapshotterStats *VolumeSnapshotterStats `json:"volumeSnapshotterStats,omitempty"`
+	VolumeSnapshotterStats []VolumeSnapshotterStats `json:"volumeSnapshotterStats,omitempty"`
 
 	// WalSegments specifies a list of wall segment for individual component
 	WalSegments []WalSegment `json:"walSegments,omitempty"`
@@ -235,6 +235,7 @@ type ResticStats struct {
 
 // VolumeSnapshotterStats specifies the "VolumeSnapshotter" driver specific information
 type VolumeSnapshotterStats struct {
+	PvcName            string `json:"pvcName,omitempty"`
 	VolumeSnapshotName string `json:"volumeSnapshotName,omitempty"`
 }
 

@@ -63,6 +63,7 @@ spec:
                       - enum:
                         - Restic
                         - WalG
+                        - VolumeSnapshotter
                       description: 'Driver specifies the underlying tool that will
                         be used to upload the data to the backend storage. Valid values
                         are: - "Restic": The underlying tool is [restic](https://restic.net/).
@@ -2367,6 +2368,7 @@ spec:
                       - enum:
                         - Restic
                         - WalG
+                        - VolumeSnapshotter
                       description: 'Driver specifies the underlying tool that will
                         be used to upload the data to the backend storage. Valid values
                         are: - "Restic": The underlying tool is [restic](https://restic.net/).

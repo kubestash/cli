@@ -232,8 +232,8 @@ func (in *Component) DeepCopyInto(out *Component) {
 	}
 	if in.VolumeSnapshotterStats != nil {
 		in, out := &in.VolumeSnapshotterStats, &out.VolumeSnapshotterStats
-		*out = new(VolumeSnapshotterStats)
-		**out = **in
+		*out = make([]VolumeSnapshotterStats, len(*in))
+		copy(*out, *in)
 	}
 	if in.WalSegments != nil {
 		in, out := &in.WalSegments, &out.WalSegments

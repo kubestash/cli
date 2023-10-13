@@ -2540,6 +2540,12 @@ spec:
                                           that will be attached with the respective
                                           Pod
                                         type: object
+                                      podLabels:
+                                        additionalProperties:
+                                          type: string
+                                        description: PodLabels are the labels that
+                                          will be attached with the respective Pod
+                                        type: object
                                       priority:
                                         description: The priority value. Various system
                                           components use this field to find the priority
@@ -7674,6 +7680,12 @@ spec:
                                           that will be attached with the respective
                                           Pod
                                         type: object
+                                      podLabels:
+                                        additionalProperties:
+                                          type: string
+                                        description: PodLabels are the labels that
+                                          will be attached with the respective Pod
+                                        type: object
                                       priority:
                                         description: The priority value. Various system
                                           components use this field to find the priority
@@ -12027,6 +12039,13 @@ spec:
                                         options set along with hostNetwork, you have
                                         to specify DNS policy explicitly to 'ClusterFirstWithHostNet'.
                                       type: string
+                                    enableServiceLinks:
+                                      description: 'EnableServiceLinks indicates whether
+                                        information about services should be injected
+                                        into pod''s environment variables, matching
+                                        the syntax of Docker links. Optional: Defaults
+                                        to true.'
+                                      type: boolean
                                     env:
                                       description: List of environment variables to
                                         set in the container. Cannot be updated.
@@ -12173,12 +12192,13 @@ spec:
                                         Optional: Default to false.'
                                       type: boolean
                                     imagePullSecrets:
-                                      description: ImagePullSecrets is an optional
+                                      description: 'ImagePullSecrets is an optional
                                         list of references to secrets in the same
                                         namespace to use for pulling any of the images
                                         used by this PodSpec. If specified, these
                                         secrets will be passed to individual puller
-                                        implementations for them to use.
+                                        implementations for them to use. More info:
+                                        https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod'
                                       items:
                                         description: LocalObjectReference contains
                                           enough information to let you locate the
@@ -14182,6 +14202,7 @@ spec:
                                         for the pod to be scheduled on that node.
                                         More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/'
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     priority:
                                       description: The priority value. Various system
                                         components use this field to find the priority
@@ -14411,6 +14432,16 @@ spec:
                                             value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                           type: object
                                       type: object
+                                    runtimeClassName:
+                                      description: 'RuntimeClassName refers to a RuntimeClass
+                                        object in the node.k8s.io group, which should
+                                        be used to run this pod.  If no RuntimeClass
+                                        resource matches the named class, the pod
+                                        will not be run. If unset or empty, the "legacy"
+                                        RuntimeClass will be used, which is an implicit
+                                        class with an empty definition that uses the
+                                        default runtime handler. More info: https://git.k8s.io/enhancements/keps/sig-node/585-runtime-class'
+                                      type: string
                                     schedulerName:
                                       description: If specified, the pod will be dispatched
                                         by specified scheduler. If not specified,
@@ -18229,7 +18260,7 @@ spec:
                                 type: object
                               jobTemplate:
                                 description: JobTemplate specifies runtime configurations
-                                  for the bakcup/restore Job
+                                  for the backup/restore Job
                                 properties:
                                   controller:
                                     description: 'Workload controller''s metadata.
@@ -19797,6 +19828,13 @@ spec:
                                           you have to specify DNS policy explicitly
                                           to 'ClusterFirstWithHostNet'.
                                         type: string
+                                      enableServiceLinks:
+                                        description: 'EnableServiceLinks indicates
+                                          whether information about services should
+                                          be injected into pod''s environment variables,
+                                          matching the syntax of Docker links. Optional:
+                                          Defaults to true.'
+                                        type: boolean
                                       env:
                                         description: List of environment variables
                                           to set in the container. Cannot be updated.
@@ -19948,12 +19986,13 @@ spec:
                                           Optional: Default to false.'
                                         type: boolean
                                       imagePullSecrets:
-                                        description: ImagePullSecrets is an optional
+                                        description: 'ImagePullSecrets is an optional
                                           list of references to secrets in the same
                                           namespace to use for pulling any of the
                                           images used by this PodSpec. If specified,
                                           these secrets will be passed to individual
                                           puller implementations for them to use.
+                                          More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod'
                                         items:
                                           description: LocalObjectReference contains
                                             enough information to let you locate the
@@ -22033,6 +22072,7 @@ spec:
                                           for the pod to be scheduled on that node.
                                           More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/'
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       priority:
                                         description: The priority value. Various system
                                           components use this field to find the priority
@@ -22267,6 +22307,17 @@ spec:
                                               value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                             type: object
                                         type: object
+                                      runtimeClassName:
+                                        description: 'RuntimeClassName refers to a
+                                          RuntimeClass object in the node.k8s.io group,
+                                          which should be used to run this pod.  If
+                                          no RuntimeClass resource matches the named
+                                          class, the pod will not be run. If unset
+                                          or empty, the "legacy" RuntimeClass will
+                                          be used, which is an implicit class with
+                                          an empty definition that uses the default
+                                          runtime handler. More info: https://git.k8s.io/enhancements/keps/sig-node/585-runtime-class'
+                                        type: string
                                       schedulerName:
                                         description: If specified, the pod will be
                                           dispatched by specified scheduler. If not

@@ -210,15 +210,16 @@ type RestoreSessionStatus struct {
 }
 
 // RestorePhase represents the current state of the restore process
-// +kubebuilder:validation:Enum=Pending;Running;Failed;Succeeded;Invalid
+// +kubebuilder:validation:Enum=Pending;Running;Failed;Succeeded;Invalid;Unknown
 type RestorePhase string
 
 const (
-	RestorePending   RestorePhase = "Pending"
-	RestoreRunning   RestorePhase = "Running"
-	RestoreFailed    RestorePhase = "Failed"
-	RestoreSucceeded RestorePhase = "Succeeded"
-	RestoreInvalid   RestorePhase = "Invalid"
+	RestorePending      RestorePhase = "Pending"
+	RestoreRunning      RestorePhase = "Running"
+	RestoreFailed       RestorePhase = "Failed"
+	RestoreSucceeded    RestorePhase = "Succeeded"
+	RestoreInvalid      RestorePhase = "Invalid"
+	RestorePhaseUnknown RestorePhase = "Unknown"
 )
 
 // ComponentRestoreStatus represents the restore status of individual components

@@ -80,11 +80,12 @@ type DumpOptions struct {
 }
 
 type backend struct {
-	provider v1alpha1.StorageProvider
-	bucket   string
-	endpoint string
-	region   string
-	path     string
+	provider       v1alpha1.StorageProvider
+	bucket         string
+	endpoint       string
+	region         string
+	path           string
+	storageAccount string
 }
 
 type SetupOptions struct {
