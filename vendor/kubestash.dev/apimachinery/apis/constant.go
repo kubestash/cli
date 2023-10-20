@@ -125,3 +125,7 @@ const (
 	TempDirMountPath        = "/tmp"
 	OperatorContainer       = "operator"
 )
+
+const (
+	DirRepository = "repository"
+)

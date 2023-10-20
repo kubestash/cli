@@ -26,16 +26,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gomodules.xyz/flags"
 	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
-	prober "kmodules.xyz/prober/api/v1"
-	"kmodules.xyz/prober/probe"
-	"kubestash.dev/apimachinery/apis"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg/restic"
 )
@@ -43,8 +39,6 @@ import (
 type unlockOptions struct {
 	restConfig *rest.Config
 	repo       *storageapi.Repository
-	configDir  string
-	extraArgs  []string
 	paths      []string
 }
 
@@ -57,8 +51,6 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			flags.EnsureRequiredFlags(cmd, "paths")
-
 			repoName := args[0]
 
 			var err error
@@ -91,6 +83,10 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 			})
 			if err != nil {
 				return err
+			}
+
+			if len(unlockOpt.paths) == 0 {
+				unlockOpt.paths = unlockOpt.repo.Status.ComponentPaths
 			}
 
 			if backupStorage.Spec.Storage.Local != nil {
@@ -137,12 +133,13 @@ func (opt *unlockOptions) unlockRepositoryViaPod(pod *core.Pod) error {
 		"--paths", strings.Join(opt.paths, ","),
 	}
 
-	action := &prober.Handler{
-		Exec:          &core.ExecAction{Command: command},
-		ContainerName: apis.OperatorContainer,
+	out, err := execOnPod(opt.restConfig, pod, command)
+	if err != nil {
+		return err
 	}
+	klog.Infoln("Output:", out)
 
-	return probe.RunProbe(opt.restConfig, action, pod.Name, pod.Namespace)
+	return nil
 }
 
 func (opt *unlockOptions) unlockRepositoryViaDocker() error {
@@ -171,25 +168,25 @@ func (opt *unlockOptions) unlockRepositoryViaDocker() error {
 			return err
 		}
 
-		opt.configDir = filepath.Join(ScratchDir, configDirName)
 		// dump restic's environments into `restic-env` file.
 		// we will pass this env file to restic docker container.
-		err = w.DumpEnv(opt.configDir, ResticEnvs)
+		err = w.DumpEnv(ConfigDir, ResticEnvs)
 		if err != nil {
 			return err
 		}
 
-		opt.extraArgs = []string{
+		unlockArgs := []string{
+			"unlock",
 			"--no-cache",
 		}
 
 		// For TLS secured Minio/REST server, specify cert path
 		if w.GetCaPath() != "" {
-			opt.extraArgs = append(opt.extraArgs, "--cacert", w.GetCaPath())
+			unlockArgs = append(unlockArgs, "--cacert", w.GetCaPath())
 		}
 
 		// run unlock inside docker
-		if err = opt.runCmdViaDocker(); err != nil {
+		if err = opt.runCmdViaDocker(unlockArgs); err != nil {
 			return err
 		}
 
@@ -199,28 +196,27 @@ func (opt *unlockOptions) unlockRepositoryViaDocker() error {
 	return nil
 }
 
-func (opt *unlockOptions) runCmdViaDocker() error {
+func (opt *unlockOptions) runCmdViaDocker(args []string) error {
 	// get current user
 	currentUser, err := user.Current()
 	if err != nil {
 		return err
 	}
 
-	args := []string{
+	unlockArgs := []string{
 		"run",
 		"--rm",
 		"-u", currentUser.Uid,
 		"-v", ScratchDir + ":" + ScratchDir,
 		"--env", "HTTP_PROXY=" + os.Getenv("HTTP_PROXY"),
 		"--env", "HTTPS_PROXY=" + os.Getenv("HTTPS_PROXY"),
-		"--env-file", filepath.Join(opt.configDir, ResticEnvs),
+		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
 		imgRestic.ToContainerImage(),
-		"unlock",
 	}
 
-	args = append(args, opt.extraArgs...)
-	klog.Infoln("Running docker with args:", args)
-	out, err := exec.Command("docker", args...).CombinedOutput()
+	unlockArgs = append(unlockArgs, args...)
+	klog.Infoln("Running docker with args:", unlockArgs)
+	out, err := exec.Command(CmdDocker, unlockArgs...).CombinedOutput()
 	klog.Infoln("Output:", string(out))
 	return err
 }

@@ -17,11 +17,13 @@ limitations under the License.
 package pkg
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	"github.com/olekukonko/tablewriter"
@@ -30,7 +32,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
+	"k8s.io/klog/v2"
+	"k8s.io/kubectl/pkg/scheme"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -368,4 +375,48 @@ func isWorkloadIdentity(pod core.Pod) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func execOnPod(config *rest.Config, pod *core.Pod, command []string) (string, error) {
+	var (
+		execOut bytes.Buffer
+		execErr bytes.Buffer
+	)
+
+	klog.Infof("Executing command %v on pod %s/%s", command, pod.Namespace, pod.Name)
+
+	kubeClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return "", err
+	}
+
+	req := kubeClient.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(pod.Name).
+		Namespace(pod.Namespace).
+		SubResource("exec").
+		Timeout(5 * time.Minute)
+	req.VersionedParams(&core.PodExecOptions{
+		Container: apis.OperatorContainer,
+		Command:   command,
+		Stdout:    true,
+		Stderr:    true,
+	}, scheme.ParameterCodec)
+
+	executor, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
+	if err != nil {
+		return "", fmt.Errorf("failed to init executor: %v", err)
+	}
+
+	err = executor.Stream(remotecommand.StreamOptions{
+		Stdout: &execOut,
+		Stderr: &execErr,
+		Tty:    true,
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("could not execute: %v, reason: %s", err, execErr.String())
+	}
+
+	return execOut.String(), nil
 }

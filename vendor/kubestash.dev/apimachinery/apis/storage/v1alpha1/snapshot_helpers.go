@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"kubestash.dev/apimachinery/apis"
 	"kubestash.dev/apimachinery/crds"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -172,4 +173,8 @@ func (s *Snapshot) OffshootLabels() map[string]string {
 	newLabels[apis.KubeStashInvokerName] = s.Name
 	newLabels[apis.KubeStashInvokerNamespace] = s.Namespace
 	return apis.UpsertLabels(s.Labels, newLabels)
+}
+
+func (s *Snapshot) GetComponentPath(componentName string) string {
+	return filepath.Join(apis.DirRepository, s.Spec.Version, s.Spec.Session, componentName)
 }

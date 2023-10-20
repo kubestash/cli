@@ -115,6 +115,10 @@ type RepositoryStatus struct {
 	// Conditions represents list of conditions regarding this Repository
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+
+	// ComponentPaths represents list of component paths in this Repository
+	// +optional
+	ComponentPaths []string `json:"componentPaths,omitempty"`
 }
 
 // RepositoryPhase specifies the current state of the Repository

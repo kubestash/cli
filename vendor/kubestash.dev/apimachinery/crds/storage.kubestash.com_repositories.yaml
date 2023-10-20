@@ -150,6 +150,12 @@ spec:
           status:
             description: RepositoryStatus defines the observed state of Repository
             properties:
+              componentPaths:
+                description: ComponentPaths represents list of component paths in
+                  this Repository
+                items:
+                  type: string
+                type: array
               conditions:
                 description: Conditions represents list of conditions regarding this
                   Repository

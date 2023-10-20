@@ -37,10 +37,10 @@ type backupDebugOptions struct {
 	backupConfig  *coreapi.BackupConfiguration
 	backupSession coreapi.BackupSession
 	sessions      []string
-	latest        bool
 }
 
 func NewCmdDebugBackup() *cobra.Command {
+	var latest bool
 	debugOpt := backupDebugOptions{}
 	cmd := &cobra.Command{
 		Use:               "backup",
@@ -71,7 +71,7 @@ func NewCmdDebugBackup() *cobra.Command {
 				return err
 			}
 
-			if debugOpt.latest {
+			if latest {
 				if err := debugOpt.debugLatestBackupSessions(backupSessions); err != nil {
 					return err
 				}
@@ -92,7 +92,7 @@ func NewCmdDebugBackup() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringSliceVar(&debugOpt.sessions, "sessions", debugOpt.sessions, "List of sessions to debug")
-	cmd.Flags().BoolVar(&debugOpt.latest, "latest", false, "Debug only latest BackupSessions")
+	cmd.Flags().BoolVar(&latest, "latest", false, "Debug only latest BackupSessions")
 
 	return cmd
 }

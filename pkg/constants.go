@@ -21,16 +21,18 @@ import "time"
 // These variables will be set during build time
 const (
 	CmdKubectl = "kubectl"
+	CmdDocker  = "docker"
 
 	ScratchDir          = "/tmp/scratch"
 	DestinationDir      = "/tmp/destination"
 	SnapshotDownloadDir = "/tmp/snapshot"
-	configDirName       = "config"
+	PasswordFile        = "/tmp/password.txt"
+	ConfigDir           = "/tmp/scratch/config"
 
 	ResticEnvs     = "restic-envs"
 	ResticRegistry = "restic"
 	ResticImage    = "restic"
-	ResticTag      = "0.15.1"
+	ResticTag      = "0.16.0"
 )
 
 // Constants for debugging

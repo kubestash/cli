@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0
-	github.com/olekukonko/tablewriter v0.0.5
+	github.com/olekukonko/tablewriter v0.0.6-0.20230925090304-df64c4bbad77
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.7.0
 	golang.org/x/text v0.9.0
@@ -22,8 +22,7 @@ require (
 	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73
 	kmodules.xyz/client-go v0.25.27
 	kmodules.xyz/offshoot-api v0.25.5-0.20231004063620-dff8fb030d57
-	kmodules.xyz/prober v0.25.0
-	kubestash.dev/apimachinery v0.1.1-0.20231016090735-4ae6a0befe35
+	kubestash.dev/apimachinery v0.1.1-0.20231018092606-32f87dcfe251
 	sigs.k8s.io/controller-runtime v0.13.1
 )
 
@@ -54,7 +53,6 @@ require (
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.1 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -78,7 +76,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
-	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/mattn/go-runewidth v0.0.10 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -95,6 +93,7 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
+	github.com/rivo/uniseg v0.1.0 // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
@@ -125,9 +124,12 @@ require (
 	k8s.io/component-base v0.25.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	kmodules.xyz/objectstore-api v0.25.1 // indirect
+	kmodules.xyz/prober v0.25.0 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace github.com/olekukonko/tablewriter => github.com/gomodules/tablewriter v0.0.6-0.20230422125635-f6b4e4ae60d8

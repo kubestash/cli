@@ -32,21 +32,16 @@ import (
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
-	prober "kmodules.xyz/prober/api/v1"
-	"kmodules.xyz/prober/probe"
-	"kubestash.dev/apimachinery/apis"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg/restic"
 )
 
 type downloadOptions struct {
 	restConfig     *rest.Config
-	configDir      string // temp dir
 	destinationDir string // user provided or, current working dir
 
 	resticStats []storageapi.ResticStats
 	components  []string
-	extraArgs   []string
 	exclude     []string
 	include     []string
 }
@@ -172,27 +167,27 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 					return err
 				}
 
-				downloadOpt.configDir = filepath.Join(ScratchDir, configDirName)
 				// dump restic's environments into `restic-env` file.
 				// we will pass this env file to restic docker container.
-				err = w.DumpEnv(downloadOpt.configDir, ResticEnvs)
+				err = w.DumpEnv(ConfigDir, ResticEnvs)
 				if err != nil {
 					return err
 				}
 
-				downloadOpt.extraArgs = []string{
+				restoreArgs := []string{
+					"restore",
 					"--no-cache",
 				}
 
 				// For TLS secured Minio/REST server, specify cert path
 				if w.GetCaPath() != "" {
-					downloadOpt.extraArgs = append(downloadOpt.extraArgs, "--cacert", w.GetCaPath())
+					restoreArgs = append(restoreArgs, "--cacert", w.GetCaPath())
 				}
 
 				downloadOpt.resticStats = comp.ResticStats
 
 				// run restore inside docker
-				if err = downloadOpt.runRestoreViaDocker(filepath.Join(DestinationDir, snapshotName, compName)); err != nil {
+				if err = downloadOpt.runRestoreViaDocker(filepath.Join(DestinationDir, snapshotName, compName), restoreArgs); err != nil {
 					return err
 				}
 				klog.Infof("Component: %v of Snapshot %s/%s restored in path %s", compName, srcNamespace, snapshotName, downloadOpt.destinationDir)
@@ -252,16 +247,16 @@ func (opt *downloadOptions) runProbe(pod *core.Pod, snapshotName string) error {
 		command = append(command, []string{"--include", strings.Join(opt.include, ",")}...)
 	}
 
-	action := &prober.Handler{
-		Exec:          &core.ExecAction{Command: command},
-		ContainerName: apis.OperatorContainer,
+	out, err := execOnPod(opt.restConfig, pod, command)
+	if err != nil {
+		return err
 	}
-
-	return probe.RunProbe(opt.restConfig, action, pod.Name, pod.Namespace)
+	klog.Infoln("Output:", out)
+	return nil
 }
 
 func (opt *downloadOptions) copyDownloadedDataToDestination(pod *core.Pod) error {
-	_, err := exec.Command(CmdKubectl, "cp", "--namespace", pod.Namespace, fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, SnapshotDownloadDir), opt.destinationDir).CombinedOutput()
+	_, err := exec.Command(CmdKubectl, "cp", fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, SnapshotDownloadDir), opt.destinationDir).CombinedOutput()
 	if err != nil {
 		return err
 	}
@@ -270,11 +265,8 @@ func (opt *downloadOptions) copyDownloadedDataToDestination(pod *core.Pod) error
 
 func (opt *downloadOptions) clearDataFromPod(pod *core.Pod) error {
 	cmd := []string{"rm", "-rf", SnapshotDownloadDir}
-	action := &prober.Handler{
-		Exec:          &core.ExecAction{Command: cmd},
-		ContainerName: apis.OperatorContainer,
-	}
-	return probe.RunProbe(opt.restConfig, action, pod.Name, pod.Namespace)
+	_, err := execOnPod(opt.restConfig, pod, cmd)
+	return err
 }
 
 func (opt *downloadOptions) prepareDestinationDir() (err error) {
@@ -287,7 +279,7 @@ func (opt *downloadOptions) prepareDestinationDir() (err error) {
 	return os.MkdirAll(opt.destinationDir, 0o755)
 }
 
-func (opt *downloadOptions) runRestoreViaDocker(destination string) error {
+func (opt *downloadOptions) runRestoreViaDocker(destination string, args []string) error {
 	// get current user
 	currentUser, err := user.Current()
 	if err != nil {
@@ -301,12 +293,11 @@ func (opt *downloadOptions) runRestoreViaDocker(destination string) error {
 		"-v", opt.destinationDir + ":" + DestinationDir,
 		"--env", "HTTP_PROXY=" + os.Getenv("HTTP_PROXY"),
 		"--env", "HTTPS_PROXY=" + os.Getenv("HTTPS_PROXY"),
-		"--env-file", filepath.Join(opt.configDir, ResticEnvs),
+		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
 		imgRestic.ToContainerImage(),
 	}
 
-	restoreArgs = append(restoreArgs, opt.extraArgs...)
-	restoreArgs = append(restoreArgs, "restore")
+	restoreArgs = append(restoreArgs, args...)
 
 	for _, include := range opt.include {
 		restoreArgs = append(restoreArgs, "--include")
@@ -319,9 +310,9 @@ func (opt *downloadOptions) runRestoreViaDocker(destination string) error {
 	}
 
 	for _, resticStat := range opt.resticStats {
-		args := append(restoreArgs, resticStat.Id, "--target", destination)
-		klog.Infoln("Running docker with args:", args)
-		out, err := exec.Command("docker", args...).CombinedOutput()
+		rargs := append(restoreArgs, resticStat.Id, "--target", destination)
+		klog.Infoln("Running docker with args:", rargs)
+		out, err := exec.Command(CmdDocker, rargs...).CombinedOutput()
 		klog.Infoln("Output:", string(out))
 		if err != nil {
 			return err
