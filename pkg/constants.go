@@ -56,7 +56,6 @@ const (
 	PVCAddon       = "pvc-addon"
 	PVCBackupTask  = "pvc-backup"
 	PVCRestoreTask = "pvc-restore"
-	PVCSession     = "pvc-session"
 	PVCSchedule    = "*/59 * * * *"
 	LatestSnapshot = "latest"
 )

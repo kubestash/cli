@@ -59,7 +59,7 @@ func NewCmdClonePVC() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "pvc",
 		Short:             `Clone PVC`,
-		Long:              `Use Backup and Restore process for cloning PVC`,
+		Long:              `Clone PVC using backup and restore process`,
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -124,8 +124,8 @@ func NewCmdClonePVC() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&storageOpt.provider, "provider", storageOpt.provider, "Backend provider (i.e. gcs, s3, azure etc)")
 	cmd.Flags().StringVar(&storageOpt.bucket, "bucket", storageOpt.bucket, "Name of the cloud bucket/container")
-	cmd.Flags().StringVar(&storageOpt.endpoint, "endpoint", storageOpt.endpoint, "Endpoint for s3/s3 compatible backend")
-	cmd.Flags().StringVar(&storageOpt.region, "region", storageOpt.region, "Region for s3/s3 compatible backend")
+	cmd.Flags().StringVar(&storageOpt.endpoint, "endpoint", storageOpt.endpoint, "Endpoint for s3 or s3 compatible backend")
+	cmd.Flags().StringVar(&storageOpt.region, "region", storageOpt.region, "Region for s3 or s3 compatible backend")
 	cmd.Flags().Int64Var(&storageOpt.maxConnections, "max-connections", storageOpt.maxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
 	cmd.Flags().StringVar(&storageOpt.storageSecret, "storage-secret", storageOpt.storageSecret, "Name of the Storage Secret")
 	cmd.Flags().StringVar(&storageOpt.encryptSecret, "encrypt-secret", storageOpt.encryptSecret, "Name of the Encryption Secret")
@@ -297,11 +297,11 @@ func (opt *storageOption) backupPVC() error {
 }
 
 func (opt *storageOption) newRetentionPolicy() *storageapi.RetentionPolicy {
-	fromAllNameSpace := apis.NamespacesFromAll
+	fromAllNameSpace := apis.NamespacesFromSame
 	return &storageapi.RetentionPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", opt.pvc.Name, "retention-policy"),
-			Namespace: dstNamespace,
+			Namespace: srcNamespace,
 		},
 		Spec: storageapi.RetentionPolicySpec{
 			MaxRetentionPeriod: "1d",
@@ -339,7 +339,7 @@ func (opt *storageOption) newBackupConfig() *coreapi.BackupConfiguration {
 	return &coreapi.BackupConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", opt.pvc.Name, "backup"),
-			Namespace: dstNamespace,
+			Namespace: srcNamespace,
 		},
 		Spec: coreapi.BackupConfigurationSpec{
 			Target: &kmapi.TypedObjectReference{
@@ -358,14 +358,14 @@ func (opt *storageOption) newBackupConfig() *coreapi.BackupConfiguration {
 					},
 					RetentionPolicy: &kmapi.ObjectReference{
 						Name:      fmt.Sprintf("%s-%s", opt.pvc.Name, "retention-policy"),
-						Namespace: dstNamespace,
+						Namespace: srcNamespace,
 					},
 				},
 			},
 			Sessions: []coreapi.Session{
 				{
 					SessionConfig: &coreapi.SessionConfig{
-						Name: PVCSession,
+						Name: "pvc-session",
 						Scheduler: &coreapi.SchedulerSpec{
 							Schedule: PVCSchedule,
 							JobTemplate: coreapi.JobTemplate{
@@ -381,7 +381,7 @@ func (opt *storageOption) newBackupConfig() *coreapi.BackupConfiguration {
 					},
 					Repositories: []coreapi.RepositoryInfo{
 						{
-							Name:      fmt.Sprintf("%s-%s-%s", opt.pvc.Name, "pvc-storage", opt.timeConst),
+							Name:      fmt.Sprintf("%s-%s-%s", opt.storage.Spec.Storage.Provider, "repo", opt.timeConst),
 							Backend:   opt.storage.Name,
 							Directory: filepath.Join("pvc", opt.pvc.Name),
 							EncryptionSecret: &kmapi.ObjectReference{
@@ -509,7 +509,7 @@ func (opt *storageOption) newRestoreSession() *coreapi.RestoreSession {
 	return &coreapi.RestoreSession{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      opt.pvc.Name,
-			Namespace: dstNamespace,
+			Namespace: srcNamespace,
 		},
 		Spec: coreapi.RestoreSessionSpec{
 			Target: &kmapi.TypedObjectReference{
@@ -518,7 +518,8 @@ func (opt *storageOption) newRestoreSession() *coreapi.RestoreSession {
 				Namespace: dstNamespace,
 			},
 			DataSource: &coreapi.RestoreDataSource{
-				Repository: fmt.Sprintf("%s-%s-%s", opt.pvc.Name, "pvc-storage", opt.timeConst),
+				// define a method for getting repo name
+				Repository: fmt.Sprintf("%s-%s-%s", opt.storage.Spec.Storage.Provider, "repo", opt.timeConst),
 				Snapshot:   LatestSnapshot,
 				EncryptionSecret: &kmapi.ObjectReference{
 					Name:      opt.encryptSecret,
