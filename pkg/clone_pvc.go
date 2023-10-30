@@ -80,8 +80,9 @@ func NewCmdClonePVC() *cobra.Command {
 			}
 			klog.Infof("Start cloning PVC %s/%s to namespace %s.", storageOpt.pvc.Namespace, storageOpt.pvc.Name, dstNamespace)
 
+			storageOpt.timeConst = fmt.Sprintf("%d", time.Now().Unix())
+
 			if storageName == "" {
-				storageOpt.timeConst = fmt.Sprintf("%d", time.Now().Unix())
 				storageOpt.storage = storageOpt.newStorage()
 				klog.Infof("Creating BackupStorage %s/%s.", storageOpt.storage.Namespace, storageOpt.storage.Name)
 				if err = storageOpt.createStorage(); err != nil {
@@ -126,14 +127,14 @@ func NewCmdClonePVC() *cobra.Command {
 	cmd.Flags().StringVar(&storageOpt.bucket, "bucket", storageOpt.bucket, "Name of the cloud bucket/container")
 	cmd.Flags().StringVar(&storageOpt.endpoint, "endpoint", storageOpt.endpoint, "Endpoint for s3 or s3 compatible backend")
 	cmd.Flags().StringVar(&storageOpt.region, "region", storageOpt.region, "Region for s3 or s3 compatible backend")
-	cmd.Flags().Int64Var(&storageOpt.maxConnections, "max-connections", storageOpt.maxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
+	cmd.Flags().Int64Var(&storageOpt.maxConnections, "max-connections", storageOpt.maxConnections, "Maximum concurrent connections for GCS, Azure and B2 backend")
 	cmd.Flags().StringVar(&storageOpt.storageSecret, "storage-secret", storageOpt.storageSecret, "Name of the Storage Secret")
 	cmd.Flags().StringVar(&storageOpt.encryptSecret, "encrypt-secret", storageOpt.encryptSecret, "Name of the Encryption Secret")
 	cmd.Flags().StringVar(&storageOpt.encryptNamespace, "encrypt-secret-namespace", "default", "Namespace of the Encryption Secret")
-	cmd.Flags().StringVar(&storageOpt.prefix, "prefix", storageOpt.prefix, "Prefix denotes the directory inside the backend")
+	cmd.Flags().StringVar(&storageOpt.prefix, "prefix", storageOpt.prefix, "Directory inside the backend")
 
-	cmd.Flags().StringVar(&storageName, "backup-storage", storageName, "Name of the BackupStorage")
-	cmd.Flags().StringVar(&storageNamespace, "backup-storage-namespace", "default", "Namespace of the BackupStorage")
+	cmd.Flags().StringVar(&storageName, "storage-name", storageName, "Name of the BackupStorage")
+	cmd.Flags().StringVar(&storageNamespace, "storage-namespace", "default", "Namespace of the BackupStorage")
 
 	return cmd
 }

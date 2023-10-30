@@ -32,7 +32,7 @@ import (
 func NewCmdUpdateKey(opt *keyOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "update",
-		Short:             `Update current key (password) of a restic repository`,
+		Short:             `Update current key (password) for restic repositories`,
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -61,7 +61,7 @@ func NewCmdUpdateKey(opt *keyOptions) *cobra.Command {
 
 			if backupStorage.Spec.Storage.Local != nil {
 				if !backupStorage.LocalNetworkVolume() {
-					return fmt.Errorf("can't unlock from local backend of type: %s", backupStorage.Spec.Storage.Local.String())
+					return fmt.Errorf("local backend of type: %s not supported", backupStorage.Spec.Storage.Local.String())
 				}
 
 				accessorPod, err := getLocalBackendAccessorPod(opt.repo.Spec.StorageRef)
@@ -91,7 +91,7 @@ func NewCmdUpdateKey(opt *keyOptions) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&opt.File, "new-password-file", opt.File, "File from which to read the new password")
-	cmd.Flags().StringSliceVar(&opt.paths, "paths", opt.paths, "List of paths for restic repository to update password")
+	cmd.Flags().StringSliceVar(&opt.paths, "paths", opt.paths, "List of component paths (restic repositories) to update the password")
 
 	return cmd
 }

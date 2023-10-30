@@ -18,8 +18,8 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,7 +44,7 @@ func NewCmdTriggerBackup(clientGetter genericclioptions.RESTClientGetter) *cobra
 
 			cfg, err := clientGetter.ToRESTConfig()
 			if err != nil {
-				return errors.Wrap(err, "failed to read kubeconfig")
+				return fmt.Errorf("failed to read kubeconfig. Reason: %w", err)
 			}
 
 			klient, err = newRuntimeClient(cfg)

@@ -52,6 +52,6 @@ go install \
       -X main.GoVersion=$(go version | cut -d " " -f 3) \
       -X main.Compiler=$(go env CC)                     \
       -X main.Platform=${OS}/${ARCH}                    \
-      -X stash.appscode.dev/cli/pkg.ResticTag=${RESTIC_VER} \
+      -X kubestash.dev/cli/pkg.ResticTag=${RESTIC_VER} \
     " \
     ./...

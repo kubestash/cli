@@ -35,12 +35,12 @@ import (
 
 var (
 	tplFrontMatter = template.Must(template.New("index").Parse(`---
-title: Reference | Stash CLI
-description: Stash CLI Reference
+title: Reference | KubeStash CLI
+description: KubeStash CLI Reference
 menu:
   docs_{{ "{{ .version }}" }}:
     identifier: reference-cli
-    name: Stash CLI
+    name: KubeStash CLI
     weight: 30
     parent: reference
 menu_name: docs_{{ "{{ .version }}" }}
@@ -72,7 +72,7 @@ func docsDir() string {
 	if dir, ok := os.LookupEnv("DOCS_ROOT"); ok {
 		return dir
 	}
-	return runtime.GOPath() + "/src/stash.appscode.dev/docs"
+	return runtime.GOPath() + "/src/kubestash.dev/docs"
 }
 
 // ref: https://github.com/spf13/cobra/blob/master/doc/md_docs.md

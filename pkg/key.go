@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -46,13 +45,13 @@ func NewCmdKey(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "password",
 		Aliases:           []string{"pw"},
-		Short:             `manages restic keys (passwords) for accessing the repository`,
+		Short:             `Manage restic keys (passwords) for accessing the repository`,
 		DisableAutoGenTag: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			opt.config, err = clientGetter.ToRESTConfig()
 			if err != nil {
-				return errors.Wrap(err, "failed to read kubeconfig")
+				return fmt.Errorf("failed to read kubeconfig. Reason: %w", err)
 			}
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
@@ -96,10 +95,14 @@ func (opt *keyOptions) runCmdViaPod(cmd string, pod *core.Pod) error {
 		"/kubestash",
 		cmd, opt.repo.Name,
 		"--namespace", opt.repo.Namespace,
-		"--paths", strings.Join(opt.paths, ","),
+	}
+
+	if len(opt.paths) > 1 {
+		command = append(command, "--paths", strings.Join(opt.paths, ","))
 	}
 
 	if opt.ID != "" {
+		command = append(command, "--path", opt.paths[0])
 		command = append(command, "--id", opt.ID)
 	}
 
@@ -110,6 +113,7 @@ func (opt *keyOptions) runCmdViaPod(cmd string, pod *core.Pod) error {
 	if opt.User != "" {
 		command = append(command, "--user", opt.User)
 	}
+
 	if opt.Host != "" {
 		command = append(command, "--host=", opt.Host)
 	}

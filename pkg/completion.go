@@ -30,7 +30,7 @@ func NewCmdCompletion() *cobra.Command {
 
 Bash:
 
-$ source <(kubectl-stash completion bash)
+$ source <(kubectl-kubestash completion bash)
 
 # To load completions for each session, execute once:
 Linux:

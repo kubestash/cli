@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -47,7 +46,6 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 	cmd := &cobra.Command{
 		Use:               "unlock",
 		Short:             `Unlock Restic Repository`,
-		Long:              `Unlock Restic Repository`,
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -56,7 +54,7 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 			var err error
 			unlockOpt.restConfig, err = clientGetter.ToRESTConfig()
 			if err != nil {
-				return errors.Wrap(err, "failed to read kubeconfig")
+				return fmt.Errorf("failed to read kubeconfig. Reason: %w", err)
 			}
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
@@ -91,7 +89,7 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 
 			if backupStorage.Spec.Storage.Local != nil {
 				if !backupStorage.LocalNetworkVolume() {
-					return fmt.Errorf("can't unlock from local backend of type: %s", backupStorage.Spec.Storage.Local.String())
+					return fmt.Errorf("local backend of type: %s not supported", backupStorage.Spec.Storage.Local.String())
 				}
 
 				accessorPod, err := getLocalBackendAccessorPod(unlockOpt.repo.Spec.StorageRef)

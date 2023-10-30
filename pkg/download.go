@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -50,8 +49,8 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 	downloadOpt := &downloadOptions{}
 	cmd := &cobra.Command{
 		Use:               "download",
-		Short:             `Download components`,
-		Long:              `Download components of a snapshot`,
+		Short:             `Download components of a snapshot`,
+		Long:              `Download components of a snapshot from restic repositories`,
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -60,7 +59,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 			var err error
 			downloadOpt.restConfig, err = clientGetter.ToRESTConfig()
 			if err != nil {
-				return errors.Wrap(err, "failed to read kubeconfig")
+				return fmt.Errorf("failed to read kubeconfig. Reason: %w", err)
 			}
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
@@ -103,7 +102,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 
 			if backupStorage.Spec.Storage.Local != nil {
 				if !backupStorage.LocalNetworkVolume() {
-					return fmt.Errorf("can't restore from local backend of type: %s", backupStorage.Spec.Storage.Local.String())
+					return fmt.Errorf("local backend of type: %s not supported", backupStorage.Spec.Storage.Local.String())
 				}
 
 				accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
@@ -176,7 +175,8 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 
 				restoreArgs := []string{
 					"restore",
-					"--no-cache",
+					"--cache-dir",
+					ScratchDir,
 				}
 
 				// For TLS secured Minio/REST server, specify cert path

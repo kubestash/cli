@@ -17,7 +17,8 @@ limitations under the License.
 package pkg
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
@@ -35,7 +36,7 @@ func NewCmdPause(clientGetter genericclioptions.RESTClientGetter) *cobra.Command
 
 			cfg, err := clientGetter.ToRESTConfig()
 			if err != nil {
-				return errors.Wrap(err, "failed to read kubeconfig")
+				return fmt.Errorf("failed to read kubeconfig. Reason: %w", err)
 			}
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()

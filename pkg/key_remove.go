@@ -35,7 +35,7 @@ func NewCmdRemoveKey(opt *keyOptions) *cobra.Command {
 	var idPaths []string
 	cmd := &cobra.Command{
 		Use:               "remove",
-		Short:             `Remove a key (password) to a restic repository`,
+		Short:             `Remove keys (passwords) from restic repositories`,
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -71,7 +71,7 @@ func NewCmdRemoveKey(opt *keyOptions) *cobra.Command {
 
 				if backupStorage.Spec.Storage.Local != nil {
 					if !backupStorage.LocalNetworkVolume() {
-						return fmt.Errorf("can't unlock from local backend of type: %s", backupStorage.Spec.Storage.Local.String())
+						return fmt.Errorf("local backend of type: %s not supported", backupStorage.Spec.Storage.Local.String())
 					}
 
 					accessorPod, err := getLocalBackendAccessorPod(opt.repo.Spec.StorageRef)
@@ -110,7 +110,7 @@ func NewCmdRemoveKey(opt *keyOptions) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&idPaths, "id-paths", idPaths, "List of ids of the passwords and their corresponding paths for restic repository to remove password")
+	cmd.Flags().StringSliceVar(&idPaths, "id-paths", idPaths, "List of restic password ID and corresponding component path (restic repository) pairs. The specified passwords, associated with the given IDs, will be removed from the restic repositories.")
 
 	return cmd
 }
