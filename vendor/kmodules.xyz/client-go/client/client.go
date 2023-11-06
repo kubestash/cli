@@ -21,13 +21,8 @@ import (
 	"reflect"
 	"strings"
 
-	kmapi "kmodules.xyz/client-go/api/v1"
-	"kmodules.xyz/client-go/tools/clusterid"
-
 	"github.com/pkg/errors"
-	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -111,9 +106,6 @@ func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object, tran
 		patch = client.MergeFrom(cur)
 	}
 	mod := transform(cur.DeepCopyObject().(client.Object), false)
-	if p, err := patch.Data(mod); err != nil || string(p) == "{}" {
-		return kutil.VerbUnchanged, err
-	}
 	err = c.Patch(ctx, mod, patch, opts...)
 	if err != nil {
 		return kutil.VerbUnchanged, err
@@ -149,9 +141,6 @@ func PatchStatus(ctx context.Context, c client.Client, obj client.Object, transf
 	//   - application/apply-patch+yaml
 	patch := client.MergeFrom(cur)
 	mod := transform(cur.DeepCopyObject().(client.Object))
-	if p, err := patch.Data(mod); err != nil || string(p) == "{}" {
-		return kutil.VerbUnchanged, err
-	}
 	err = c.Status().Patch(ctx, mod, patch, opts...)
 	if err != nil {
 		return kutil.VerbUnchanged, err
@@ -193,22 +182,4 @@ func GetForGVK(ctx context.Context, c client.Client, gvk schema.GroupVersionKind
 	obj := o.(client.Object)
 	err = c.Get(ctx, ref, obj)
 	return obj, err
-}
-
-func ClusterUID(c client.Reader) (string, error) {
-	var ns core.Namespace
-	err := c.Get(context.TODO(), client.ObjectKey{Name: metav1.NamespaceSystem}, &ns)
-	if err != nil {
-		return "", err
-	}
-	return string(ns.UID), nil
-}
-
-func ClusterMetadata(c client.Reader) (*kmapi.ClusterMetadata, error) {
-	var ns core.Namespace
-	err := c.Get(context.TODO(), client.ObjectKey{Name: metav1.NamespaceSystem}, &ns)
-	if err != nil {
-		return nil, err
-	}
-	return clusterid.ClusterMetadataForNamespace(&ns)
 }

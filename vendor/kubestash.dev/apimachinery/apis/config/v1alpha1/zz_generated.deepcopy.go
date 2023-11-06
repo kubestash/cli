@@ -88,6 +88,11 @@ func (in *KubeStashConfig) DeepCopyInto(out *KubeStashConfig) {
 	out.License = in.License
 	out.WebhookInfo = in.WebhookInfo
 	out.Docker = in.Docker
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	out.NetVolAccessor = in.NetVolAccessor
 }
 

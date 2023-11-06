@@ -30,10 +30,10 @@ import (
 	"kubestash.dev/apimachinery/pkg/restic"
 )
 
-func NewCmdAddKey(opt *keyOptions) *cobra.Command {
+func NewCmdListKey(opt *keyOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "add",
-		Short:             `Add a new key (password) to restic repositories`,
+		Use:               "list",
+		Short:             `List the keys (passwords) for restic repositories`,
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -72,7 +72,7 @@ func NewCmdAddKey(opt *keyOptions) *cobra.Command {
 					return err
 				}
 
-				return opt.addResticKeyViaPod(accessorPod)
+				return opt.listResticKeysViaPod(accessorPod)
 			}
 
 			operatorPod, err := getOperatorPod()
@@ -86,39 +86,28 @@ func NewCmdAddKey(opt *keyOptions) *cobra.Command {
 			}
 
 			if yes {
-				return opt.addResticKeyViaPod(&operatorPod)
+				return opt.listResticKeysViaPod(&operatorPod)
 			}
 
-			return opt.addResticKeyViaDocker()
+			return opt.listResticKeysViaDocker()
 		},
 	}
 
-	cmd.Flags().StringVar(&opt.Host, "host", opt.Host, "Host for the new key")
-	cmd.Flags().StringVar(&opt.User, "user", opt.User, "User for the new key")
-	cmd.Flags().StringVar(&opt.File, "new-password-file", opt.File, "File from which to read the new password")
-	cmd.Flags().StringSliceVar(&opt.paths, "paths", opt.paths, "List of component paths (restic repositories) to add the new password")
+	cmd.Flags().StringSliceVar(&opt.paths, "paths", opt.paths, "List of component paths (restic repositories) for which to list the passwords")
 
 	return cmd
 }
 
-func (opt *keyOptions) addResticKeyViaPod(pod *core.Pod) error {
-	if err := opt.copyPasswordFileToPod(pod); err != nil {
-		return fmt.Errorf("failed to copy password file from local directory to pod: %w", err)
-	}
-
-	if err := opt.runCmdViaPod("add-key", pod); err != nil {
+func (opt *keyOptions) listResticKeysViaPod(pod *core.Pod) error {
+	if err := opt.runCmdViaPod("list-key", pod); err != nil {
 		return err
 	}
 
-	if err := opt.removePasswordFileFromPod(pod); err != nil {
-		return fmt.Errorf("failed to remove password file from pod: %w", err)
-	}
-
-	klog.Infof("Restic key has been added successfully for repository %s/%s", opt.repo.Namespace, opt.repo.Name)
+	klog.Infof("Restic keys have been listed successfully for repository %s/%s", opt.repo.Namespace, opt.repo.Name)
 	return nil
 }
 
-func (opt *keyOptions) addResticKeyViaDocker() error {
+func (opt *keyOptions) listResticKeysViaDocker() error {
 	var err error
 	if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
 		return err
@@ -164,13 +153,18 @@ func (opt *keyOptions) addResticKeyViaDocker() error {
 
 		keyArgs := []string{
 			"key",
-			"add",
+			"list",
 			"--no-cache",
 		}
 
 		// For TLS secured Minio/REST server, specify cert path
 		if w.GetCaPath() != "" {
 			keyArgs = append(keyArgs, "--cacert", w.GetCaPath())
+		}
+
+		_, err = os.Stdout.Write([]byte("\nComponent Path: " + path + "\n"))
+		if err != nil {
+			return err
 		}
 
 		if err = opt.runCmdViaDocker(keyArgs); err != nil {
