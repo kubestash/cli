@@ -95,7 +95,7 @@ type SetupOptions struct {
 	EncryptionSecret *kmapi.ObjectReference
 	Directory        string
 	Client           client.Client
-	BackupStorage    *kmapi.TypedObjectReference
+	BackupStorage    *kmapi.ObjectReference
 	CacertFile       string
 	ScratchDir       string
 	MountPath        string

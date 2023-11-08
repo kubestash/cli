@@ -287,7 +287,7 @@ func getOperatorPod() (core.Pod, error) {
 	}
 
 	for i := range podList.Items {
-		if hasKubeStashContainer(&podList.Items[i]) {
+		if hasKubeStashOperatorContainer(&podList.Items[i]) {
 			return podList.Items[i], nil
 		}
 	}
@@ -295,10 +295,10 @@ func getOperatorPod() (core.Pod, error) {
 	return core.Pod{}, fmt.Errorf("operator pod not found")
 }
 
-func hasKubeStashContainer(pod *core.Pod) bool {
+func hasKubeStashOperatorContainer(pod *core.Pod) bool {
 	if strings.Contains(pod.Name, "kubestash") {
 		for _, c := range pod.Spec.Containers {
-			if c.Name == "operator" {
+			if c.Name == apis.OperatorContainer {
 				return true
 			}
 		}
@@ -306,7 +306,7 @@ func hasKubeStashContainer(pod *core.Pod) bool {
 	return false
 }
 
-func getLocalBackendAccessorPod(obj kmapi.TypedObjectReference) (*core.Pod, error) {
+func getLocalBackendAccessorPod(obj kmapi.ObjectReference) (*core.Pod, error) {
 	var pods core.PodList
 	appLabels := map[string]string{
 		apis.KubeStashApp: apis.KubeStashNetVolAccessor,
@@ -397,7 +397,7 @@ func execOnPod(config *rest.Config, pod *core.Pod, command []string) (string, er
 		SubResource("exec").
 		Timeout(5 * time.Minute)
 	req.VersionedParams(&core.PodExecOptions{
-		Container: apis.OperatorContainer,
+		Container: getContainerName(pod),
 		Command:   command,
 		Stdout:    true,
 		Stderr:    true,
@@ -419,4 +419,11 @@ func execOnPod(config *rest.Config, pod *core.Pod, command []string) (string, er
 	}
 
 	return execOut.String(), nil
+}
+
+func getContainerName(pod *core.Pod) string {
+	if hasKubeStashOperatorContainer(pod) {
+		return apis.OperatorContainer
+	}
+	return apis.KubeStashContainer
 }

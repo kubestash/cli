@@ -137,29 +137,30 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				}
 			}()
 
+			setupOptions := restic.SetupOptions{
+				Client:           klient,
+				BackupStorage:    &repository.Spec.StorageRef,
+				EncryptionSecret: repository.Spec.EncryptionSecret,
+				ScratchDir:       ScratchDir,
+			}
+
+			// apply nice, ionice settings from env
+			setupOptions.Nice, err = v1.NiceSettingsFromEnv()
+			if err != nil {
+				return fmt.Errorf("failed to set nice settings: %w", err)
+			}
+
+			setupOptions.IONice, err = v1.IONiceSettingsFromEnv()
+			if err != nil {
+				return fmt.Errorf("failed to set ionice settings: %w", err)
+			}
+
 			for compName, comp := range snapshot.Status.Components {
 				if !downloadOpt.shouldRestoreComponent(compName) {
 					continue
 				}
 
-				setupOptions := restic.SetupOptions{
-					Client:           klient,
-					Directory:        filepath.Join(repository.Spec.Path, comp.Path),
-					BackupStorage:    &repository.Spec.StorageRef,
-					EncryptionSecret: repository.Spec.EncryptionSecret,
-					ScratchDir:       ScratchDir,
-				}
-
-				// apply nice, ionice settings from env
-				setupOptions.Nice, err = v1.NiceSettingsFromEnv()
-				if err != nil {
-					return fmt.Errorf("failed to set nice settings: %w", err)
-				}
-
-				setupOptions.IONice, err = v1.IONiceSettingsFromEnv()
-				if err != nil {
-					return fmt.Errorf("failed to set ionice settings: %w", err)
-				}
+				setupOptions.Directory = filepath.Join(repository.Spec.Path, comp.Path)
 
 				w, err := restic.NewResticWrapper(setupOptions)
 				if err != nil {
@@ -211,7 +212,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 }
 
 func (opt *downloadOptions) runRestoreViaPod(pod *core.Pod, snapshotName string) error {
-	if err := opt.runProbe(pod, snapshotName); err != nil {
+	if err := opt.runCmdViaPod(pod, snapshotName); err != nil {
 		return err
 	}
 
@@ -227,7 +228,7 @@ func (opt *downloadOptions) runRestoreViaPod(pod *core.Pod, snapshotName string)
 	return nil
 }
 
-func (opt *downloadOptions) runProbe(pod *core.Pod, snapshotName string) error {
+func (opt *downloadOptions) runCmdViaPod(pod *core.Pod, snapshotName string) error {
 	command := []string{
 		"/kubestash",
 		"download", snapshotName,

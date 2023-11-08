@@ -39,6 +39,9 @@ type KubeStashConfig struct {
 	// Docker specifies the operator's  docker registry, image, and tag information
 	Docker Docker `json:"docker,omitempty"`
 
+	// ImagePullSecrets specifies the secrets to pull image from private registry
+	ImagePullSecrets []string `json:"imagePullSecrets,omitempty"`
+
 	// NetVolAccessor specifies the network volume accessor's resource requirements
 	NetVolAccessor NetVolAccessor `json:"netVolAccessor,omitempty"`
 }
