@@ -204,9 +204,17 @@ spec:
                         description: VolumeSnapshotterStats specifies the "VolumeSnapshotter"
                           driver specific information
                         properties:
+                          hostPath:
+                            description: HostPath represents the corresponding path
+                              of PVC for which volumeSnapshot is created.
+                            type: string
                           pvcName:
+                            description: PVCName represents the backup PVC name for
+                              which volumeSnapshot is created.
                             type: string
                           volumeSnapshotName:
+                            description: VolumeSnapshotName represents the name of
+                              created volumeSnapshot.
                             type: string
                         type: object
                       type: array

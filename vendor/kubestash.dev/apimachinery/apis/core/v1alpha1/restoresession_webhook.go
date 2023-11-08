@@ -54,11 +54,11 @@ func (r *RestoreSession) ValidateCreate() error {
 		return fmt.Errorf("failed to set Kubernetes client, Reason: %w", err)
 	}
 
-	if err := r.checkIfSnapshotIsEmpty(); err != nil {
+	if err = r.checkIfSnapshotIsEmpty(); err != nil {
 		return err
 	}
 
-	if err := r.checkIfRepoIsEmptyForLatestSnapshot(); err != nil {
+	if err = r.checkIfRepoIsEmptyForLatestSnapshot(); err != nil {
 		return err
 	}
 

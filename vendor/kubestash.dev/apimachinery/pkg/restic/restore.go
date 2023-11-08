@@ -93,7 +93,8 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
 		dumpOptions.SourceHost = dumpOptions.Host
 	}
 
-	if _, err := w.DumpOnce(dumpOptions); err != nil {
+	_, err := w.DumpOnce(dumpOptions)
+	if err != nil {
 		restoreStats.Phase = HostRestoreFailed
 		restoreStats.Error = err.Error()
 	} else {
@@ -103,7 +104,7 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
 
 	return &RestoreOutput{
 		Stats: []HostRestoreStats{restoreStats},
-	}, nil
+	}, err
 }
 
 // ParallelDump run DumpOnce for multiple hosts concurrently using go routine.

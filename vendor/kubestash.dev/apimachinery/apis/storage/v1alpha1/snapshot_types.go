@@ -235,7 +235,17 @@ type ResticStats struct {
 
 // VolumeSnapshotterStats specifies the "VolumeSnapshotter" driver specific information
 type VolumeSnapshotterStats struct {
-	PvcName            string `json:"pvcName,omitempty"`
+
+	// PVCName represents the backup PVC name for which volumeSnapshot is created.
+	// +optional
+	PVCName string `json:"pvcName,omitempty"`
+
+	// HostPath represents the corresponding path of PVC for which volumeSnapshot is created.
+	// +optional
+	HostPath string `json:"hostPath,omitempty"`
+
+	// VolumeSnapshotName represents the name of created volumeSnapshot.
+	// +optional
 	VolumeSnapshotName string `json:"volumeSnapshotName,omitempty"`
 }
 

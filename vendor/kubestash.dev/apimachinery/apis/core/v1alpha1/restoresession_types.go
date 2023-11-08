@@ -68,9 +68,11 @@ type RestoreSessionSpec struct {
 	// If the session execution does not finish within this time period, KubeStash will consider this session as a failure.
 	// +optional
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
+
 	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
 	// +optional
 	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
+
 	// ManifestOptions provide options to select particular manifest object to restore
 	// +optional
 	ManifestOptions *ManifestRestoreOptions `json:"manifestOptions,omitempty"`
@@ -80,9 +82,11 @@ type ManifestRestoreOptions struct {
 	// RestoreNamespace specifies the Namespace where the restored files will be applied
 	//+optional
 	RestoreNamespace string `json:"restoreNamespace,omitempty"`
+
 	// MongoDB specifies the options for selecting particular MongoDB components to restore in manifest restore
 	// +optional
 	MongoDB *KubeDBManifestOptions `json:"mongoDB,omitempty"`
+
 	// Postgres specifies the options for selecting particular Postgres components to restore in manifest restore
 	// +optional
 	Postgres *KubeDBManifestOptions `json:"postgres,omitempty"`
@@ -92,6 +96,7 @@ type KubeDBManifestOptions struct {
 	// DB specifies whether to restore the DB manifest or not
 	// +optional
 	DB bool `json:"db,omitempty"`
+
 	// DBName specifies the new name of the DB yaml after restore
 	// +optional
 	DBName string `json:"dbName,omitempty"`
@@ -99,6 +104,7 @@ type KubeDBManifestOptions struct {
 	// AuthSecret specifies whether to restore the AuthSecret manifest or not
 	// +optional
 	AuthSecret bool `json:"authSecret,omitempty"`
+
 	// AuthSecretName specifies new name of the AuthSecret yaml after restore
 	// +optional
 	AuthSecretName string `json:"authSecretName,omitempty"`
@@ -106,6 +112,7 @@ type KubeDBManifestOptions struct {
 	// ConfigSecret specifies whether to restore the ConfigSecret manifest or not
 	// +optional
 	ConfigSecret bool `json:"configSecret,omitempty"`
+
 	// ConfigSecretName specifies new name of the ConfigSecret yaml after restore
 	// +optional
 	ConfigSecretName string `json:"configSecretName,omitempty"`
@@ -204,6 +211,7 @@ type RestoreSessionStatus struct {
 	// PausedBackups represents the list of backups that have been paused before restore.
 	// +optional
 	PausedBackups []kmapi.TypedObjectReference `json:"pausedBackups,omitempty"`
+
 	// Conditions specifies a list of conditions related to this restore session
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`

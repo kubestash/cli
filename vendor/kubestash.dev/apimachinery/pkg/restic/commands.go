@@ -256,7 +256,7 @@ func (w *ResticWrapper) DumpOnce(dumpOptions DumpOptions) ([]byte, error) {
 	} else {
 		args = append(args, "stdin")
 	}
-	if dumpOptions.Host != "" {
+	if dumpOptions.SourceHost != "" {
 		args = append(args, "--host")
 		args = append(args, dumpOptions.SourceHost)
 	}

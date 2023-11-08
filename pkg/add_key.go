@@ -30,10 +30,10 @@ import (
 	"kubestash.dev/apimachinery/pkg/restic"
 )
 
-func NewCmdListKey(opt *keyOptions) *cobra.Command {
+func NewCmdAddKey(opt *keyOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "list",
-		Short:             `List the keys (passwords) for restic repositories`,
+		Use:               "add",
+		Short:             `Add a new key (password) to restic repositories`,
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -72,7 +72,7 @@ func NewCmdListKey(opt *keyOptions) *cobra.Command {
 					return err
 				}
 
-				return opt.listResticKeysViaPod(accessorPod)
+				return opt.addResticKeyViaPod(accessorPod)
 			}
 
 			operatorPod, err := getOperatorPod()
@@ -86,28 +86,39 @@ func NewCmdListKey(opt *keyOptions) *cobra.Command {
 			}
 
 			if yes {
-				return opt.listResticKeysViaPod(&operatorPod)
+				return opt.addResticKeyViaPod(&operatorPod)
 			}
 
-			return opt.listResticKeysViaDocker()
+			return opt.addResticKeyViaDocker()
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&opt.paths, "paths", opt.paths, "List of component paths (restic repositories) to list the passwords")
+	cmd.Flags().StringVar(&opt.Host, "host", opt.Host, "Host for the new key")
+	cmd.Flags().StringVar(&opt.User, "user", opt.User, "User for the new key")
+	cmd.Flags().StringVar(&opt.File, "new-password-file", opt.File, "File from which to read the new password")
+	cmd.Flags().StringSliceVar(&opt.paths, "paths", opt.paths, "List of component paths (restic repositories) to add the new password")
 
 	return cmd
 }
 
-func (opt *keyOptions) listResticKeysViaPod(pod *core.Pod) error {
-	if err := opt.runCmdViaPod("list-key", pod); err != nil {
+func (opt *keyOptions) addResticKeyViaPod(pod *core.Pod) error {
+	if err := opt.copyPasswordFileToPod(pod); err != nil {
+		return fmt.Errorf("failed to copy password file from local directory to pod: %w", err)
+	}
+
+	if err := opt.runCmdViaPod("add-key", pod); err != nil {
 		return err
 	}
 
-	klog.Infof("Restic keys have been listed successfully for repository %s/%s", opt.repo.Namespace, opt.repo.Name)
+	if err := opt.removePasswordFileFromPod(pod); err != nil {
+		return fmt.Errorf("failed to remove password file from pod: %w", err)
+	}
+
+	klog.Infof("Restic key has been added successfully for repository %s/%s", opt.repo.Namespace, opt.repo.Name)
 	return nil
 }
 
-func (opt *keyOptions) listResticKeysViaDocker() error {
+func (opt *keyOptions) addResticKeyViaDocker() error {
 	var err error
 	if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
 		return err
@@ -119,25 +130,26 @@ func (opt *keyOptions) listResticKeysViaDocker() error {
 		}
 	}()
 
+	setupOptions := restic.SetupOptions{
+		Client:           klient,
+		BackupStorage:    &opt.repo.Spec.StorageRef,
+		EncryptionSecret: opt.repo.Spec.EncryptionSecret,
+		ScratchDir:       ScratchDir,
+	}
+
+	// apply nice, ionice settings from env
+	setupOptions.Nice, err = v1.NiceSettingsFromEnv()
+	if err != nil {
+		return fmt.Errorf("failed to set nice settings: %w", err)
+	}
+
+	setupOptions.IONice, err = v1.IONiceSettingsFromEnv()
+	if err != nil {
+		return fmt.Errorf("failed to set ionice settings: %w", err)
+	}
+
 	for _, path := range opt.paths {
-		setupOptions := restic.SetupOptions{
-			Client:           klient,
-			Directory:        filepath.Join(opt.repo.Spec.Path, path),
-			BackupStorage:    &opt.repo.Spec.StorageRef,
-			EncryptionSecret: opt.repo.Spec.EncryptionSecret,
-			ScratchDir:       ScratchDir,
-		}
-
-		// apply nice, ionice settings from env
-		setupOptions.Nice, err = v1.NiceSettingsFromEnv()
-		if err != nil {
-			return fmt.Errorf("failed to set nice settings: %w", err)
-		}
-
-		setupOptions.IONice, err = v1.IONiceSettingsFromEnv()
-		if err != nil {
-			return fmt.Errorf("failed to set ionice settings: %w", err)
-		}
+		setupOptions.Directory = filepath.Join(opt.repo.Spec.Path, path)
 
 		w, err := restic.NewResticWrapper(setupOptions)
 		if err != nil {
@@ -153,18 +165,13 @@ func (opt *keyOptions) listResticKeysViaDocker() error {
 
 		keyArgs := []string{
 			"key",
-			"list",
+			"add",
 			"--no-cache",
 		}
 
 		// For TLS secured Minio/REST server, specify cert path
 		if w.GetCaPath() != "" {
 			keyArgs = append(keyArgs, "--cacert", w.GetCaPath())
-		}
-
-		_, err = os.Stdout.Write([]byte("\nComponent Path: " + path + "\n"))
-		if err != nil {
-			return err
 		}
 
 		if err = opt.runCmdViaDocker(keyArgs); err != nil {

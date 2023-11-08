@@ -136,25 +136,26 @@ func (opt *keyOptions) removeResticKeyViaDocker() error {
 		}
 	}()
 
+	setupOptions := restic.SetupOptions{
+		Client:           klient,
+		BackupStorage:    &opt.repo.Spec.StorageRef,
+		EncryptionSecret: opt.repo.Spec.EncryptionSecret,
+		ScratchDir:       ScratchDir,
+	}
+
+	// apply nice, ionice settings from env
+	setupOptions.Nice, err = v1.NiceSettingsFromEnv()
+	if err != nil {
+		return fmt.Errorf("failed to set nice settings: %w", err)
+	}
+
+	setupOptions.IONice, err = v1.IONiceSettingsFromEnv()
+	if err != nil {
+		return fmt.Errorf("failed to set ionice settings: %w", err)
+	}
+
 	for _, path := range opt.paths {
-		setupOptions := restic.SetupOptions{
-			Client:           klient,
-			Directory:        filepath.Join(opt.repo.Spec.Path, path),
-			BackupStorage:    &opt.repo.Spec.StorageRef,
-			EncryptionSecret: opt.repo.Spec.EncryptionSecret,
-			ScratchDir:       ScratchDir,
-		}
-
-		// apply nice, ionice settings from env
-		setupOptions.Nice, err = v1.NiceSettingsFromEnv()
-		if err != nil {
-			return fmt.Errorf("failed to set nice settings: %w", err)
-		}
-
-		setupOptions.IONice, err = v1.IONiceSettingsFromEnv()
-		if err != nil {
-			return fmt.Errorf("failed to set ionice settings: %w", err)
-		}
+		setupOptions.Directory = filepath.Join(opt.repo.Spec.Path, path)
 
 		w, err := restic.NewResticWrapper(setupOptions)
 		if err != nil {
