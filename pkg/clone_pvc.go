@@ -351,7 +351,7 @@ func (opt *storageOption) newBackupConfig() *coreapi.BackupConfiguration {
 			Backends: []coreapi.BackendReference{
 				{
 					Name: opt.storage.Name,
-					StorageRef: kmapi.ObjectReference{
+					StorageRef: &kmapi.ObjectReference{
 						Name:      opt.storage.Name,
 						Namespace: opt.storage.Namespace,
 					},
