@@ -102,7 +102,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 
 			if backupStorage.Spec.Storage.Local != nil {
 				if !backupStorage.LocalNetworkVolume() {
-					return fmt.Errorf("local backend of type: %s not supported", backupStorage.Spec.Storage.Local.String())
+					return fmt.Errorf("unsupported type of local backend provided")
 				}
 
 				accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
