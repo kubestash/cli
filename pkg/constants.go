@@ -54,8 +54,8 @@ const (
 // Constants for PVC cloning
 const (
 	PVCAddon       = "pvc-addon"
-	PVCBackupTask  = "pvc-backup"
-	PVCRestoreTask = "pvc-restore"
+	PVCBackupTask  = "LogicalBackup"
+	PVCRestoreTask = "LogicalBackupRestore"
 	PVCSchedule    = "*/59 * * * *"
 	LatestSnapshot = "latest"
 )

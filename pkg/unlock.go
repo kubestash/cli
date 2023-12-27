@@ -32,6 +32,7 @@ import (
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/pkg"
 	"kubestash.dev/apimachinery/pkg/restic"
 )
 
@@ -62,7 +63,7 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 				return err
 			}
 
-			klient, err = newRuntimeClient(unlockOpt.restConfig)
+			klient, err = pkg.NewUncachedClient()
 			if err != nil {
 				return err
 			}

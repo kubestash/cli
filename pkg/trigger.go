@@ -18,7 +18,7 @@ package pkg
 
 import (
 	"context"
-	"fmt"
+	"slices"
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
@@ -29,10 +29,13 @@ import (
 	kmc "kmodules.xyz/client-go/client"
 	core_util "kmodules.xyz/client-go/core/v1"
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
+	"kubestash.dev/apimachinery/pkg"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func NewCmdTriggerBackup(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
+	var sessions []string
+
 	cmd := &cobra.Command{
 		Use:               "trigger",
 		Short:             `Trigger a backup`,
@@ -42,12 +45,16 @@ func NewCmdTriggerBackup(clientGetter genericclioptions.RESTClientGetter) *cobra
 		RunE: func(cmd *cobra.Command, args []string) error {
 			backupConfigName := args[0]
 
+<<<<<<< HEAD
 			cfg, err := clientGetter.ToRESTConfig()
 			if err != nil {
 				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
 			}
+=======
+			var err error
+>>>>>>> f5312de (Update uncached client + Add session list in trigger backup)
 
-			klient, err = newRuntimeClient(cfg)
+			klient, err = pkg.NewUncachedClient()
 			if err != nil {
 				return err
 			}
@@ -66,7 +73,12 @@ func NewCmdTriggerBackup(clientGetter genericclioptions.RESTClientGetter) *cobra
 			}
 
 			for _, session := range backupConfig.Spec.Sessions {
-				_, err := triggerBackup(backupConfig, session)
+				if len(sessions) != 0 &&
+					!slices.Contains(sessions, session.Name) {
+					continue
+				}
+
+				_, err = triggerBackup(backupConfig, session)
 				if err != nil {
 					return err
 				}
@@ -74,6 +86,8 @@ func NewCmdTriggerBackup(clientGetter genericclioptions.RESTClientGetter) *cobra
 			return nil
 		},
 	}
+
+	cmd.Flags().StringSliceVar(&sessions, "sessions", sessions, "List of sessions to trigger")
 
 	return cmd
 }

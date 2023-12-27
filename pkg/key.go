@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/pkg"
 	"kubestash.dev/apimachinery/pkg/restic"
 )
 
@@ -59,7 +60,7 @@ func NewCmdKey(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 				return err
 			}
 
-			klient, err = newRuntimeClient(opt.config)
+			klient, err = pkg.NewUncachedClient()
 			if err != nil {
 				return err
 			}

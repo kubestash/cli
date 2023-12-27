@@ -17,11 +17,10 @@ limitations under the License.
 package pkg
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"gomodules.xyz/flags"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"kubestash.dev/apimachinery/pkg"
 )
 
 func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
@@ -33,17 +32,21 @@ func NewCmdCopy(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			flags.EnsureRequiredFlags(cmd, "to-namespace")
 
+<<<<<<< HEAD
 			cfg, err := clientGetter.ToRESTConfig()
 			if err != nil {
 				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
 			}
+=======
+			var err error
+>>>>>>> f5312de (Update uncached client + Add session list in trigger backup)
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
 			if err != nil {
 				return err
 			}
 
-			klient, err = newRuntimeClient(cfg)
+			klient, err = pkg.NewUncachedClient()
 			if err != nil {
 				return err
 			}
