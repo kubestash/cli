@@ -21,7 +21,7 @@ require (
 	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73
 	kmodules.xyz/client-go v0.25.43
 	kmodules.xyz/offshoot-api v0.25.5
-	kubestash.dev/apimachinery v0.2.0
+	kubestash.dev/apimachinery v0.3.0
 	sigs.k8s.io/controller-runtime v0.13.1
 )
 
@@ -109,7 +109,6 @@ require (
 	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f // indirect
-	gomodules.xyz/envsubst v0.2.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	gomodules.xyz/mergo v0.3.13 // indirect
 	gomodules.xyz/pointer v0.1.0 // indirect

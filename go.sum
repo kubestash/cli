@@ -372,8 +372,8 @@ github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxv
 github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
-github.com/kr/pretty v0.2.0 h1:s5hAObm+yFO5uHYt5dYjxi2rXrsnmRpJx4OYvIWUaQs=
 github.com/kr/pretty v0.2.0/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
+github.com/kr/pretty v0.2.1 h1:Fmg33tUaq4/8ym9TJN1x7sLJnHVwhP33CNkpYV/7rwI=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/pty v1.1.5/go.mod h1:9r2w37qlBe7rQ6e1fg1S/9xpWHSnaqNdHD3WcMdbPDA=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
@@ -837,8 +837,6 @@ golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f h1:hTyhR4r+tj1Uq7/PpFxLTzbeA0LhMVp7bEYfhkzFjdY=
 gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f/go.mod h1:K3m7N+nBOlf91/tpv8REUGwsAgaKFwElQCuiLhm12AQ=
-gomodules.xyz/envsubst v0.2.0 h1:piG4OcpUa/Mu7LxSo+2Ye8JH7pXXWM2XuCD8Ic7Hdwc=
-gomodules.xyz/envsubst v0.2.0/go.mod h1:eB1KRKtXx6RSpl+WYxE8gFE7DhNJCoorHzSij7X3AQo=
 gomodules.xyz/flags v0.1.3 h1:jQ06+EfmoMv5NvjXvJon03dOhLU+FF0TQMWN7I6qpzs=
 gomodules.xyz/flags v0.1.3/go.mod h1:e+kvBLnqdEWGG670SKOYag1CXStM2Slrxq01OIK3tFs=
 gomodules.xyz/go-sh v0.1.0 h1:1BJAuGREh2RhePt7HRrpmjnkbgfpXlCzc42SiyZ5dkc=
@@ -1069,8 +1067,8 @@ kmodules.xyz/offshoot-api v0.25.5 h1:erUtTDj9iljikd9CvrCz0E32P5mgEqq1NYxy06lxrNo
 kmodules.xyz/offshoot-api v0.25.5/go.mod h1:wotLtcXWHw6KrWX6Ry2EsHn2I2QTvyLX7gXAuwBjkFc=
 kmodules.xyz/prober v0.25.0 h1:R5uRLHJEvEtEoogj+vaTAob0Btph6+PX5IlS6hPh8PA=
 kmodules.xyz/prober v0.25.0/go.mod h1:z4RTnjaajNQa/vPltsiOnO3xI716I/ziD2ac2Exm+1M=
-kubestash.dev/apimachinery v0.2.0 h1:xu6Um9Z0gFgMbKzUHIJAsvh+izJ6Nl4LJPyK4SUnntE=
-kubestash.dev/apimachinery v0.2.0/go.mod h1:ouqYby7/IIHRJgadPc++tzh3vxtjIgk1pDzU0YRCCw4=
+kubestash.dev/apimachinery v0.3.0 h1:0zkdiJeL3ONm4P53rJI9CQiTs8vF+OgOM1jbA+oM8RM=
+kubestash.dev/apimachinery v0.3.0/go.mod h1:mZlerbYdxPXYFJQfOrXFDHBPV8NzZkVF1qHUsP0/Q0s=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=
 rsc.io/sampler v1.3.0/go.mod h1:T1hPZKmBbMNahiBKFy5HrXp6adAjACjK9JXDnKaTXpA=
