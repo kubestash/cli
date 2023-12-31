@@ -71,7 +71,11 @@ func newRuntimeClient(config *restclient.Config) (client.Client, error) {
 	utilruntime.Must(core.AddToScheme(scheme))
 	utilruntime.Must(vsapi.AddToScheme(scheme))
 
-	mapper, err := apiutil.NewDynamicRESTMapper(config)
+	hc, err := rest.HTTPClientFor(config)
+	if err != nil {
+		return nil, err
+	}
+	mapper, err := apiutil.NewDynamicRESTMapper(config, hc)
 	if err != nil {
 		return nil, err
 	}
@@ -79,10 +83,6 @@ func newRuntimeClient(config *restclient.Config) (client.Client, error) {
 	return client.New(config, client.Options{
 		Scheme: scheme,
 		Mapper: mapper,
-		Opts: client.WarningHandlerOptions{
-			SuppressWarnings:   false,
-			AllowDuplicateLogs: false,
-		},
 	})
 }
 
@@ -408,7 +408,7 @@ func execOnPod(config *rest.Config, pod *core.Pod, command []string) (string, er
 		return "", fmt.Errorf("failed to init executor: %v", err)
 	}
 
-	err = executor.Stream(remotecommand.StreamOptions{
+	err = executor.StreamWithContext(context.Background(), remotecommand.StreamOptions{
 		Stdout: &execOut,
 		Stderr: &execErr,
 		Tty:    true,

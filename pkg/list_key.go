@@ -115,7 +115,7 @@ func (opt *keyOptions) listResticKeysViaDocker() error {
 	defer func() {
 		err := os.RemoveAll(ScratchDir)
 		if err != nil {
-			klog.Errorf("failed to remove scratch dir. Reason: %w", err)
+			klog.Errorf("failed to remove scratch dir. Reason: %v", err)
 		}
 	}()
 

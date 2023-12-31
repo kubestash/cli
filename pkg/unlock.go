@@ -54,7 +54,7 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 			var err error
 			unlockOpt.restConfig, err = clientGetter.ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("failed to read kubeconfig. Reason: %w", err)
+				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
 			}
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()

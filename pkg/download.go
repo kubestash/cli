@@ -59,7 +59,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 			var err error
 			downloadOpt.restConfig, err = clientGetter.ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("failed to read kubeconfig. Reason: %w", err)
+				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
 			}
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
@@ -133,7 +133,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 			defer func() {
 				err := os.RemoveAll(ScratchDir)
 				if err != nil {
-					klog.Errorf("failed to remove scratch dir. Reason: %w", err)
+					klog.Errorf("failed to remove scratch dir. Reason: %v", err)
 				}
 			}()
 

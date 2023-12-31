@@ -31,7 +31,7 @@ func NewCmdDebug(clientGetter genericclioptions.RESTClientGetter) *cobra.Command
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := clientGetter.ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("failed to read kubeconfig. Reason: %w", err)
+				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
 			}
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()

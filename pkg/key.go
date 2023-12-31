@@ -51,7 +51,7 @@ func NewCmdKey(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 			var err error
 			opt.config, err = clientGetter.ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("failed to read kubeconfig. Reason: %w", err)
+				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
 			}
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
