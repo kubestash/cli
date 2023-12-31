@@ -36,7 +36,7 @@ func NewCmdResume(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 
 			cfg, err := clientGetter.ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("failed to read kubeconfig. Reason: %w", err)
+				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
 			}
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
