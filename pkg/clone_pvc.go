@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
 	"kubestash.dev/apimachinery/apis"
@@ -95,7 +95,7 @@ func NewCmdClonePVC() *cobra.Command {
 
 				defer func() {
 					if err = klient.Delete(context.Background(), storageOpt.storage); err != nil {
-						klog.Errorf("Failed to delete BackupStorage %s/%s. Reason: %w", storageOpt.storage.Namespace, storageOpt.storage.Name, err)
+						klog.Errorf("Failed to delete BackupStorage %s/%s. Reason: %v", storageOpt.storage.Namespace, storageOpt.storage.Name, err)
 						return
 					}
 					klog.Infof("BackupStorage %s/%s has been deleted successfully.", storageOpt.storage.Namespace, storageOpt.storage.Name)
@@ -241,8 +241,8 @@ func (opt *storageOption) createStorage() error {
 }
 
 func (opt *storageOption) waitUntilBackupStorageIsReady() error {
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if err := klient.Get(context.Background(), client.ObjectKeyFromObject(opt.storage), opt.storage); err != nil {
+	return wait.PollUntilContextTimeout(context.Background(), PullInterval, WaitTimeOut, true, func(ctx context.Context) (done bool, err error) {
+		if err := klient.Get(ctx, client.ObjectKeyFromObject(opt.storage), opt.storage); err != nil {
 			return false, nil
 		}
 
@@ -307,10 +307,10 @@ func (opt *storageOption) newRetentionPolicy() *storageapi.RetentionPolicy {
 		Spec: storageapi.RetentionPolicySpec{
 			MaxRetentionPeriod: "1d",
 			SuccessfulSnapshots: &storageapi.SuccessfulSnapshotsKeepPolicy{
-				Last: pointer.Int32(2),
+				Last: ptr.To(int32(2)),
 			},
 			FailedSnapshots: &storageapi.FailedSnapshotsKeepPolicy{
-				Last: pointer.Int32(2),
+				Last: ptr.To(int32(2)),
 			},
 			UsagePolicy: &apis.UsagePolicy{
 				AllowedNamespaces: apis.AllowedNamespaces{
@@ -368,7 +368,7 @@ func (opt *storageOption) newBackupConfig() *coreapi.BackupConfiguration {
 						Scheduler: &coreapi.SchedulerSpec{
 							Schedule: PVCSchedule,
 							JobTemplate: coreapi.JobTemplate{
-								BackoffLimit: pointer.Int32(1),
+								BackoffLimit: ptr.To(int32(1)),
 							},
 						},
 						RetryConfig: &coreapi.RetryConfig{
@@ -419,8 +419,8 @@ func (opt *storageOption) createBackupConfig(bc *coreapi.BackupConfiguration) er
 }
 
 func waitUntilBackupConfigIsReady(bc *coreapi.BackupConfiguration) error {
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if err := klient.Get(context.Background(), client.ObjectKeyFromObject(bc), bc); err != nil {
+	return wait.PollUntilContextTimeout(context.Background(), PullInterval, WaitTimeOut, true, func(ctx context.Context) (done bool, err error) {
+		if err := klient.Get(ctx, client.ObjectKeyFromObject(bc), bc); err != nil {
 			return false, nil
 		}
 
@@ -437,8 +437,8 @@ func waitUntilBackupConfigIsReady(bc *coreapi.BackupConfiguration) error {
 }
 
 func waitUntilBackupSessionCompleted(bs *coreapi.BackupSession) error {
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if err := klient.Get(context.Background(), client.ObjectKeyFromObject(bs), bs); err != nil {
+	return wait.PollUntilContextTimeout(context.Background(), PullInterval, WaitTimeOut, true, func(ctx context.Context) (done bool, err error) {
+		if err := klient.Get(ctx, client.ObjectKeyFromObject(bs), bs); err != nil {
 			return false, nil
 		}
 
@@ -552,8 +552,8 @@ func (opt *storageOption) createRestoreSession(rs *coreapi.RestoreSession) error
 }
 
 func waitUntilRestoreSessionCompleted(rs *coreapi.RestoreSession) error {
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if err := klient.Get(context.Background(), client.ObjectKeyFromObject(rs), rs); err != nil {
+	return wait.PollUntilContextTimeout(context.Background(), PullInterval, WaitTimeOut, true, func(ctx context.Context) (done bool, err error) {
+		if err := klient.Get(ctx, client.ObjectKeyFromObject(rs), rs); err != nil {
 			return false, nil
 		}
 
