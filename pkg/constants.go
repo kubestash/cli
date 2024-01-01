@@ -33,6 +33,8 @@ const (
 	ResticRegistry = "restic"
 	ResticImage    = "restic"
 	ResticTag      = "0.16.0"
+	EnvHttpProxy   = "HTTP_PROXY"
+	EnvHttpsProxy  = "HTTPS_PROXY"
 )
 
 // Constants for debugging
@@ -54,8 +56,8 @@ const (
 // Constants for PVC cloning
 const (
 	PVCAddon       = "pvc-addon"
-	PVCBackupTask  = "pvc-backup"
-	PVCRestoreTask = "pvc-restore"
+	PVCBackupTask  = "LogicalBackup"
+	PVCRestoreTask = "LogicalBackupRestore"
 	PVCSchedule    = "*/59 * * * *"
 	LatestSnapshot = "latest"
 )

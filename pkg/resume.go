@@ -17,11 +17,10 @@ limitations under the License.
 package pkg
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
+	"kubestash.dev/apimachinery/pkg"
 )
 
 func NewCmdResume(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
@@ -34,17 +33,14 @@ func NewCmdResume(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 		RunE: func(cmd *cobra.Command, args []string) error {
 			backupConfigName := args[0]
 
-			cfg, err := clientGetter.ToRESTConfig()
-			if err != nil {
-				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
-			}
+			var err error
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
 			if err != nil {
 				return err
 			}
 
-			klient, err = newRuntimeClient(cfg)
+			klient, err = pkg.NewUncachedClient()
 			if err != nil {
 				return err
 			}

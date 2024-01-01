@@ -30,11 +30,8 @@ import (
 	"gomodules.xyz/go-sh"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/klog/v2"
 	"k8s.io/kubectl/pkg/scheme"
@@ -46,7 +43,6 @@ import (
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 var (
@@ -62,28 +58,6 @@ func init() {
 	imgRestic.Registry = ResticRegistry
 	imgRestic.Image = ResticImage
 	imgRestic.Tag = ResticTag
-}
-
-func newRuntimeClient(config *restclient.Config) (client.Client, error) {
-	scheme := runtime.NewScheme()
-	utilruntime.Must(coreapi.AddToScheme(scheme))
-	utilruntime.Must(storageapi.AddToScheme(scheme))
-	utilruntime.Must(core.AddToScheme(scheme))
-	utilruntime.Must(vsapi.AddToScheme(scheme))
-
-	hc, err := rest.HTTPClientFor(config)
-	if err != nil {
-		return nil, err
-	}
-	mapper, err := apiutil.NewDynamicRESTMapper(config, hc)
-	if err != nil {
-		return nil, err
-	}
-
-	return client.New(config, client.Options{
-		Scheme: scheme,
-		Mapper: mapper,
-	})
 }
 
 func getSecret(ref kmapi.ObjectReference) (*core.Secret, error) {
