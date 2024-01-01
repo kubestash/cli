@@ -295,8 +295,8 @@ func (opt *downloadOptions) runRestoreViaDocker(destination string, args []strin
 		"-u", currentUser.Uid,
 		"-v", ScratchDir + ":" + ScratchDir,
 		"-v", opt.destinationDir + ":" + DestinationDir,
-		"--env", "HTTP_PROXY=" + os.Getenv("HTTP_PROXY"),
-		"--env", "HTTPS_PROXY=" + os.Getenv("HTTPS_PROXY"),
+		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
+		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
 		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
 		imgRestic.ToContainerImage(),
 	}

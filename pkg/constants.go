@@ -33,6 +33,8 @@ const (
 	ResticRegistry = "restic"
 	ResticImage    = "restic"
 	ResticTag      = "0.16.0"
+	EnvHttpProxy   = "HTTP_PROXY"
+	EnvHttpsProxy  = "HTTPS_PROXY"
 )
 
 // Constants for debugging
