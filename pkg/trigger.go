@@ -45,14 +45,7 @@ func NewCmdTriggerBackup(clientGetter genericclioptions.RESTClientGetter) *cobra
 		RunE: func(cmd *cobra.Command, args []string) error {
 			backupConfigName := args[0]
 
-<<<<<<< HEAD
-			cfg, err := clientGetter.ToRESTConfig()
-			if err != nil {
-				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
-			}
-=======
 			var err error
->>>>>>> f5312de (Update uncached client + Add session list in trigger backup)
 
 			klient, err = pkg.NewUncachedClient()
 			if err != nil {

@@ -60,31 +60,6 @@ func init() {
 	imgRestic.Tag = ResticTag
 }
 
-<<<<<<< HEAD
-func newRuntimeClient(config *restclient.Config) (client.Client, error) {
-	scheme := runtime.NewScheme()
-	utilruntime.Must(coreapi.AddToScheme(scheme))
-	utilruntime.Must(storageapi.AddToScheme(scheme))
-	utilruntime.Must(core.AddToScheme(scheme))
-	utilruntime.Must(vsapi.AddToScheme(scheme))
-
-	hc, err := rest.HTTPClientFor(config)
-	if err != nil {
-		return nil, err
-	}
-	mapper, err := apiutil.NewDynamicRESTMapper(config, hc)
-	if err != nil {
-		return nil, err
-	}
-
-	return client.New(config, client.Options{
-		Scheme: scheme,
-		Mapper: mapper,
-	})
-}
-
-=======
->>>>>>> f5312de (Update uncached client + Add session list in trigger backup)
 func getSecret(ref kmapi.ObjectReference) (*core.Secret, error) {
 	secret := &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{

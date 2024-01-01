@@ -28,14 +28,7 @@ func NewCmdDebug(clientGetter genericclioptions.RESTClientGetter) *cobra.Command
 		Short:             `Debug common KubeStash issues`,
 		DisableAutoGenTag: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-<<<<<<< HEAD
-			cfg, err := clientGetter.ToRESTConfig()
-			if err != nil {
-				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
-			}
-=======
 			var err error
->>>>>>> f5312de (Update uncached client + Add session list in trigger backup)
 
 			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
 			if err != nil {
