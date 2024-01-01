@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
@@ -72,18 +73,18 @@ func NewCmdDebugBackup() *cobra.Command {
 			}
 
 			if latest {
-				if err := debugOpt.debugLatestBackupSessions(backupSessions); err != nil {
+				if err = debugOpt.debugLatestBackupSessions(backupSessions); err != nil {
 					return err
 				}
 				return nil
 			}
 
 			for _, bs := range backupSessions {
-				if !debugOpt.shouldDebugSession() {
+				if !slices.Contains(debugOpt.sessions, bs.Spec.Session) {
 					continue
 				}
 				debugOpt.backupSession = bs
-				if err := debugOpt.showTableForFailedBackupSession(); err != nil {
+				if err = debugOpt.showTableForFailedBackupSession(); err != nil {
 					return err
 				}
 			}
@@ -208,19 +209,6 @@ func (opt *backupDebugOptions) getLatestBackupSession(session string, backupSess
 		}
 	}
 	return bs
-}
-
-func (opt *backupDebugOptions) shouldDebugSession() bool {
-	if len(opt.sessions) == 0 {
-		return true
-	}
-
-	for _, session := range opt.sessions {
-		if opt.backupSession.Spec.Session == session {
-			return true
-		}
-	}
-	return false
 }
 
 func (opt *backupDebugOptions) showTableForFailedBackupSession() error {

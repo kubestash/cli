@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/pkg"
 	"kubestash.dev/apimachinery/pkg/restic"
 )
 
@@ -59,7 +60,7 @@ func NewCmdKey(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 				return err
 			}
 
-			klient, err = newRuntimeClient(opt.config)
+			klient, err = pkg.NewUncachedClient()
 			if err != nil {
 				return err
 			}
@@ -138,8 +139,8 @@ func (opt *keyOptions) runCmdViaDocker(args []string) error {
 		"--rm",
 		"-u", currentUser.Uid,
 		"-v", ScratchDir + ":" + ScratchDir,
-		"--env", "HTTP_PROXY=" + os.Getenv("HTTP_PROXY"),
-		"--env", "HTTPS_PROXY=" + os.Getenv("HTTPS_PROXY"),
+		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
+		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
 		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
 	}
 

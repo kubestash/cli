@@ -63,7 +63,10 @@ func NewCmdClonePVC() *cobra.Command {
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			flags.EnsureRequiredFlags(cmd, "provider", "bucket", "encrypt-secret", "encrypt-secret-namespace")
+			flags.EnsureRequiredFlags(cmd, "encrypt-secret", "encrypt-secret-namespace")
+			if storageName == "" {
+				flags.EnsureRequiredFlags(cmd, "provider", "bucket")
+			}
 			if storageOpt.provider == string(storageapi.ProviderS3) {
 				flags.EnsureRequiredFlags(cmd, "endpoint")
 			}
@@ -211,14 +214,6 @@ func (opt *storageOption) getBackendInfo() storageapi.Backend {
 				Container: opt.bucket,
 				Prefix:    opt.prefix,
 				Secret:    opt.storageSecret,
-			},
-		}
-	case string(storageapi.ProviderRest):
-		backend = storageapi.Backend{
-			Provider: storageapi.ProviderRest,
-			Rest: &storageapi.RestServerSpec{
-				URL:    opt.endpoint,
-				Secret: opt.storageSecret,
 			},
 		}
 	}

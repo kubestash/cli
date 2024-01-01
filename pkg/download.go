@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -32,6 +33,7 @@ import (
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/pkg"
 	"kubestash.dev/apimachinery/pkg/restic"
 )
 
@@ -67,7 +69,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				return err
 			}
 
-			klient, err = newRuntimeClient(downloadOpt.restConfig)
+			klient, err = pkg.NewUncachedClient()
 			if err != nil {
 				return err
 			}
@@ -156,7 +158,8 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 			}
 
 			for compName, comp := range snapshot.Status.Components {
-				if !downloadOpt.shouldRestoreComponent(compName) {
+				if len(downloadOpt.components) != 0 &&
+					!slices.Contains(downloadOpt.components, compName) {
 					continue
 				}
 
@@ -292,8 +295,8 @@ func (opt *downloadOptions) runRestoreViaDocker(destination string, args []strin
 		"-u", currentUser.Uid,
 		"-v", ScratchDir + ":" + ScratchDir,
 		"-v", opt.destinationDir + ":" + DestinationDir,
-		"--env", "HTTP_PROXY=" + os.Getenv("HTTP_PROXY"),
-		"--env", "HTTPS_PROXY=" + os.Getenv("HTTPS_PROXY"),
+		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
+		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
 		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
 		imgRestic.ToContainerImage(),
 	}
@@ -320,17 +323,4 @@ func (opt *downloadOptions) runRestoreViaDocker(destination string, args []strin
 		}
 	}
 	return nil
-}
-
-func (opt *downloadOptions) shouldRestoreComponent(componentName string) bool {
-	if opt.components == nil {
-		return true
-	}
-
-	for _, comp := range opt.components {
-		if comp == componentName {
-			return true
-		}
-	}
-	return false
 }
