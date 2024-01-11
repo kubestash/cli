@@ -173,7 +173,7 @@ func (opt *storageOption) getBackendInfo() storageapi.Backend {
 				Bucket:         opt.bucket,
 				Prefix:         opt.prefix,
 				MaxConnections: opt.maxConnections,
-				Secret:         opt.storageSecret,
+				SecretName:     opt.storageSecret,
 			},
 		}
 	case string(storageapi.ProviderAzure):
@@ -183,39 +183,41 @@ func (opt *storageOption) getBackendInfo() storageapi.Backend {
 				Container:      opt.bucket,
 				Prefix:         opt.prefix,
 				MaxConnections: opt.maxConnections,
-				Secret:         opt.storageSecret,
+				SecretName:     opt.storageSecret,
 			},
 		}
 	case string(storageapi.ProviderS3):
 		backend = storageapi.Backend{
 			Provider: storageapi.ProviderS3,
 			S3: &storageapi.S3Spec{
-				Bucket:   opt.bucket,
-				Prefix:   opt.prefix,
-				Endpoint: opt.endpoint,
-				Region:   opt.region,
-				Secret:   opt.storageSecret,
+				Bucket:     opt.bucket,
+				Prefix:     opt.prefix,
+				Endpoint:   opt.endpoint,
+				Region:     opt.region,
+				SecretName: opt.storageSecret,
 			},
 		}
-	case string(storageapi.ProviderB2):
-		backend = storageapi.Backend{
-			Provider: storageapi.ProviderB2,
-			B2: &storageapi.B2Spec{
-				Bucket:         opt.bucket,
-				Prefix:         opt.prefix,
-				MaxConnections: opt.maxConnections,
-				Secret:         opt.storageSecret,
-			},
-		}
-	case string(storageapi.ProviderSwift):
-		backend = storageapi.Backend{
-			Provider: storageapi.ProviderSwift,
-			Swift: &storageapi.SwiftSpec{
-				Container: opt.bucket,
-				Prefix:    opt.prefix,
-				Secret:    opt.storageSecret,
-			},
-		}
+		/*
+			case string(storageapi.ProviderB2):
+				backend = storageapi.Backend{
+					Provider: storageapi.ProviderB2,
+					B2: &storageapi.B2Spec{
+						Bucket:         opt.bucket,
+						Prefix:         opt.prefix,
+						MaxConnections: opt.maxConnections,
+						Secret:         opt.storageSecret,
+					},
+				}
+			case string(storageapi.ProviderSwift):
+				backend = storageapi.Backend{
+					Provider: storageapi.ProviderSwift,
+					Swift: &storageapi.SwiftSpec{
+						Container: opt.bucket,
+						Prefix:    opt.prefix,
+						Secret:    opt.storageSecret,
+					},
+				}
+		*/
 	}
 
 	return backend
