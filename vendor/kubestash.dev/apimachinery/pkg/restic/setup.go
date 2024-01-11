@@ -377,7 +377,7 @@ func (w *ResticWrapper) setBackupStorageVariables() error {
 		w.config.bucket = s3.Bucket
 		w.config.endpoint = s3.Endpoint
 		w.config.path = s3.Prefix
-		secret = s3.Secret
+		secret = s3.SecretName
 	}
 
 	if gcs := bs.Spec.Storage.GCS; gcs != nil {
@@ -385,7 +385,7 @@ func (w *ResticWrapper) setBackupStorageVariables() error {
 		w.config.bucket = gcs.Bucket
 		w.config.path = gcs.Prefix
 		w.config.MaxConnections = gcs.MaxConnections
-		secret = gcs.Secret
+		secret = gcs.SecretName
 	}
 
 	if azure := bs.Spec.Storage.Azure; azure != nil {
@@ -394,7 +394,7 @@ func (w *ResticWrapper) setBackupStorageVariables() error {
 		w.config.bucket = azure.Container
 		w.config.path = azure.Prefix
 		w.config.MaxConnections = azure.MaxConnections
-		secret = azure.Secret
+		secret = azure.SecretName
 	}
 
 	if local := bs.Spec.Storage.Local; local != nil {
