@@ -131,8 +131,6 @@ const (
 
 const (
 	ComponentPod            = "pod"
-	ComponentDeployment     = "deployment"
-	ComponentPVC            = "pvc"
 	ComponentDump           = "dump"
 	ComponentWal            = "wal"
 	ComponentManifest       = "manifest"
