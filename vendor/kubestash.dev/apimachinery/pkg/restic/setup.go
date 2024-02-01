@@ -377,6 +377,7 @@ func (w *ResticWrapper) setBackupStorageVariables() error {
 		w.config.bucket = s3.Bucket
 		w.config.endpoint = s3.Endpoint
 		w.config.path = s3.Prefix
+		w.config.insecureTLS = s3.InsecureTLS
 		secret = s3.SecretName
 	}
 
