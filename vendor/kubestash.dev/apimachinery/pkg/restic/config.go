@@ -84,6 +84,7 @@ type backend struct {
 	bucket         string
 	endpoint       string
 	region         string
+	insecureTLS    bool
 	path           string
 	storageAccount string
 }
@@ -224,4 +225,11 @@ func (w *ResticWrapper) Copy() *ResticWrapper {
 	}
 	out.config = w.config
 	return out
+}
+
+func (w *ResticWrapper) appendInsecureTLSFlag(args []interface{}) []interface{} {
+	if w.config.insecureTLS {
+		return append(args, "--insecure-tls")
+	}
+	return args
 }

@@ -79,6 +79,7 @@ func (w *ResticWrapper) listSnapshots(snapshotIDs []string) ([]Snapshot, error) 
 	result := make([]Snapshot, 0)
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json", "--quiet", "--no-lock"})
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 	for _, id := range snapshotIDs {
 		args = append(args, id)
@@ -94,6 +95,7 @@ func (w *ResticWrapper) listSnapshots(snapshotIDs []string) ([]Snapshot, error) 
 func (w *ResticWrapper) tryDeleteSnapshots(snapshotIDs []string) ([]byte, error) {
 	args := w.appendCacheDirFlag([]interface{}{"forget", "--quiet", "--prune"})
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 	for _, id := range snapshotIDs {
 		args = append(args, id)
@@ -118,6 +120,7 @@ func (w *ResticWrapper) repositoryExist() bool {
 	klog.Infoln("Checking whether the backend repository exist or not....")
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json", "--no-lock"})
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 	if _, err := w.run(Command{Name: ResticCMD, Args: args}); err == nil {
 		return true
@@ -133,6 +136,7 @@ func (w *ResticWrapper) initRepository() error {
 
 	args := w.appendCacheDirFlag([]interface{}{"init"})
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 	_, err := w.run(Command{Name: ResticCMD, Args: args})
 	return err
@@ -169,6 +173,7 @@ func (w *ResticWrapper) backup(params backupParams) ([]byte, error) {
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCleanupCacheFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
@@ -192,6 +197,7 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCleanupCacheFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 
 	commands = append(commands, Command{Name: ResticCMD, Args: args})
@@ -237,6 +243,7 @@ func (w *ResticWrapper) restore(params restoreParams) ([]byte, error) {
 	}
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
@@ -268,6 +275,7 @@ func (w *ResticWrapper) DumpOnce(dumpOptions DumpOptions) ([]byte, error) {
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 
 	// first add restic command, then add StdoutPipeCommands
 	commands := []Command{
@@ -282,6 +290,7 @@ func (w *ResticWrapper) check() ([]byte, error) {
 	args := w.appendCacheDirFlag([]interface{}{"check", "--no-lock"})
 	args = w.appendCaCertFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
@@ -295,6 +304,7 @@ func (w *ResticWrapper) stats(snapshotID string) ([]byte, error) {
 	args = w.appendMaxConnectionsFlag(args)
 	args = append(args, "--quiet", "--json", "--mode", "raw-data", "--no-lock")
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
@@ -304,6 +314,7 @@ func (w *ResticWrapper) unlock() ([]byte, error) {
 	args := w.appendCacheDirFlag([]interface{}{"unlock", "--remove-all"})
 	args = w.appendMaxConnectionsFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
@@ -457,6 +468,7 @@ func (w *ResticWrapper) addKey(params keyParams) ([]byte, error) {
 	args = w.appendCacheDirFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
@@ -469,6 +481,7 @@ func (w *ResticWrapper) listKey() ([]byte, error) {
 	args = w.appendCacheDirFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
@@ -485,6 +498,7 @@ func (w *ResticWrapper) updateKey(params keyParams) ([]byte, error) {
 	args = w.appendCacheDirFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
@@ -497,6 +511,7 @@ func (w *ResticWrapper) removeKey(params keyParams) ([]byte, error) {
 	args = w.appendCacheDirFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
