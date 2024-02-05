@@ -23,7 +23,7 @@ import (
 	"kubestash.dev/apimachinery/apis"
 
 	"encoding/json"
-	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v7/apis/volumesnapshot/v1"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	cu "kmodules.xyz/client-go/client"
 	addonapi "kubestash.dev/apimachinery/apis/addons/v1alpha1"

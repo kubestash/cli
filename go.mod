@@ -21,7 +21,7 @@ require (
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	kmodules.xyz/client-go v0.29.6
 	kmodules.xyz/offshoot-api v0.29.0
-	kubestash.dev/apimachinery v0.4.0
+	kubestash.dev/apimachinery v0.5.0
 	sigs.k8s.io/controller-runtime v0.17.0
 )
 
@@ -64,7 +64,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-runewidth v0.0.10 // indirect
@@ -117,7 +116,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.29.0 // indirect
 	k8s.io/component-base v0.29.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
-	kmodules.xyz/objectstore-api v0.29.0 // indirect
+	kmodules.xyz/objectstore-api v0.29.1 // indirect
 	kmodules.xyz/prober v0.29.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.13.5-0.20230601165947-6ce0bf390ce3 // indirect
