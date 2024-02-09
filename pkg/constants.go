@@ -23,11 +23,11 @@ const (
 	CmdKubectl = "kubectl"
 	CmdDocker  = "docker"
 
-	ScratchDir          = "/kubestash-tmp/scratch"
-	DestinationDir      = "/kubestash-tmp/destination"
+	ScratchDir          = "/tmp/scratch"
+	DestinationDir      = "/tmp/destination"
 	SnapshotDownloadDir = "/kubestash-tmp/snapshot"
 	PasswordFile        = "/kubestash-tmp/password.txt"
-	ConfigDir           = "/kubestash-tmp/scratch/config"
+	ConfigDir           = "/tmp/scratch/config"
 
 	ResticEnvs     = "restic-envs"
 	ResticRegistry = "restic"
