@@ -27,7 +27,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:               "kubectl-kubestash",
 		Short:             `kubectl plugin for KubeStash`,
-		Long:              `kubectl plugin for KubeStash. For more information, visit here: https://appscode.com/products/kubestash`,
+		Long:              `kubectl plugin for KubeStash. For more information, visit here: https://kubestash.com`,
 		DisableAutoGenTag: true,
 	}
 
