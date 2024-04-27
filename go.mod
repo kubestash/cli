@@ -22,15 +22,9 @@ require (
 	k8s.io/kubectl v0.29.0
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
 	kmodules.xyz/client-go v0.29.13
-	kmodules.xyz/offshoot-api v0.29.0
-	kubestash.dev/apimachinery v0.7.0
+	kmodules.xyz/offshoot-api v0.29.2
+	kubestash.dev/apimachinery v0.8.0
 	sigs.k8s.io/controller-runtime v0.17.2
-)
-
-require (
-	github.com/google/pprof v0.0.0-20221118152302-e6195bd50e26 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/rogpeppe/go-internal v1.11.0 // indirect
 )
 
 require (
@@ -86,7 +80,6 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/onsi/gomega v1.31.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect

@@ -109,8 +109,6 @@ github.com/google/go-containerregistry/pkg/name
 ## explicit; go 1.12
 github.com/google/gofuzz
 github.com/google/gofuzz/bytesource
-# github.com/google/pprof v0.0.0-20221118152302-e6195bd50e26
-## explicit; go 1.18
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 ## explicit; go 1.13
 github.com/google/shlex
@@ -184,8 +182,6 @@ github.com/munnerz/goautoneg
 # github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
 ## explicit
 github.com/mxk/go-flowrate/flowrate
-# github.com/nxadm/tail v1.4.11
-## explicit; go 1.13
 # github.com/olekukonko/tablewriter v0.0.6-0.20230925090304-df64c4bbad77 => github.com/gomodules/tablewriter v0.0.6-0.20230422125635-f6b4e4ae60d8
 ## explicit; go 1.12
 github.com/olekukonko/tablewriter
@@ -210,8 +206,6 @@ github.com/peterbourgon/diskv
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-## explicit
 # github.com/prometheus/client_golang v1.18.0
 ## explicit; go 1.19
 github.com/prometheus/client_golang/prometheus
@@ -234,8 +228,6 @@ github.com/prometheus/procfs/internal/util
 # github.com/rivo/uniseg v0.1.0
 ## explicit; go 1.12
 github.com/rivo/uniseg
-# github.com/rogpeppe/go-internal v1.11.0
-## explicit; go 1.19
 # github.com/russross/blackfriday/v2 v2.1.0
 ## explicit
 github.com/russross/blackfriday/v2
@@ -829,14 +821,14 @@ kmodules.xyz/client-go/meta
 # kmodules.xyz/objectstore-api v0.29.1
 ## explicit; go 1.21
 kmodules.xyz/objectstore-api/api/v1
-# kmodules.xyz/offshoot-api v0.29.0
-## explicit; go 1.21.5
+# kmodules.xyz/offshoot-api v0.29.2
+## explicit; go 1.22.0
 kmodules.xyz/offshoot-api/api/v1
 # kmodules.xyz/prober v0.29.0
 ## explicit; go 1.21.5
 kmodules.xyz/prober/api/v1
-# kubestash.dev/apimachinery v0.7.0
-## explicit; go 1.21.5
+# kubestash.dev/apimachinery v0.8.0
+## explicit; go 1.22.0
 kubestash.dev/apimachinery/apis
 kubestash.dev/apimachinery/apis/addons/v1alpha1
 kubestash.dev/apimachinery/apis/config/v1alpha1
