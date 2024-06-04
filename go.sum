@@ -646,8 +646,8 @@ kmodules.xyz/offshoot-api v0.29.4 h1:WQV2BIUIoVKKiqZNmZ4gAy367jEdwBhEl3dFCLZM1qA
 kmodules.xyz/offshoot-api v0.29.4/go.mod h1:e+NQ0s4gW/YTPWBWEfdISZcmk+tlTq8IjvP5SLdqvko=
 kmodules.xyz/prober v0.29.0 h1:Ex7m4F9rH7uWNNJlLgP63ROOM+nUATJkC2L5OQ7nwMg=
 kmodules.xyz/prober v0.29.0/go.mod h1:UtK+HKyI1lFLEKX+HFLyOCVju6TO93zv3kwGpzqmKOo=
-kubestash.dev/apimachinery v0.8.1-0.20240604180741-126c359043bc h1:8pJBdyfg+srWoAKpchKo7AzZpUf+Zs8N5idQlNUyIvI=
-kubestash.dev/apimachinery v0.8.1-0.20240604180741-126c359043bc/go.mod h1:ElttP7EeECmi8+qsJJ9s7WjUlKG8MkjHSVo/gV6FV88=
+kubestash.dev/apimachinery v0.9.0 h1:jj5JW6HuhaQogztEhFzVJ7rkDuOaHivX836tPJ1N51E=
+kubestash.dev/apimachinery v0.9.0/go.mod h1:ElttP7EeECmi8+qsJJ9s7WjUlKG8MkjHSVo/gV6FV88=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd h1:EDPBXCAspyGV4jQlpZSudPeMmr1bNJefnuqLsRAsHZo=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd/go.mod h1:B8JuhiUyNFVKdsE8h686QcCxMaH6HrOAZj4vswFpcB0=
