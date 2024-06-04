@@ -23,7 +23,7 @@ require (
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0
 	kmodules.xyz/client-go v0.30.1
 	kmodules.xyz/offshoot-api v0.29.4
-	kubestash.dev/apimachinery v0.8.1-0.20240604180741-126c359043bc
+	kubestash.dev/apimachinery v0.9.0
 	sigs.k8s.io/controller-runtime v0.18.3
 )
 

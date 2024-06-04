@@ -149,8 +149,6 @@ type ControllerWebhook struct {
 // +kubebuilder:object:root=true
 
 // ControllerManagerConfiguration is the Schema for the GenericControllerManagerConfigurations API.
-//
-// Deprecated: The component config package has been deprecated and will be removed in a future release. Users should migrate to their own config implementation, please share feedback in https://github.com/kubernetes-sigs/controller-runtime/issues/895.
 type ControllerManagerConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 
@@ -159,8 +157,6 @@ type ControllerManagerConfiguration struct {
 }
 
 // Complete returns the configuration for controller-runtime.
-//
-// Deprecated: The component config package has been deprecated and will be removed in a future release. Users should migrate to their own config implementation, please share feedback in https://github.com/kubernetes-sigs/controller-runtime/issues/895.
 func (c *ControllerManagerConfigurationSpec) Complete() (ControllerManagerConfigurationSpec, error) {
 	return *c, nil
 }
