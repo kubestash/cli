@@ -8,7 +8,7 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0
 	github.com/olekukonko/tablewriter v0.0.6-0.20230925090304-df64c4bbad77
 	github.com/spf13/cobra v1.8.0
-	golang.org/x/text v0.15.0
+	golang.org/x/text v0.16.0
 	gomodules.xyz/flags v0.1.3
 	gomodules.xyz/go-sh v0.1.0
 	gomodules.xyz/logs v0.0.7
@@ -21,10 +21,10 @@ require (
 	k8s.io/klog/v2 v2.120.1
 	k8s.io/kubectl v0.29.0
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0
-	kmodules.xyz/client-go v0.30.1
+	kmodules.xyz/client-go v0.30.8
 	kmodules.xyz/offshoot-api v0.29.4
-	kubestash.dev/apimachinery v0.9.0
-	sigs.k8s.io/controller-runtime v0.18.3
+	kubestash.dev/apimachinery v0.10.0
+	sigs.k8s.io/controller-runtime v0.18.4
 )
 
 require (
@@ -98,11 +98,11 @@ require (
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
-	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/oauth2 v0.15.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/oauth2 v0.18.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/term v0.20.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/term v0.21.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f // indirect
 	gomodules.xyz/envsubst v0.2.0 // indirect
