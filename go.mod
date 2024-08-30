@@ -21,9 +21,9 @@ require (
 	k8s.io/klog/v2 v2.120.1
 	k8s.io/kubectl v0.29.0
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0
-	kmodules.xyz/client-go v0.30.8
+	kmodules.xyz/client-go v0.30.13
 	kmodules.xyz/offshoot-api v0.29.4
-	kubestash.dev/apimachinery v0.11.0
+	kubestash.dev/apimachinery v0.12.0
 	sigs.k8s.io/controller-runtime v0.18.4
 )
 
