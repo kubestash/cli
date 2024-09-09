@@ -35,7 +35,8 @@ import (
 )
 
 const (
-	ResticCMD = "restic"
+	ResticCMD  = "restic"
+	TimeoutCMD = "timeout"
 )
 
 type Snapshot struct {
@@ -176,7 +177,10 @@ func (w *ResticWrapper) backup(params backupParams) ([]byte, error) {
 	args = w.appendInsecureTLSFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 
-	return w.run(Command{Name: ResticCMD, Args: args})
+	command := Command{Name: ResticCMD, Args: args}
+	command = w.wrapWithTimeoutIfConfigured(command)
+
+	return w.run(command)
 }
 
 func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
@@ -200,7 +204,10 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 	args = w.appendInsecureTLSFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 
-	commands = append(commands, Command{Name: ResticCMD, Args: args})
+	command := Command{Name: ResticCMD, Args: args}
+	command = w.wrapWithTimeoutIfConfigured(command)
+
+	commands = append(commands, command)
 	return w.run(commands...)
 }
 
@@ -246,7 +253,10 @@ func (w *ResticWrapper) restore(params restoreParams) ([]byte, error) {
 	args = w.appendInsecureTLSFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 
-	return w.run(Command{Name: ResticCMD, Args: args})
+	command := Command{Name: ResticCMD, Args: args}
+	command = w.wrapWithTimeoutIfConfigured(command)
+
+	return w.run(command)
 }
 
 func (w *ResticWrapper) DumpOnce(dumpOptions DumpOptions) ([]byte, error) {
@@ -277,10 +287,11 @@ func (w *ResticWrapper) DumpOnce(dumpOptions DumpOptions) ([]byte, error) {
 	args = w.appendMaxConnectionsFlag(args)
 	args = w.appendInsecureTLSFlag(args)
 
+	command := Command{Name: ResticCMD, Args: args}
+	command = w.wrapWithTimeoutIfConfigured(command)
+
 	// first add restic command, then add StdoutPipeCommands
-	commands := []Command{
-		{Name: ResticCMD, Args: args},
-	}
+	commands := []Command{command}
 	commands = append(commands, dumpOptions.StdoutPipeCommands...)
 	return w.run(commands...)
 }
@@ -368,7 +379,7 @@ func (w *ResticWrapper) run(commands ...Command) ([]byte, error) {
 	w.sh.Stderr = io.MultiWriter(os.Stderr, errBuff)
 
 	for _, cmd := range commands {
-		if cmd.Name == ResticCMD {
+		if cmd.Name == ResticCMD || cmd.Name == TimeoutCMD {
 			// first apply NiceSettings, then apply IONiceSettings
 			cmd, err = w.applyNiceSettings(cmd)
 			if err != nil {
@@ -393,6 +404,9 @@ func (w *ResticWrapper) run(commands ...Command) ([]byte, error) {
 func formatError(err error, stdErr string) error {
 	parts := strings.Split(strings.TrimSuffix(stdErr, "\n"), "\n")
 	if len(parts) > 1 {
+		if strings.Contains(parts[1], "signal terminated") {
+			return errors.New(strings.Join(append([]string{"deadline exceeded or signal terminated"}, parts[2:]...), " "))
+		}
 		return errors.New(strings.Join(parts[1:], " "))
 	}
 	return err
@@ -514,4 +528,13 @@ func (w *ResticWrapper) removeKey(params keyParams) ([]byte, error) {
 	args = w.appendInsecureTLSFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
+}
+
+func (w *ResticWrapper) wrapWithTimeoutIfConfigured(cmd Command) Command {
+	if w.config.Timeout != nil {
+		timeoutArgs := []interface{}{fmt.Sprintf("%f", w.config.Timeout.Seconds()), cmd.Name}
+		timeoutArgs = append(timeoutArgs, cmd.Args...)
+		return Command{Name: TimeoutCMD, Args: timeoutArgs}
+	}
+	return cmd
 }
