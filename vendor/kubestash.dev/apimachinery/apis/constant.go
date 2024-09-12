@@ -75,6 +75,7 @@ const (
 	KubeStashAppRefKind      = "kubestash.com/app-ref-kind"
 	KubeStashAppRefNamespace = "kubestash.com/app-ref-namespace"
 	KubeStashAppRefName      = "kubestash.com/app-ref-name"
+	KubeDBAppVersion         = "kubedb.com/db-version"
 )
 
 // Keys for structure logging
