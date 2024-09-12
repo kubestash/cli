@@ -21,6 +21,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
@@ -34,19 +40,14 @@ import (
 	_ "gocloud.dev/blob/gcsblob"
 	"gocloud.dev/blob/s3blob"
 	_ "gocloud.dev/blob/s3blob"
-	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
 	"kubestash.dev/apimachinery/apis"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
-	"net/http"
-	"os"
-	"path"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"strings"
 )
 
 const (
@@ -256,15 +257,10 @@ func (b *Blob) Upload(ctx context.Context, filepath string, data []byte, content
 	}
 	defer closeBucket(ctx, bucket)
 
-	writerOptions := &blob.WriterOptions{
+	w, err := bucket.NewWriter(ctx, fileName, &blob.WriterOptions{
+		ContentType:                 contentType,
 		DisableContentTypeDetection: true,
-	}
-	if contentType != "" {
-		writerOptions.ContentType = contentType
-		writerOptions.DisableContentTypeDetection = false
-	}
-
-	w, err := bucket.NewWriter(ctx, fileName, writerOptions)
+	})
 	if err != nil {
 		return err
 	}
@@ -281,23 +277,18 @@ func (b *Blob) Upload(ctx context.Context, filepath string, data []byte, content
 
 func (b *Blob) Debug(ctx context.Context, filepath string, data []byte, contentType string) error {
 	dir, fileName := path.Split(filepath)
-	bucket, err := b.openBucketWithDebug(ctx, dir)
+	bucket, err := b.openBucketWithDebug(ctx, dir, true)
 	if err != nil {
 		return err
 	}
 
 	defer closeBucket(ctx, bucket)
 
-	writerOptions := &blob.WriterOptions{
-		DisableContentTypeDetection: true,
-	}
-	if contentType != "" {
-		writerOptions.ContentType = contentType
-		writerOptions.DisableContentTypeDetection = false
-	}
-
 	klog.Infof("Uploading data to backend...")
-	w, err := bucket.NewWriter(ctx, fileName, writerOptions)
+	w, err := bucket.NewWriter(ctx, fileName, &blob.WriterOptions{
+		ContentType:                 contentType,
+		DisableContentTypeDetection: true,
+	})
 	if err != nil {
 		return err
 	}
@@ -389,32 +380,10 @@ func checkIfObjectFile(obj *blob.ListObject) bool {
 }
 
 func (b *Blob) openBucket(ctx context.Context, dir string) (*blob.Bucket, error) {
-	var bucket *blob.Bucket
-	var err error
-	if b.backupStorage.Spec.Storage.Provider == storageapi.ProviderS3 {
-		sess, err := b.getS3Session()
-		if err != nil {
-			return nil, err
-		}
-		bucket, err = s3blob.OpenBucket(ctx, sess, b.backupStorage.Spec.Storage.S3.Bucket, nil)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		bucket, err = blob.OpenBucket(ctx, b.storageURL)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	suffix := strings.Trim(path.Join(b.prefix, dir), "/") + "/"
-	if suffix == string(os.PathSeparator) {
-		return bucket, nil
-	}
-	return blob.PrefixedBucket(bucket, suffix), nil
+	return b.openBucketWithDebug(ctx, dir, false)
 }
 
-func (b *Blob) openBucketWithDebug(ctx context.Context, dir string) (*blob.Bucket, error) {
+func (b *Blob) openBucketWithDebug(ctx context.Context, dir string, debug bool) (*blob.Bucket, error) {
 	var bucket *blob.Bucket
 	var err error
 	if b.backupStorage.Spec.Storage.Provider == storageapi.ProviderS3 {
@@ -422,8 +391,10 @@ func (b *Blob) openBucketWithDebug(ctx context.Context, dir string) (*blob.Bucke
 		if err != nil {
 			return nil, err
 		}
-		// Currently Only S3 has debugging support, because for the rest of providers we're using default blob.
-		sess.Config.WithLogLevel(aws.LogDebug)
+		if debug {
+			// Currently Only S3 has debugging support, because for the rest of providers we're using default blob.
+			sess.Config.WithLogLevel(aws.LogDebug)
+		}
 		bucket, err = s3blob.OpenBucket(ctx, sess, b.backupStorage.Spec.Storage.S3.Bucket, nil)
 		if err != nil {
 			return nil, err

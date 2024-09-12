@@ -30,7 +30,7 @@ import (
 
 const (
 	debugMetaFile   = "debug_metadata.yaml"
-	yamlContentType = "application/yaml"
+	contentTypeYAML = "application/yaml"
 )
 
 func NewCmdDebugBackupStorage() *cobra.Command {
@@ -61,7 +61,7 @@ func NewCmdDebugBackupStorage() *cobra.Command {
 				return err
 			}
 
-			return backend.Debug(ctx, debugMetaFile, d, yamlContentType)
+			return backend.Debug(ctx, debugMetaFile, d, contentTypeYAML)
 		},
 	}
 	return cmd
