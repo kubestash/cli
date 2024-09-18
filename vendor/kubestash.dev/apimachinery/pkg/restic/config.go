@@ -18,11 +18,11 @@ package restic
 
 import (
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"os"
 	"path/filepath"
 	"sort"
-
-	"kubestash.dev/apimachinery/apis/storage/v1alpha1"
 
 	shell "gomodules.xyz/go-sh"
 	core "k8s.io/api/core/v1"
@@ -103,6 +103,7 @@ type SetupOptions struct {
 	EnableCache      bool
 	Nice             *ofst.NiceSettings
 	IONice           *ofst.IONiceSettings
+	Timeout          *metav1.Duration
 }
 
 type KeyOptions struct {

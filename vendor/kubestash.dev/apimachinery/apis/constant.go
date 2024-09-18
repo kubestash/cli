@@ -75,7 +75,6 @@ const (
 	KubeStashAppRefKind      = "kubestash.com/app-ref-kind"
 	KubeStashAppRefNamespace = "kubestash.com/app-ref-namespace"
 	KubeStashAppRefName      = "kubestash.com/app-ref-name"
-	KubeDBAppVersion         = "kubedb.com/db-version"
 )
 
 // Keys for structure logging
@@ -152,4 +151,10 @@ const (
 	OwnerKey          = ".metadata.controller"
 	SnapshotVersionV1 = "v1"
 	DirRepository     = "repository"
+)
+
+// Annotations
+const (
+	AnnKubeDBAppVersion          = "kubedb.com/db-version"
+	AnnRestoreSessionBeneficiary = "restoresession.kubestash.com/beneficiary"
 )

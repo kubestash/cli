@@ -100,8 +100,9 @@ func triggerBackup(backupConfig *coreapi.BackupConfiguration, session coreapi.Se
 				Kind:     coreapi.ResourceKindBackupConfiguration,
 				Name:     backupConfig.Name,
 			},
-			Session:   session.Name,
-			RetryLeft: 0,
+			Session:       session.Name,
+			RetryLeft:     0,
+			BackupTimeout: session.BackupTimeout,
 		},
 	}
 

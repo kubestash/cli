@@ -1377,7 +1377,7 @@ kmodules.xyz/offshoot-api/api/v1
 # kmodules.xyz/prober v0.29.0
 ## explicit; go 1.21.5
 kmodules.xyz/prober/api/v1
-# kubestash.dev/apimachinery v0.12.1-0.20240912114724-e2698888fc6a
+# kubestash.dev/apimachinery v0.12.1-0.20240918082744-9cbda1e7f2b1
 ## explicit; go 1.22.0
 kubestash.dev/apimachinery/apis
 kubestash.dev/apimachinery/apis/addons/v1alpha1
