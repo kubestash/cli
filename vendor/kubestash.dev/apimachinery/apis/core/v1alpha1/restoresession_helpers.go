@@ -20,12 +20,12 @@ import (
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
-	"kubestash.dev/apimachinery/apis"
-	"kubestash.dev/apimachinery/crds"
-
 	"kmodules.xyz/client-go/apiextensions"
 	cutil "kmodules.xyz/client-go/conditions"
 	meta_util "kmodules.xyz/client-go/meta"
+	"kubestash.dev/apimachinery/apis"
+	"kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/crds"
 )
 
 func (_ RestoreSession) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
@@ -44,7 +44,8 @@ func (rs *RestoreSession) CalculatePhase() RestorePhase {
 	if cutil.IsConditionTrue(rs.Status.Conditions, TypeMetricsPushed) &&
 		(cutil.IsConditionFalse(rs.Status.Conditions, TypePreRestoreHooksExecutionSucceeded) ||
 			cutil.IsConditionFalse(rs.Status.Conditions, TypePostRestoreHooksExecutionSucceeded) ||
-			cutil.IsConditionFalse(rs.Status.Conditions, TypeRestoreExecutorEnsured)) {
+			cutil.IsConditionFalse(rs.Status.Conditions, TypeRestoreExecutorEnsured) ||
+			cutil.IsConditionTrue(rs.Status.Conditions, TypeRestoreIncomplete)) {
 		return RestoreFailed
 	}
 
@@ -191,4 +192,86 @@ func (rs *RestoreSession) GetRemainingTimeoutDuration() (*metav1.Duration, error
 		return nil, fmt.Errorf("deadline exceeded")
 	}
 	return &metav1.Duration{Duration: rs.Status.RestoreDeadline.Sub(currentTime.Time)}, nil
+}
+
+func (rs *RestoreSession) GetTargetObjectRef(snap *v1alpha1.Snapshot) *kmapi.ObjectReference {
+	if rs.Spec.Target != nil {
+		return &kmapi.ObjectReference{
+			Namespace: rs.Spec.Target.Namespace,
+			Name:      rs.Spec.Target.Name,
+		}
+	}
+
+	return rs.getTargetRef(snap.Spec.AppRef)
+}
+
+func (rs *RestoreSession) IsApplicationLevelRestore() bool {
+	tasks := map[string]bool{}
+	for _, task := range rs.Spec.Addon.Tasks {
+		tasks[task.Name] = true
+	}
+
+	return tasks[apis.ManifestRestore] && tasks[apis.LogicalBackupRestore]
+}
+
+func (rs *RestoreSession) getTargetRef(appRef kmapi.TypedObjectReference) *kmapi.ObjectReference {
+	targetRef := &kmapi.ObjectReference{
+		Name:      appRef.Name,
+		Namespace: appRef.Namespace,
+	}
+
+	if rs.Spec.ManifestOptions == nil {
+		return targetRef
+	}
+
+	overrideTargetRef := func(dbName, namespace string) {
+		if dbName != "" {
+			targetRef.Name = dbName
+		}
+		if namespace != "" {
+			targetRef.Namespace = namespace
+		}
+	}
+
+	opt := rs.Spec.ManifestOptions
+	switch appRef.Kind {
+	case apis.KindMySQL:
+		if opt.MySQL != nil {
+			overrideTargetRef(opt.MySQL.DBName, opt.MySQL.RestoreNamespace)
+		}
+	case apis.KindPostgres:
+		if opt.Postgres != nil {
+			overrideTargetRef(opt.Postgres.DBName, opt.Postgres.RestoreNamespace)
+		}
+	case apis.KindMongoDB:
+		if opt.MongoDB != nil {
+			overrideTargetRef(opt.MongoDB.DBName, opt.MongoDB.RestoreNamespace)
+		}
+	case apis.KindMariaDB:
+		if opt.MariaDB != nil {
+			overrideTargetRef(opt.MariaDB.DBName, opt.MariaDB.RestoreNamespace)
+		}
+	case apis.KindRedis:
+		if opt.Redis != nil {
+			overrideTargetRef(opt.Redis.DBName, opt.Redis.RestoreNamespace)
+		}
+	case apis.KindMSSQLServer:
+		if opt.MSSQLServer != nil {
+			overrideTargetRef(opt.MSSQLServer.DBName, opt.MSSQLServer.RestoreNamespace)
+		}
+	case apis.KindDruid:
+		if opt.Druid != nil {
+			overrideTargetRef(opt.Druid.DBName, opt.Druid.RestoreNamespace)
+		}
+	case apis.KindZooKeeper:
+		if opt.ZooKeeper != nil {
+			overrideTargetRef(opt.ZooKeeper.DBName, opt.ZooKeeper.RestoreNamespace)
+		}
+	case apis.KindSinglestore:
+		if opt.Singlestore != nil {
+			overrideTargetRef(opt.Singlestore.DBName, opt.Singlestore.RestoreNamespace)
+		}
+	}
+
+	return targetRef
 }
