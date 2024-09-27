@@ -43,6 +43,9 @@ type KubeStashConfig struct {
 
 	// NetVolAccessor specifies the network volume accessor's resource requirements
 	NetVolAccessor NetVolAccessor `json:"netVolAccessor,omitempty"`
+
+	// NetworkPolicy specifies whether the networkPolicy is enabled or not
+	NetworkPolicy bool `json:"networkPolicy,omitempty"`
 }
 
 type LicenseOptions struct {
