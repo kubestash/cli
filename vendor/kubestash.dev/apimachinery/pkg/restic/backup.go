@@ -18,6 +18,7 @@ package restic
 
 import (
 	"gomodules.xyz/pointer"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"sync"
 	"time"
@@ -38,6 +39,10 @@ func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, er
 	} else {
 		hostStats.Phase = HostBackupSucceeded
 		hostStats.Duration = time.Since(startTime).String()
+		st := metav1.Time{Time: startTime}
+		et := metav1.Now()
+		hostStats.StartTime = &st
+		hostStats.EndTime = &et
 	}
 
 	return &BackupOutput{

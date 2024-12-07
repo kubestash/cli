@@ -16,6 +16,8 @@ limitations under the License.
 
 package restic
 
+import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 type HostRestorePhase string
 
 const (
@@ -61,6 +63,12 @@ type HostBackupStats struct {
 	// Error indicates string value of error in case of backup failure
 	// +optional
 	Error string `json:"error,omitempty"`
+	// StartTime indicates when the backup is triggered
+	// +optional
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+	// EndTime indicates when the backup is executed successfully
+	// +optional
+	EndTime *metav1.Time `json:"endTime,omitempty"`
 }
 
 type SnapshotStats struct {
