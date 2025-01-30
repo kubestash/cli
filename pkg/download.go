@@ -139,11 +139,16 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				}
 			}()
 
-			setupOptions := restic.SetupOptions{
-				Client:           klient,
-				BackupStorage:    &repository.Spec.StorageRef,
-				EncryptionSecret: repository.Spec.EncryptionSecret,
-				ScratchDir:       ScratchDir,
+			setupOptions := &restic.SetupOptions{
+				Client:     klient,
+				ScratchDir: ScratchDir,
+				Backends: []*restic.Backend{
+					{
+						Repository:       repository.Name,
+						BackupStorage:    &repository.Spec.StorageRef,
+						EncryptionSecret: repository.Spec.EncryptionSecret,
+					},
+				},
 			}
 
 			// apply nice, ionice settings from env
@@ -163,7 +168,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 					continue
 				}
 
-				setupOptions.Directory = filepath.Join(repository.Spec.Path, comp.Path)
+				setupOptions.Backends[0].Directory = filepath.Join(repository.Spec.Path, comp.Path)
 
 				w, err := restic.NewResticWrapper(setupOptions)
 				if err != nil {
@@ -184,8 +189,8 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				}
 
 				// For TLS secured Minio/REST server, specify cert path
-				if w.GetCaPath() != "" {
-					restoreArgs = append(restoreArgs, "--cacert", w.GetCaPath())
+				if w.GetCaPath(repository.Name) != "" {
+					restoreArgs = append(restoreArgs, "--cacert", w.GetCaPath(repository.Name))
 				}
 
 				downloadOpt.resticStats = comp.ResticStats

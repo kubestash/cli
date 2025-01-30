@@ -20,6 +20,8 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"strings"
 )
@@ -49,41 +51,39 @@ type RepositoryStats struct {
 
 // ExtractBackupInfo extract information from output of "restic backup" command and
 // save valuable information into backupOutput
-func extractBackupInfo(output []byte, path string) (SnapshotStats, error) {
-	snapshotStats := SnapshotStats{
-		Path: path,
-	}
-
+func extractBackupInfo(output []byte, path string) ([]SnapshotStats, error) {
 	// unmarshal json output
-	var jsonOutput BackupSummary
+	var jsonOutputs []BackupSummary
 	dec := json.NewDecoder(bytes.NewReader(output))
+	var errs []error
 	for {
+		var summary BackupSummary
+		if err := dec.Decode(&summary); err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			errs = append(errs, fmt.Errorf("error decoding JSON: %w", err))
+		}
+		jsonOutputs = append(jsonOutputs, summary)
+	}
+	var snapshotStatsList []SnapshotStats
+	for _, jsonOutput := range jsonOutputs {
+		snapshotStats := SnapshotStats{
+			Path: path,
+		}
+		snapshotStats.FileStats.NewFiles = jsonOutput.FilesNew
+		snapshotStats.FileStats.ModifiedFiles = jsonOutput.FilesChanged
+		snapshotStats.FileStats.UnmodifiedFiles = jsonOutput.FilesUnmodified
+		snapshotStats.FileStats.TotalFiles = jsonOutput.TotalFilesProcessed
 
-		err := dec.Decode(&jsonOutput)
-		if err == io.EOF {
-			// all done
-			break
-		}
-		if err != nil {
-			return snapshotStats, err
-		}
-		// if message type is summary then we have found our desired message block
-		if jsonOutput.MessageType == "summary" {
-			break
-		}
+		snapshotStats.Uploaded = formatBytes(jsonOutput.DataAdded)
+		snapshotStats.TotalSize = formatBytes(jsonOutput.TotalBytesProcessed)
+		snapshotStats.ProcessingTime = formatSeconds(uint64(jsonOutput.TotalDuration))
+		snapshotStats.Name = jsonOutput.SnapshotID
+		snapshotStatsList = append(snapshotStatsList, snapshotStats)
 	}
 
-	snapshotStats.FileStats.NewFiles = jsonOutput.FilesNew
-	snapshotStats.FileStats.ModifiedFiles = jsonOutput.FilesChanged
-	snapshotStats.FileStats.UnmodifiedFiles = jsonOutput.FilesUnmodified
-	snapshotStats.FileStats.TotalFiles = jsonOutput.TotalFilesProcessed
-
-	snapshotStats.Uploaded = formatBytes(jsonOutput.DataAdded)
-	snapshotStats.TotalSize = formatBytes(jsonOutput.TotalBytesProcessed)
-	snapshotStats.ProcessingTime = formatSeconds(uint64(jsonOutput.TotalDuration))
-	snapshotStats.Name = jsonOutput.SnapshotID
-
-	return snapshotStats, nil
+	return snapshotStatsList, nil
 }
 
 // ExtractCheckInfo extract information from output of "restic check" command and

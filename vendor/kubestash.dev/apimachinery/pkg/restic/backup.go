@@ -20,40 +20,42 @@ import (
 	"gomodules.xyz/pointer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
+	"math"
 	"sync"
 	"time"
 )
 
 // RunBackup takes backup, cleanup old snapshots, check repository integrity etc.
 // It extracts valuable information from respective restic command it runs and return them for further use.
-func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, error) {
+func (w *ResticWrapper) RunBackup(backupOption BackupOptions) ([]BackupOutput, error) {
 	// Start clock to measure total session duration
 	startTime := time.Now()
+	var backupOutput []BackupOutput
 
 	// Run backup
 	hostStats, err := w.runBackup(backupOption)
-
-	if err != nil {
-		hostStats.Phase = HostBackupFailed
-		hostStats.Error = err.Error()
-	} else {
-		hostStats.Phase = HostBackupSucceeded
-		hostStats.Duration = time.Since(startTime).String()
-		st := metav1.Time{Time: startTime}
-		et := metav1.Now()
-		hostStats.StartTime = &st
-		hostStats.EndTime = &et
+	for _, hostStat := range hostStats {
+		if err != nil {
+			hostStat.Phase = HostBackupFailed
+			hostStat.Error = err.Error()
+		} else {
+			hostStat.Phase = HostBackupSucceeded
+			hostStat.Duration = time.Since(startTime).String()
+			st := metav1.Time{Time: startTime}
+			et := metav1.Now()
+			hostStat.StartTime = &st
+			hostStat.EndTime = &et
+		}
+		backupOutput = append(backupOutput, BackupOutput{
+			Stats: []HostBackupStats{hostStat},
+		})
 	}
 
-	return &BackupOutput{
-		Stats: []HostBackupStats{hostStats},
-	}, err
+	return backupOutput, err
 }
 
-func (w *ResticWrapper) runBackup(backupOption BackupOptions) (HostBackupStats, error) {
-	hostStats := HostBackupStats{
-		Hostname: backupOption.Host,
-	}
+func (w *ResticWrapper) runBackup(backupOption BackupOptions) ([]HostBackupStats, error) {
+	var hostStats []HostBackupStats
 
 	// fmt.Println("shell: ",w)
 	// Backup from stdin
@@ -67,12 +69,25 @@ func (w *ResticWrapper) runBackup(backupOption BackupOptions) (HostBackupStats, 
 		if err != nil {
 			return hostStats, err
 		}
-		hostStats.Snapshots = []SnapshotStats{snapStats}
+		for _, snap := range snapStats {
+			hostStat := HostBackupStats{
+				Hostname:  backupOption.Host,
+				Snapshots: []SnapshotStats{snap},
+			}
+			hostStats = append(hostStats, hostStat)
+		}
 		return hostStats, nil
 	}
 
 	// Backup all target paths
+	hostStats = make([]HostBackupStats, len(w.Config.Backends))
+	for idx := range hostStats {
+		hostStats[idx] = HostBackupStats{
+			Hostname: backupOption.Host,
+		}
+	}
 	for _, path := range backupOption.BackupPaths {
+		startTime := time.Now()
 		params := backupParams{
 			path:     path,
 			host:     backupOption.Host,
@@ -88,15 +103,32 @@ func (w *ResticWrapper) runBackup(backupOption BackupOptions) (HostBackupStats, 
 		if err != nil {
 			return hostStats, err
 		}
-		hostStats = upsertSnapshotStats(hostStats, stats)
+		for idx, stat := range stats {
+			hostStats[idx] = upsertSnapshotStats(hostStats[idx], stat)
+		}
+		w.updateElapsedTimeout(startTime)
 	}
 
 	return hostStats, nil
 }
 
+func (w *ResticWrapper) updateElapsedTimeout(startTime time.Time) {
+	if w.Config.Timeout != nil {
+		w.Config.Lock()
+		defer w.Config.Unlock()
+
+		// Calculate the new timeout by subtracting the elapsed duration
+		elapsed := time.Since(startTime)
+		newTimeout := time.Duration(math.Max(float64(w.Config.Timeout.Duration-elapsed), float64(0)))
+		w.Config.Timeout = &metav1.Duration{
+			Duration: newTimeout,
+		}
+	}
+}
+
 // RunParallelBackup runs multiple backup in parallel.
 // Host must be different for each backup.
-func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConcurrency int) (*BackupOutput, error) {
+func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConcurrency int) ([]BackupOutput, error) {
 	// WaitGroup to wait until all go routine finishes
 	wg := sync.WaitGroup{}
 	// concurrencyLimiter channel is used to limit maximum number simultaneous go routine
@@ -108,7 +140,7 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 		mu         sync.Mutex // use lock to avoid racing condition
 	)
 
-	backupOutput := &BackupOutput{}
+	var multipleOutputs = make([]BackupOutput, len(w.Config.Backends))
 
 	for i := range backupOptions {
 		// try to send message in concurrencyLimiter channel.
@@ -129,30 +161,34 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 			// sh field in ResticWrapper is a pointer. we must not use same w in multiple go routine.
 			// otherwise they might enter in racing condition.
 			nw := w.Copy()
-
 			hostStats, err := nw.runBackup(opt)
-
-			if err != nil {
-				hostStats.Phase = HostBackupFailed
-				hostStats.Error = err.Error()
+			for idx, hostStat := range hostStats {
+				if err != nil {
+					hostStat.Phase = HostBackupFailed
+					hostStat.Error = err.Error()
+					mu.Lock()
+					backupErrs = append(backupErrs, err)
+					mu.Unlock()
+				} else {
+					hostStat.Phase = HostBackupSucceeded
+					hostStat.Duration = time.Since(startTime).String()
+					st := metav1.Time{Time: startTime}
+					et := metav1.Now()
+					hostStat.StartTime = &st
+					hostStat.EndTime = &et
+				}
 				mu.Lock()
-				backupErrs = append(backupErrs, err)
+				multipleOutputs[idx].upsertHostBackupStats(hostStat)
+				// add hostStats to backupOutput. use lock to avoid racing condition.
 				mu.Unlock()
-			} else {
-				hostStats.Phase = HostBackupSucceeded
-				hostStats.Duration = time.Since(startTime).String()
 			}
-			// add hostStats to backupOutput. use lock to avoid racing condition.
-			mu.Lock()
-			backupOutput.upsertHostBackupStats(hostStats)
-			mu.Unlock()
 		}(backupOptions[i], time.Now())
 	}
 
 	// wait for all the go routines to complete
 	wg.Wait()
 
-	return backupOutput, errors.NewAggregate(backupErrs)
+	return multipleOutputs, errors.NewAggregate(backupErrs)
 }
 
 func upsertSnapshotStats(hostStats HostBackupStats, snapStats SnapshotStats) HostBackupStats {
@@ -181,24 +217,24 @@ func (backupOutput *BackupOutput) upsertHostBackupStats(hostStats HostBackupStat
 	backupOutput.Stats = append(backupOutput.Stats, hostStats)
 }
 
-func (w *ResticWrapper) RepositoryAlreadyExist() bool {
-	return w.repositoryExist()
+func (w *ResticWrapper) RepositoryAlreadyExist(repository string) bool {
+	return w.repositoryExist(repository)
 }
 
-func (w *ResticWrapper) InitializeRepository() error {
-	return w.initRepository()
+func (w *ResticWrapper) InitializeRepository(repository string) error {
+	return w.initRepository(repository)
 }
 
-func (w *ResticWrapper) VerifyRepositoryIntegrity() (*RepositoryStats, error) {
+func (w *ResticWrapper) VerifyRepositoryIntegrity(repository string) (*RepositoryStats, error) {
 	// Check repository integrity
-	out, err := w.check()
+	out, err := w.check(repository)
 	if err != nil {
 		return nil, err
 	}
 	// Extract information from output of "check" command
 	integrity := extractCheckInfo(out)
 	// Read repository statics after cleanup
-	out, err = w.stats("")
+	out, err = w.stats(repository, "")
 	if err != nil {
 		return nil, err
 	}
