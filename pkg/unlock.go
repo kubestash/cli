@@ -142,10 +142,15 @@ func (opt *unlockOptions) unlockRepositoryViaPod(pod *core.Pod) error {
 }
 
 func (opt *unlockOptions) unlockRepositoryViaDocker() error {
-	setupOptions := restic.SetupOptions{
-		Client:           klient,
-		BackupStorage:    &opt.repo.Spec.StorageRef,
-		EncryptionSecret: opt.repo.Spec.EncryptionSecret,
+	setupOptions := &restic.SetupOptions{
+		Client: klient,
+		Backends: []*restic.Backend{
+			{
+				Repository:       opt.repo.Name,
+				BackupStorage:    &opt.repo.Spec.StorageRef,
+				EncryptionSecret: opt.repo.Spec.EncryptionSecret,
+			},
+		},
 	}
 
 	// apply nice, ionice settings from env
@@ -161,7 +166,7 @@ func (opt *unlockOptions) unlockRepositoryViaDocker() error {
 	}
 
 	for _, path := range opt.paths {
-		setupOptions.Directory = filepath.Join(opt.repo.Spec.Path, path)
+		setupOptions.Backends[0].Directory = filepath.Join(opt.repo.Spec.Path, path)
 
 		w, err := restic.NewResticWrapper(setupOptions)
 		if err != nil {
@@ -181,8 +186,8 @@ func (opt *unlockOptions) unlockRepositoryViaDocker() error {
 		}
 
 		// For TLS secured Minio/REST server, specify cert path
-		if w.GetCaPath() != "" {
-			unlockArgs = append(unlockArgs, "--cacert", w.GetCaPath())
+		if w.GetCaPath(opt.repo.Name) != "" {
+			unlockArgs = append(unlockArgs, "--cacert", w.GetCaPath(opt.repo.Name))
 		}
 
 		// run unlock inside docker
