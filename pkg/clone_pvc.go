@@ -384,7 +384,7 @@ func (opt *storageOption) newBackupConfig() *coreapi.BackupConfiguration {
 								Name:      opt.encryptSecret,
 								Namespace: opt.encryptNamespace,
 							},
-							DeletionPolicy: storageapi.DeletionPolicyWipeOut,
+							DeletionPolicy: storageapi.BackupConfigDeletionPolicy(storageapi.DeletionPolicyWipeOut),
 						},
 					},
 					Addon: &coreapi.AddonInfo{

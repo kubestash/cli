@@ -16,7 +16,7 @@ limitations under the License.
 
 package restic
 
-func (w *ResticWrapper) UnlockRepository() error {
-	_, err := w.unlock()
+func (w *ResticWrapper) UnlockRepository(repository string) error {
+	_, err := w.unlock(repository)
 	return err
 }

@@ -28,6 +28,7 @@ import (
 	addonapi "kubestash.dev/apimachinery/apis/addons/v1alpha1"
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -74,4 +75,22 @@ func ResolveWithInputs(obj interface{}, inputs map[string]string) error {
 		return err
 	}
 	return json.Unmarshal([]byte(resolved), obj)
+}
+
+func GetProxyEnvVariables() []core.EnvVar {
+	proxyVars := []string{
+		"HTTP_PROXY", "http_proxy",
+		"HTTPS_PROXY", "https_proxy",
+		"NO_PROXY", "no_proxy",
+	}
+	var envs []core.EnvVar
+	for _, env := range proxyVars {
+		if v, ok := os.LookupEnv(env); ok {
+			envs = append(envs, core.EnvVar{
+				Name:  env,
+				Value: v,
+			})
+		}
+	}
+	return envs
 }

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+   http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,15 +23,14 @@ import (
 )
 
 // RunRestore run restore process for a single host.
-func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutput, error) {
+func (w *ResticWrapper) RunRestore(repository string, restoreOptions RestoreOptions) (*RestoreOutput, error) {
 	// Start clock to measure total restore duration
 	startTime := time.Now()
 
 	restoreStats := HostRestoreStats{
 		Hostname: restoreOptions.Host,
 	}
-
-	err := w.runRestore(restoreOptions)
+	err := w.runRestore(repository, restoreOptions)
 	if err != nil {
 		restoreStats.Phase = HostRestoreFailed
 		restoreStats.Error = err.Error()
@@ -46,7 +45,7 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutpu
 	}, err
 }
 
-func (w *ResticWrapper) runRestore(restoreOptions RestoreOptions) error {
+func (w *ResticWrapper) runRestore(repository string, restoreOptions RestoreOptions) error {
 	if len(restoreOptions.Snapshots) != 0 {
 		for _, snapshot := range restoreOptions.Snapshots {
 			// if snapshot is specified then host and path does not matter.
@@ -57,7 +56,7 @@ func (w *ResticWrapper) runRestore(restoreOptions RestoreOptions) error {
 				includes:    restoreOptions.Include,
 				args:        restoreOptions.Args,
 			}
-			if _, err := w.restore(params); err != nil {
+			if _, err := w.restore(repository, params); err != nil {
 				return err
 			}
 		}
@@ -71,7 +70,7 @@ func (w *ResticWrapper) runRestore(restoreOptions RestoreOptions) error {
 				includes:    restoreOptions.Include,
 				args:        restoreOptions.Args,
 			}
-			if _, err := w.restore(params); err != nil {
+			if _, err := w.restore(repository, params); err != nil {
 				return err
 			}
 		}
@@ -80,7 +79,7 @@ func (w *ResticWrapper) runRestore(restoreOptions RestoreOptions) error {
 }
 
 // Dump run restore process for a single host and output the restored files in stdout.
-func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
+func (w *ResticWrapper) Dump(repository string, dumpOptions DumpOptions) (*RestoreOutput, error) {
 	// Start clock to measure total restore duration
 	startTime := time.Now()
 
@@ -93,7 +92,7 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
 		dumpOptions.SourceHost = dumpOptions.Host
 	}
 
-	_, err := w.DumpOnce(dumpOptions)
+	_, err := w.DumpOnce(repository, dumpOptions)
 	if err != nil {
 		restoreStats.Phase = HostRestoreFailed
 		restoreStats.Error = err.Error()
@@ -109,7 +108,7 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
 
 // ParallelDump run DumpOnce for multiple hosts concurrently using go routine.
 // You can control maximum number of parallel restore process using maxConcurrency parameter.
-func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency int) (*RestoreOutput, error) {
+func (w *ResticWrapper) ParallelDump(repository string, dumpOptions []DumpOptions, maxConcurrency int) (*RestoreOutput, error) {
 	// WaitGroup to wait until all go routine finish
 	wg := sync.WaitGroup{}
 	// concurrencyLimiter channel is used to limit maximum number simultaneous go routine
@@ -152,7 +151,7 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 				Hostname: opt.Host,
 			}
 			// run restore
-			_, err := nw.DumpOnce(opt)
+			_, err := nw.DumpOnce(repository, opt)
 			if err != nil {
 				hostStats.Phase = HostRestoreFailed
 				hostStats.Error = err.Error()

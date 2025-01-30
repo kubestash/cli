@@ -21,19 +21,16 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	aws2 "github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sts"
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/azureblob"
 	_ "gocloud.dev/blob/fileblob"
@@ -63,8 +60,6 @@ const (
 	caCertData                   = "CA_CERT_DATA"
 	awsAccessKeyId               = "AWS_ACCESS_KEY_ID"
 	awsSecretAccessKey           = "AWS_SECRET_ACCESS_KEY"
-	awsRoleArn                   = "AWS_ROLE_ARN"
-	awsWebIdentityTokenFile      = "AWS_WEB_IDENTITY_TOKEN_FILE"
 )
 
 type Blob struct {
@@ -387,15 +382,13 @@ func (b *Blob) openBucketWithDebug(ctx context.Context, dir string, debug bool) 
 	var bucket *blob.Bucket
 	var err error
 	if b.backupStorage.Spec.Storage.Provider == storageapi.ProviderS3 {
-		sess, err := b.getS3Session()
+		cfg, err := b.getS3Config(ctx, debug)
 		if err != nil {
 			return nil, err
 		}
-		if debug {
-			// Currently Only S3 has debugging support, because for the rest of providers we're using default blob.
-			sess.Config.WithLogLevel(aws.LogDebug)
-		}
-		bucket, err = s3blob.OpenBucket(ctx, sess, b.backupStorage.Spec.Storage.S3.Bucket, nil)
+		bucket, err = s3blob.OpenBucketV2(ctx, s3.NewFromConfig(cfg, func(options *s3.Options) {
+			options.UsePathStyle = true
+		}), b.backupStorage.Spec.Storage.S3.Bucket, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -421,82 +414,67 @@ func closeBucket(ctx context.Context, bucket *blob.Bucket) {
 	}
 }
 
-func (b *Blob) getS3Session() (*session.Session, error) {
-	var providers []credentials.Provider
+func (b *Blob) getS3Config(ctx context.Context, debug bool) (aws2.Config, error) {
+	var loadOptions []func(*config.LoadOptions) error
+	if b.backupStorage.Spec.Storage.S3.SecretName != "" {
+		if b.backupStorage.Spec.Storage.S3.Endpoint != "" {
+			config.WithBaseEndpoint(b.backupStorage.Spec.Storage.S3.Endpoint)
+		}
+		if b.backupStorage.Spec.Storage.S3.Region != "" {
+			loadOptions = append(loadOptions, config.WithRegion(b.backupStorage.Spec.Storage.S3.Region))
+		}
+	}
 
-	// if static credential is provided, use that
+	if debug {
+		loadOptions = append(loadOptions, config.WithClientLogMode(
+			aws2.LogRetries|aws2.LogRequestWithBody|aws2.LogResponseWithBody))
+	}
+
 	if b.backupStorage.Spec.Storage.S3.SecretName != "" {
 		id, ok := b.s3Secret.Data[awsAccessKeyId]
 		if !ok {
-			return nil, fmt.Errorf("storage secret %s/%s missing %s key", b.s3Secret.Namespace, b.s3Secret.Name, awsAccessKeyId)
+			return aws2.Config{}, fmt.Errorf("storage secret %s/%s missing %s key", b.s3Secret.Namespace, b.s3Secret.Name, awsAccessKeyId)
 		}
 		key, ok := b.s3Secret.Data[awsSecretAccessKey]
 		if !ok {
-			return nil, fmt.Errorf("storage Secret %s/%s missing %s key", b.s3Secret.Namespace, b.s3Secret.Name, awsSecretAccessKey)
+			return aws2.Config{}, fmt.Errorf("storage Secret %s/%s missing %s key", b.s3Secret.Namespace, b.s3Secret.Name, awsSecretAccessKey)
 		}
-		providers = []credentials.Provider{&credentials.StaticProvider{Value: credentials.Value{
-			AccessKeyID:     string(id),
-			SecretAccessKey: string(key),
-			SessionToken:    "",
-		}}}
-	} else {
-		providers = []credentials.Provider{
-			&credentials.EnvProvider{},
-			&credentials.SharedCredentialsProvider{
-				Filename: "",
-				Profile:  "",
-			},
-			// Required for IRSA
-			stscreds.NewWebIdentityRoleProviderWithOptions(
-				sts.New(session.Must(session.NewSession(aws.NewConfig().
-					WithRegion("us-east-1")))),
-				os.Getenv(awsRoleArn),
-				"",
-				stscreds.FetchTokenPath(os.Getenv(awsWebIdentityTokenFile)),
-			),
-			&ec2rolecreds.EC2RoleProvider{
-				Client: ec2metadata.New(session.Must(session.NewSession(aws.NewConfig().
-					WithRegion("us-east-1")))),
-			},
-		}
-	}
 
-	config := aws.NewConfig().
-		WithRegion(b.backupStorage.Spec.Storage.S3.Region).
-		WithCredentialsChainVerboseErrors(true).
-		WithEndpoint(b.backupStorage.Spec.Storage.S3.Endpoint).
-		WithS3ForcePathStyle(true).
-		WithCredentials(credentials.NewChainCredentials(providers))
+		loadOptions = append(loadOptions, config.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(string(id), string(key), ""),
+		))
 
-	if b.backupStorage.Spec.Storage.S3.SecretName != "" {
-		if caCert := b.s3Secret.Data[caCertData]; len(caCert) > 0 || b.backupStorage.Spec.Storage.S3.InsecureTLS {
-			if err := configureTLS(config, caCert, b.backupStorage.Spec.Storage.S3.InsecureTLS); err != nil {
-				return nil, err
+		needsTLS := b.backupStorage.Spec.Storage.S3.InsecureTLS || len(b.s3Secret.Data[caCertData]) > 0
+		if needsTLS {
+			httpClient, err := configureTLS(b.s3Secret.Data[caCertData],
+				b.backupStorage.Spec.Storage.S3.InsecureTLS)
+			if err != nil {
+				return aws2.Config{}, err
 			}
+			loadOptions = append(loadOptions, config.WithHTTPClient(httpClient))
 		}
 	}
 
-	return session.NewSession(config)
+	return config.LoadDefaultConfig(ctx, loadOptions...)
 }
 
-func configureTLS(config *aws.Config, caCert []byte, insecureTLS bool) error {
+func configureTLS(caCert []byte, insecureTLS bool) (*http.Client, error) {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: insecureTLS,
 	}
 	if len(caCert) > 0 {
 		caCertPool := x509.NewCertPool()
 		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-			return fmt.Errorf("failed to parse CA certificate")
+			return nil, fmt.Errorf("failed to parse CA certificate")
 		}
 		tlsConfig.RootCAs = caCertPool
 	}
 	rt := http.DefaultTransport.(*http.Transport).Clone()
 	rt.TLSClientConfig = tlsConfig
 
-	config.HTTPClient = &http.Client{
+	return &http.Client{
 		Transport: rt,
-	}
-	return nil
+	}, nil
 }
 
 func (b *Blob) SetPathAsDir(ctx context.Context, path string) error {

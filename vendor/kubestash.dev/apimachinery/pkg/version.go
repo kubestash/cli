@@ -29,13 +29,37 @@ func extractDBVersion(version string) string {
 	return r.FindString(version)
 }
 
+var (
+	// {dbVersion, funcName} -> addonVersion
+	hardCodedMap = map[struct{ dbVersionRegex, funcNameRegex string }]string{
+		{"7.0.*", "mongodb-(backup|restore)"}:        "6.0.5",
+		{"5.7.*", "mysql-physical-(backup|restore)"}: "2.4.29",
+	}
+)
+
+func foundInHardCodedMap(funcName, dbVersion string) (bool, string) {
+	regexMatched := func(rx, val string) bool {
+		r := regexp.MustCompile(rx)
+		return r.MatchString(val)
+	}
+	for key, av := range hardCodedMap {
+		if regexMatched(key.funcNameRegex, funcName) && regexMatched(key.dbVersionRegex, dbVersion) {
+			return true, av
+		}
+	}
+	return false, ""
+}
+
 // For algorithm design & real addon mapping : https://github.com/kubestash/project/issues/140
 
-func FindAppropriateAddonVersion(addonVersions []string, dbVersion string) (string, error) {
+func FindAppropriateAddonVersion(addonVersions []string, dbVersion, funcName string) (string, error) {
 	if len(addonVersions) == 0 {
 		return "", fmt.Errorf("available list of addon-versions can't be empty")
 	}
 	dbVersion = extractDBVersion(dbVersion)
+	if found, av := foundInHardCodedMap(funcName, dbVersion); found {
+		return av, nil
+	}
 	semverDBVersion, err := semver.NewVersion(dbVersion)
 	if err != nil {
 		return "", err
@@ -82,6 +106,8 @@ func FindAppropriateAddonVersion(addonVersions []string, dbVersion string) (stri
 		}
 		return distances[i].isDB < distances[j].isDB
 	})
+
+	//klog.Infof("distances: %v", distances)
 
 	// Algorithm:
 	// - first sort the versions according to Ascending order of major,minor and patch version
