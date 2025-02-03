@@ -1421,6 +1421,7 @@ kmodules.xyz/client-go/core/v1
 kmodules.xyz/client-go/discovery
 kmodules.xyz/client-go/meta
 kmodules.xyz/client-go/policy/secomp
+kmodules.xyz/client-go/tools/parser
 # kmodules.xyz/custom-resources v0.30.0
 ## explicit; go 1.22.0
 kmodules.xyz/custom-resources/apis/appcatalog
@@ -1618,6 +1619,12 @@ sigs.k8s.io/structured-merge-diff/v4/value
 sigs.k8s.io/yaml
 sigs.k8s.io/yaml/goyaml.v2
 sigs.k8s.io/yaml/goyaml.v3
+# stash.appscode.dev/apimachinery v0.38.0
+## explicit; go 1.22.0
+stash.appscode.dev/apimachinery/apis/stash
+stash.appscode.dev/apimachinery/apis/stash/v1alpha1
+stash.appscode.dev/apimachinery/apis/stash/v1beta1
+stash.appscode.dev/apimachinery/crds
 # github.com/olekukonko/tablewriter => github.com/gomodules/tablewriter v0.0.6-0.20230422125635-f6b4e4ae60d8
 # github.com/Masterminds/sprig/v3 => github.com/gomodules/sprig/v3 v3.2.3-0.20220405051441-0a8a99bac1b8
 # sigs.k8s.io/controller-runtime => github.com/kmodules/controller-runtime v0.18.4-0.20240603164526-fa88ec2314fe
