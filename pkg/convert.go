@@ -374,7 +374,7 @@ func configureBackupHooks(bc *v1beta1.BackupConfiguration) *coreapi.BackupHooks 
 		preHook = append(preHook, coreapi.HookInfo{
 			Name: "prebackup-hook",
 			HookTemplate: &kmapi.ObjectReference{
-				Name:      fmt.Sprintf("%s-prebackup-hook", bc.Name),
+				Name:      meta_util.ValidNameWithPrefixNSuffix(bc.Name, "prebackup", "hook"),
 				Namespace: bc.Namespace,
 			},
 		})
@@ -383,7 +383,7 @@ func configureBackupHooks(bc *v1beta1.BackupConfiguration) *coreapi.BackupHooks 
 		postHook = append(postHook, coreapi.HookInfo{
 			Name: "postbackup-hook",
 			HookTemplate: &kmapi.ObjectReference{
-				Name:      fmt.Sprintf("%s-postbackup-hook", bc.Name),
+				Name:      meta_util.ValidNameWithPrefixNSuffix(bc.Name, "postbackup", "hook"),
 				Namespace: bc.Namespace,
 			},
 			ExecutionPolicy: configureHookExecutionPolicy(bc.Spec.Hooks.PostBackup.ExecutionPolicy),
@@ -478,7 +478,7 @@ func convertRestoreSession(ri parser.ResourceInfo) error {
 
 		if oldRS.Spec.Hooks.PostRestore != nil {
 			ht := createHookTemplate(kmapi.ObjectReference{
-				Name:      meta_util.ValidNameWithPrefixNSuffix(oldRS.Name, "prerestore", "hook"),
+				Name:      meta_util.ValidNameWithPrefixNSuffix(oldRS.Name, "postrestore", "hook"),
 				Namespace: oldRS.Namespace,
 			}, oldRS.Spec.Hooks.PostRestore.Handler)
 			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
@@ -543,7 +543,7 @@ func configureRestoreHooks(rs *v1beta1.RestoreSession) *coreapi.RestoreHooks {
 		preHook = append(preHook, coreapi.HookInfo{
 			Name: "prerestore-hook",
 			HookTemplate: &kmapi.ObjectReference{
-				Name:      fmt.Sprintf("%s-prerestore-hook", rs.Name),
+				Name:      meta_util.ValidNameWithPrefixNSuffix(rs.Name, "prerestore", "hook"),
 				Namespace: rs.Namespace,
 			},
 		})
@@ -553,7 +553,7 @@ func configureRestoreHooks(rs *v1beta1.RestoreSession) *coreapi.RestoreHooks {
 		postHook = append(postHook, coreapi.HookInfo{
 			Name: "postrestore-hook",
 			HookTemplate: &kmapi.ObjectReference{
-				Name:      fmt.Sprintf("%s-postrestore-hook", rs.Name),
+				Name:      meta_util.ValidNameWithPrefixNSuffix(rs.Name, "postrestore", "hook"),
 				Namespace: rs.Namespace,
 			},
 			ExecutionPolicy: configureHookExecutionPolicy(rs.Spec.Hooks.PostRestore.ExecutionPolicy),
@@ -569,15 +569,15 @@ func setValidValue(fieldName string) string {
 	return fmt.Sprintf("### Set Valid %s ###", fieldName)
 }
 
-func writeToTargetDir(srcPath string, separator bool, obj interface{}) error {
+func writeToTargetDir(srcPath string, addSeparator bool, obj interface{}) error {
 	targetPath := strings.Replace(srcPath, sourceDir, targetDir, -1)
 	if err := os.MkdirAll(filepath.Dir(targetPath), os.ModePerm); err != nil {
 		return err
 	}
 	klog.Infof("Writing %s to %s", srcPath, targetPath)
 
-	if separator {
-		if err := addSeparator(targetPath); err != nil {
+	if addSeparator {
+		if err := addSeparatorToTargetFile(targetPath); err != nil {
 			return err
 		}
 	}
@@ -598,13 +598,14 @@ func writeToTargetDir(srcPath string, separator bool, obj interface{}) error {
 	return nil
 }
 
-func addSeparator(path string) error {
-	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
+func addSeparatorToTargetFile(filePath string) error {
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	if _, err := file.WriteString("\n---\n\n"); err != nil {
+	separator := "\n---\n\n"
+	if _, err := file.WriteString(separator); err != nil {
 		return err
 	}
 	return nil
