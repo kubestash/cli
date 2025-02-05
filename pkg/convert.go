@@ -17,6 +17,7 @@ limitations under the License.
 package pkg
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -115,7 +116,7 @@ func configureStorageBackend(repo *v1alpha1.Repository, bs *storageapi.BackupSto
 	case repo.Spec.Backend.S3 != nil:
 		bs.Spec.Storage.Provider = storageapi.ProviderS3
 		bs.Spec.Storage.S3 = &storageapi.S3Spec{
-			Endpoint:   repo.Spec.Backend.S3.Endpoint,
+			Endpoint:   addConnectionScheme(repo.Spec.Backend.S3.Endpoint),
 			Bucket:     repo.Spec.Backend.S3.Bucket,
 			Prefix:     repo.Spec.Backend.S3.Prefix,
 			Region:     repo.Spec.Backend.S3.Region,
@@ -145,6 +146,13 @@ func configureStorageBackend(repo *v1alpha1.Repository, bs *storageapi.BackupSto
 			SubPath:   repo.Spec.Backend.Local.SubPath,
 		}
 	}
+}
+
+func addConnectionScheme(endpoint string) string {
+	if strings.HasPrefix(endpoint, "http") {
+		return endpoint
+	}
+	return "https://" + endpoint
 }
 
 func convertBackupConfiguration(ri parser.ResourceInfo) error {
@@ -189,6 +197,15 @@ func convertBackupConfiguration(ri parser.ResourceInfo) error {
 }
 
 func createBackupConfiguration(oldBC *v1beta1.BackupConfiguration) *coreapi.BackupConfiguration {
+	var ref v1beta1.TargetRef
+	if oldBC.Spec.Target != nil {
+		ref = v1beta1.TargetRef{
+			APIVersion: oldBC.Spec.Target.Ref.APIVersion,
+			Kind:       oldBC.Spec.Target.Ref.Kind,
+			Name:       oldBC.Spec.Target.Ref.Name,
+			Namespace:  oldBC.Spec.Target.Ref.Namespace,
+		}
+	}
 	return &coreapi.BackupConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       coreapi.ResourceKindBackupConfiguration,
@@ -200,7 +217,7 @@ func createBackupConfiguration(oldBC *v1beta1.BackupConfiguration) *coreapi.Back
 		},
 		Spec: coreapi.BackupConfigurationSpec{
 			Paused:   oldBC.Spec.Paused,
-			Target:   configureTarget(),
+			Target:   configureTarget(oldBC.Namespace, ref),
 			Backends: []coreapi.BackendReference{configureBackend(oldBC)},
 			Sessions: []coreapi.Session{configureSession(oldBC)},
 		},
@@ -296,13 +313,33 @@ func configureUsagePolicy(policy *v1alpha1.UsagePolicy) *apis.UsagePolicy {
 	}
 }
 
-func configureTarget() *kmapi.TypedObjectReference {
+func configureTarget(namespace string, ref v1beta1.TargetRef) *kmapi.TypedObjectReference {
+	if isTargetWorkload(ref) {
+		if ref.Namespace != "" {
+			namespace = ref.Namespace
+		}
+		return &kmapi.TypedObjectReference{
+			APIGroup:  strings.Split(ref.APIVersion, "/")[0],
+			Kind:      ref.Kind,
+			Name:      ref.Name,
+			Namespace: namespace,
+		}
+	}
 	return &kmapi.TypedObjectReference{
 		APIGroup:  setValidValue("APIGroup"),
 		Kind:      setValidValue("Kind"),
 		Name:      setValidValue("Name"),
 		Namespace: setValidValue("Namespace"),
 	}
+}
+
+func isTargetWorkload(ref v1beta1.TargetRef) bool {
+	if ref.Kind == apis.KindStatefulSet ||
+		ref.Kind == apis.KindDeployment ||
+		ref.Kind == apis.KindDaemonSet {
+		return true
+	}
+	return false
 }
 
 func configureBackend(bc *v1beta1.BackupConfiguration) coreapi.BackendReference {
@@ -349,18 +386,7 @@ func configureSession(bc *v1beta1.BackupConfiguration) coreapi.Session {
 				},
 			},
 		},
-		Addon: &coreapi.AddonInfo{
-			Name: setValidValue("Name"),
-			Tasks: []coreapi.TaskReference{
-				{
-					Name: setValidValue("Name"),
-				},
-			},
-			ContainerRuntimeSettings: bc.Spec.RuntimeSettings.Container,
-			JobTemplate: &ofst.PodTemplateSpec{
-				Spec: configurePodRuntimeSettings(bc.Spec.RuntimeSettings.Pod),
-			},
-		},
+		Addon: configureBackupAddonInfo(bc),
 	}
 }
 
@@ -405,6 +431,52 @@ func configureHookExecutionPolicy(policy v1beta1.HookExecutionPolicy) coreapi.Ho
 		return coreapi.ExecuteOnFailure
 	default:
 		return ""
+	}
+}
+
+func configureBackupAddonInfo(bc *v1beta1.BackupConfiguration) *coreapi.AddonInfo {
+	var podTemplateSpec *ofst.PodTemplateSpec
+	if bc.Spec.RuntimeSettings.Pod != nil {
+		podTemplateSpec = &ofst.PodTemplateSpec{
+			Spec: configurePodRuntimeSettings(bc.Spec.RuntimeSettings.Pod),
+		}
+	}
+	if bc.Spec.Target != nil && isTargetWorkload(bc.Spec.Target.Ref) {
+		params := &runtime.RawExtension{}
+		pathsMap := make(map[string]interface{})
+
+		if len(bc.Spec.Target.Paths) > 0 {
+			pathsMap["paths"] = strings.Join(bc.Spec.Target.Paths, ",")
+		}
+		if len(bc.Spec.Target.Exclude) > 0 {
+			pathsMap["exclude"] = strings.Join(bc.Spec.Target.Exclude, ",")
+		}
+		if len(pathsMap) > 0 {
+			data, _ := json.Marshal(pathsMap)
+			params.Raw = data
+		}
+
+		return &coreapi.AddonInfo{
+			Name: "workload-addon",
+			Tasks: []coreapi.TaskReference{
+				{
+					Name:   "logical-backup",
+					Params: params,
+				},
+			},
+			ContainerRuntimeSettings: bc.Spec.RuntimeSettings.Container,
+			JobTemplate:              podTemplateSpec,
+		}
+	}
+	return &coreapi.AddonInfo{
+		Name: setValidValue("Name"),
+		Tasks: []coreapi.TaskReference{
+			{
+				Name: setValidValue("Name"),
+			},
+		},
+		ContainerRuntimeSettings: bc.Spec.RuntimeSettings.Container,
+		JobTemplate:              podTemplateSpec,
 	}
 }
 
@@ -495,6 +567,11 @@ func createRestoreSession(oldRS *v1beta1.RestoreSession) *coreapi.RestoreSession
 		namespace = oldRS.Spec.Repository.Namespace
 	}
 
+	var ref v1beta1.TargetRef
+	if oldRS.Spec.Target != nil {
+		ref = oldRS.Spec.Target.Ref
+	}
+
 	return &coreapi.RestoreSession{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       coreapi.ResourceKindRestoreSession,
@@ -505,7 +582,7 @@ func createRestoreSession(oldRS *v1beta1.RestoreSession) *coreapi.RestoreSession
 			Namespace: oldRS.Namespace,
 		},
 		Spec: coreapi.RestoreSessionSpec{
-			Target: configureTarget(),
+			Target: configureTarget(oldRS.Namespace, ref),
 			DataSource: &coreapi.RestoreDataSource{
 				Namespace:  namespace,
 				Repository: oldRS.Spec.Repository.Name,
@@ -515,21 +592,42 @@ func createRestoreSession(oldRS *v1beta1.RestoreSession) *coreapi.RestoreSession
 					Namespace: setValidValue("Namespace"),
 				},
 			},
-			Addon: &coreapi.AddonInfo{
-				Name: setValidValue("Name"),
-				Tasks: []coreapi.TaskReference{
-					{
-						Name: setValidValue("Name"),
-					},
-				},
-				ContainerRuntimeSettings: oldRS.Spec.RuntimeSettings.Container,
-				JobTemplate: &ofst.PodTemplateSpec{
-					Spec: configurePodRuntimeSettings(oldRS.Spec.RuntimeSettings.Pod),
-				},
-			},
+			Addon:          configureRestoreAddonInfo(oldRS),
 			RestoreTimeout: oldRS.Spec.TimeOut,
 			Hooks:          configureRestoreHooks(oldRS),
 		},
+	}
+}
+
+func configureRestoreAddonInfo(rs *v1beta1.RestoreSession) *coreapi.AddonInfo {
+	var podTemplateSpec *ofst.PodTemplateSpec
+	if rs.Spec.RuntimeSettings.Pod != nil {
+		podTemplateSpec = &ofst.PodTemplateSpec{
+			Spec: configurePodRuntimeSettings(rs.Spec.RuntimeSettings.Pod),
+		}
+	}
+	if rs.Spec.Target != nil && isTargetWorkload(rs.Spec.Target.Ref) {
+		// TODO: convert rules to params
+		return &coreapi.AddonInfo{
+			Name: "workload-addon",
+			Tasks: []coreapi.TaskReference{
+				{
+					Name: "logical-backup-restore",
+				},
+			},
+			ContainerRuntimeSettings: rs.Spec.RuntimeSettings.Container,
+			JobTemplate:              podTemplateSpec,
+		}
+	}
+	return &coreapi.AddonInfo{
+		Name: setValidValue("Name"),
+		Tasks: []coreapi.TaskReference{
+			{
+				Name: setValidValue("Name"),
+			},
+		},
+		ContainerRuntimeSettings: rs.Spec.RuntimeSettings.Container,
+		JobTemplate:              podTemplateSpec,
 	}
 }
 
