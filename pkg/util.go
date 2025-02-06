@@ -387,7 +387,6 @@ func execOnPod(config *rest.Config, pod *core.Pod, command []string) (string, er
 		Stderr: &execErr,
 		Tty:    true,
 	})
-
 	if err != nil {
 		return "", fmt.Errorf("could not execute: %v, reason: %s", err, execErr.String())
 	}
