@@ -12,6 +12,7 @@ require (
 	gomodules.xyz/flags v0.1.3
 	gomodules.xyz/go-sh v0.1.1-0.20250117070215-e08594acad2a
 	gomodules.xyz/logs v0.0.7
+	gomodules.xyz/pointer v0.1.0
 	gomodules.xyz/runtime v0.3.0
 	gomodules.xyz/x v0.0.17
 	k8s.io/api v0.30.3
@@ -23,9 +24,11 @@ require (
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	kmodules.xyz/client-go v0.30.45
 	kmodules.xyz/offshoot-api v0.30.1
+	kmodules.xyz/prober v0.29.0
 	kubestash.dev/apimachinery v0.16.0
 	sigs.k8s.io/controller-runtime v0.18.4
 	sigs.k8s.io/yaml v1.4.0
+	stash.appscode.dev/apimachinery v0.38.0
 )
 
 require (
@@ -166,7 +169,6 @@ require (
 	gomodules.xyz/envsubst v0.2.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	gomodules.xyz/mergo v0.3.13 // indirect
-	gomodules.xyz/pointer v0.1.0 // indirect
 	gomodules.xyz/sets v0.2.1 // indirect
 	gomodules.xyz/wait v0.2.0 // indirect
 	google.golang.org/api v0.191.0 // indirect
@@ -187,7 +189,6 @@ require (
 	kmodules.xyz/custom-resources v0.30.0 // indirect
 	kmodules.xyz/monitoring-agent-api v0.30.2 // indirect
 	kmodules.xyz/objectstore-api v0.29.1 // indirect
-	kmodules.xyz/prober v0.29.0 // indirect
 	kubedb.dev/apimachinery v0.51.0 // indirect
 	kubeops.dev/petset v0.0.7 // indirect
 	kubeops.dev/sidekick v0.0.10 // indirect
