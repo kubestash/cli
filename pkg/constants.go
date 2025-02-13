@@ -32,7 +32,7 @@ const (
 	ResticEnvs     = "restic-envs"
 	ResticRegistry = "restic"
 	ResticImage    = "restic"
-	ResticTag      = "0.16.0"
+	ResticTag      = "latest"
 	EnvHttpProxy   = "HTTP_PROXY"
 	EnvHttpsProxy  = "HTTPS_PROXY"
 )
