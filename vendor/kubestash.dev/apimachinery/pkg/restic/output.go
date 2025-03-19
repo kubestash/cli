@@ -64,6 +64,9 @@ func extractBackupInfo(output []byte, path string) ([]SnapshotStats, error) {
 			}
 			errs = append(errs, fmt.Errorf("error decoding JSON: %w", err))
 		}
+		if summary.MessageType != "summary" {
+			continue
+		}
 		jsonOutputs = append(jsonOutputs, summary)
 	}
 	var snapshotStatsList []SnapshotStats

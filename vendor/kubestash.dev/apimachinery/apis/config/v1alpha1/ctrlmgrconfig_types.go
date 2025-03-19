@@ -71,6 +71,17 @@ type ControllerManagerConfigurationSpec struct {
 	// Webhook contains the controllers webhook configuration
 	// +optional
 	Webhook ControllerWebhook `json:"webhook,omitempty"`
+
+	// CertDir is the directory that contains the server key and certificate.
+	// if not set, webhook server would look up the server key and certificate in
+	// {TempDir}/k8s-webhook-server/serving-certs. The server key and certificate
+	// must be named tls.key and tls.crt, respectively.
+	// +optional
+	CertDir string `json:"certDir,omitempty"`
+
+	// EnableHTTP2 if set, HTTP/2 will be enabled for the metrics and webhook servers
+	// +optional
+	EnableHTTP2 bool `json:"enableHTTP2,omitempty"`
 }
 
 // ControllerConfigurationSpec defines the global configuration for
@@ -107,6 +118,12 @@ type ControllerMetrics struct {
 	// It can be set to "0" to disable the metrics serving.
 	// +optional
 	BindAddress string `json:"bindAddress,omitempty"`
+
+	// SecureMetrics if set, the metrics endpoint is served securely via HTTPS.
+	// Use --metrics-secure=false to use HTTP instead.
+	// +kubebuilder:default=true
+	// +optional
+	SecureMetrics bool `json:"secureMetrics,omitempty"`
 }
 
 // ControllerHealth defines the health configs.
@@ -137,13 +154,6 @@ type ControllerWebhook struct {
 	// It is used to set webhook.Server.Host.
 	// +optional
 	Host string `json:"host,omitempty"`
-
-	// CertDir is the directory that contains the server key and certificate.
-	// if not set, webhook server would look up the server key and certificate in
-	// {TempDir}/k8s-webhook-server/serving-certs. The server key and certificate
-	// must be named tls.key and tls.crt, respectively.
-	// +optional
-	CertDir string `json:"certDir,omitempty"`
 }
 
 // +kubebuilder:object:root=true

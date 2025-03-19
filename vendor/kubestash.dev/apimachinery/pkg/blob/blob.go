@@ -420,9 +420,9 @@ func (b *Blob) getS3Config(ctx context.Context, debug bool) (aws2.Config, error)
 		if b.backupStorage.Spec.Storage.S3.Endpoint != "" {
 			loadOptions = append(loadOptions, config.WithBaseEndpoint(b.backupStorage.Spec.Storage.S3.Endpoint))
 		}
-		if b.backupStorage.Spec.Storage.S3.Region != "" {
-			loadOptions = append(loadOptions, config.WithRegion(b.backupStorage.Spec.Storage.S3.Region))
-		}
+	}
+	if b.backupStorage.Spec.Storage.S3.Region != "" {
+		loadOptions = append(loadOptions, config.WithRegion(b.backupStorage.Spec.Storage.S3.Region))
 	}
 
 	if debug {
