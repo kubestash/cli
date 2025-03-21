@@ -177,7 +177,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 
 				// dump restic's environments into `restic-env` file.
 				// we will pass this env file to restic docker container.
-				err = w.DumpEnv(ConfigDir, ResticEnvs)
+				err = w.DumpEnv(repository.Name, ConfigDir, ResticEnvs)
 				if err != nil {
 					return err
 				}

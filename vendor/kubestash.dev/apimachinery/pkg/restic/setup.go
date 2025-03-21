@@ -166,17 +166,11 @@ func (w *ResticWrapper) setupEnvsForBackend(b *Backend) error {
 
 	case storage.ProviderGCS:
 		b.envs[RESTIC_REPOSITORY] = fmt.Sprintf("gs:%s:/%s", b.bucket, filepath.Join(b.path, b.Directory))
-		if val, err := w.getSecretKey(b.storageSecret, GOOGLE_SERVICE_ACCOUNT_JSON_KEY, false); err != nil {
-			return err
-		} else {
-			b.envs[GOOGLE_SERVICE_ACCOUNT_JSON_KEY] = val
-		}
-
 		if w.isSecretKeyExist(b.storageSecret, GOOGLE_SERVICE_ACCOUNT_JSON_KEY) {
 			if filePath, err := w.writeSecretKeyToFile(tmpDir, b.storageSecret, GOOGLE_SERVICE_ACCOUNT_JSON_KEY, GOOGLE_SERVICE_ACCOUNT_JSON_KEY); err != nil {
 				return err
 			} else {
-				w.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, filePath)
+				b.envs[GOOGLE_APPLICATION_CREDENTIALS] = filePath
 			}
 		}
 	}
