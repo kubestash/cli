@@ -25,7 +25,7 @@ require (
 	kmodules.xyz/client-go v0.32.1
 	kmodules.xyz/offshoot-api v0.32.0
 	kmodules.xyz/prober v0.32.0
-	kubestash.dev/apimachinery v0.17.0-rc.0
+	kubestash.dev/apimachinery v0.17.0-rc.0.0.20250321085921-7e42870bd1f2
 	sigs.k8s.io/controller-runtime v0.20.3
 	sigs.k8s.io/yaml v1.4.0
 	stash.appscode.dev/apimachinery v0.39.0

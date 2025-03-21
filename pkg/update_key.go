@@ -157,7 +157,7 @@ func (opt *keyOptions) updateResticKeyViaDocker() error {
 
 		// dump restic's environments into `restic-env` file.
 		// we will pass this env file to restic docker container.
-		err = w.DumpEnv(ConfigDir, ResticEnvs)
+		err = w.DumpEnv(setupOptions.Backends[0].Repository, ConfigDir, ResticEnvs)
 		if err != nil {
 			return err
 		}
