@@ -5,6 +5,7 @@ go 1.23.0
 toolchain go1.24.1
 
 require (
+	github.com/jedib0t/go-pretty/v6 v6.6.7
 	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0
 	github.com/olekukonko/tablewriter v0.0.6-0.20230925090304-df64c4bbad77
 	github.com/spf13/cobra v1.9.1
@@ -121,7 +122,7 @@ require (
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
-	github.com/mattn/go-runewidth v0.0.10 // indirect
+	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
@@ -141,7 +142,7 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.61.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/rivo/uniseg v0.1.0 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
