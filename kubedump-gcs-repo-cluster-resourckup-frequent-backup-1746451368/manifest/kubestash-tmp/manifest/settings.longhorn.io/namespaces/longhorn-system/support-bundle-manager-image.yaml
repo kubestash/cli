@@ -1,8 +1,0 @@
-apiVersion: longhorn.io/v1beta2
-kind: Setting
-metadata:
-  annotations:
-    longhorn.io/configmap-resource-version: ""
-  name: support-bundle-manager-image
-  namespace: longhorn-system
-value: longhornio/support-bundle-kit:v0.0.25

@@ -1,8 +1,0 @@
-apiVersion: longhorn.io/v1beta2
-kind: Setting
-metadata:
-  annotations:
-    longhorn.io/configmap-resource-version: "25376"
-  name: stable-longhorn-versions
-  namespace: longhorn-system
-value: v1.3.3,v1.4.4,v1.5.5,v1.6.4,v1.7.3,v1.8.1

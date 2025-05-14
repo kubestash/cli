@@ -1,8 +1,0 @@
-apiVersion: longhorn.io/v1beta2
-kind: Setting
-metadata:
-  annotations:
-    longhorn.io/configmap-resource-version: "25376"
-  name: engine-replica-timeout
-  namespace: longhorn-system
-value: "8"
