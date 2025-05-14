@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:26:31Z"
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: my-deployment-5686b8d7f5-sz6v2
+  namespace: demo
+  resourceVersion: "1706484"
+  uid: c4b1327e-d023-43f0-8232-fd6960389e88
+kind: Event
+lastTimestamp: "2025-05-05T12:26:31Z"
+message: 'AttachVolume.Attach succeeded for volume "pvc-c5a10634-c0f3-42dd-94fe-f5dd706a084d" '
+metadata:
+  name: my-deployment-5686b8d7f5-sz6v2.183ca1320388b520
+  namespace: demo
+reason: SuccessfulAttachVolume
+reportingComponent: attachdetach-controller
+reportingInstance: ""
+source:
+  component: attachdetach-controller
+type: Normal

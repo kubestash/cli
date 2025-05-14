@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:43:02Z"
+involvedObject:
+  apiVersion: apps/v1
+  kind: Deployment
+  name: my-deployment
+  namespace: demo
+  resourceVersion: "1708528"
+  uid: ae62ee86-fe14-4bee-8f2a-b9b78d54fb80
+kind: Event
+lastTimestamp: "2025-05-05T12:43:02Z"
+message: Scaled up replica set my-deployment-5686b8d7f5 from 0 to 1
+metadata:
+  name: my-deployment.183ca2189f2433af
+  namespace: demo
+reason: ScalingReplicaSet
+reportingComponent: deployment-controller
+reportingInstance: ""
+source:
+  component: deployment-controller
+type: Normal

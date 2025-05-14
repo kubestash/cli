@@ -1,0 +1,25 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:40:01Z"
+deprecatedLastTimestamp: "2025-05-05T12:40:01Z"
+deprecatedSource:
+  component: kubelet
+  host: nipun
+eventTime: null
+kind: Event
+metadata:
+  name: demo-cluster-resources-backup-frequent-backup-1746448800-2b4gs.183ca1ee96a37d5c
+  namespace: demo
+note: 'Created container: manifest-backup-0'
+reason: Created
+regarding:
+  apiVersion: v1
+  fieldPath: spec.containers{manifest-backup-0}
+  kind: Pod
+  name: demo-cluster-resources-backup-frequent-backup-1746448800-2b4gs
+  namespace: demo
+  resourceVersion: "1708045"
+  uid: 0b4e9dcd-2813-436c-b8de-ac0698aa09f2
+reportingController: kubelet
+reportingInstance: nipun
+type: Normal

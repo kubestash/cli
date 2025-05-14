@@ -1,0 +1,21 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:58:01Z"
+deprecatedLastTimestamp: "2025-05-05T12:58:01Z"
+deprecatedSource:
+  component: longhorn-replica-controller
+eventTime: null
+kind: Event
+metadata:
+  name: pvc-2e83e939-a3ba-47a8-82e5-5ed26c9c579f-r-e618444d.183ca2ea042c4566
+  namespace: longhorn-system
+note: Starts pvc-2e83e939-a3ba-47a8-82e5-5ed26c9c579f-r-e618444d
+reason: Start
+regarding:
+  apiVersion: longhorn.io/v1beta2
+  kind: Replica
+  name: pvc-2e83e939-a3ba-47a8-82e5-5ed26c9c579f-r-e618444d
+  namespace: longhorn-system
+  resourceVersion: "1711084"
+  uid: b8779eec-3c5c-418c-ad72-0932d8b147ae
+type: Normal

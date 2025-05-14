@@ -1,0 +1,22 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    objectset.rio.cattle.io/applied: H4sIAAAAAAAA/4ySQe/TMAzFvwryuStru/9aInEYHDhwGxIXxMFJ3C20i6vEKYKp3x21YxpI2+Bo2e/J/j2fAQf3mUJ07EFB0GhyTHLk4H6iOPZ518Tc8euxgAw65y0oeN+nKBT23NM7563zB8jgRIIWBUGdAb1nWeRxLll/IyORJA+Oc4MiPc2ebjaD7GGfv3sKq8PYgYKuin90xiJ79dF5+3ZnLft/Wng8ESgwHMj6+F/jcUAza7qkaRV/RKETZHf5JE3Bk9CCCZNwGizKrJWQCKYMetTULyT+HtbMEiXgMMwIL/RXllpMvTzb8ojxCAq0obKpyjdNUxT1psJ11WxRvxTrtmy3NbX1ptyszUs9r/CbwOUQdQUxZRC4pz21S2qD+xA4Dc/+4O4TwBP/mC5HgPpyvko/URidoZ0xnLzc1Ld8HiUwfZ1+BQAA//+fo6ANsgIAAA
+    objectset.rio.cattle.io/id: ""
+    objectset.rio.cattle.io/owner-gvk: k3s.cattle.io/v1, Kind=Addon
+    objectset.rio.cattle.io/owner-name: coredns
+    objectset.rio.cattle.io/owner-namespace: kube-system
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+  labels:
+    kubernetes.io/bootstrapping: rbac-defaults
+    objectset.rio.cattle.io/hash: bce283298811743a0386ab510f2f67ef74240c57
+  name: system:coredns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:coredns
+subjects:
+- kind: ServiceAccount
+  name: coredns
+  namespace: kube-system

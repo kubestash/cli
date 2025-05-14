@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:35:17Z"
+involvedObject:
+  apiVersion: batch/v1
+  kind: Job
+  name: retention-policy-cluster-resources-backup-frequent-b-1746448500
+  namespace: demo
+  resourceVersion: "1707571"
+  uid: 39be0e3b-340a-4eb2-9ae6-775ae155c8a9
+kind: Event
+lastTimestamp: "2025-05-05T12:35:17Z"
+message: 'Created pod: retention-policy-cluster-resources-backup-frequent-b-17464t9wmn'
+metadata:
+  name: retention-policy-cluster-resources-backup-frequent-b-1746448500.183ca1ac6a56175d
+  namespace: demo
+reason: SuccessfulCreate
+reportingComponent: job-controller
+reportingInstance: ""
+source:
+  component: job-controller
+type: Normal

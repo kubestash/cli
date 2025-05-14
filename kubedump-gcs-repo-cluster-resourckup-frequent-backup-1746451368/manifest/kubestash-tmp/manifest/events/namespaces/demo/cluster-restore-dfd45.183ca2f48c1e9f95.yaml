@@ -1,0 +1,22 @@
+action: Binding
+apiVersion: v1
+eventTime: "2025-05-05T12:58:46.719443Z"
+firstTimestamp: null
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: cluster-restore-dfd45
+  namespace: demo
+  resourceVersion: "1711276"
+  uid: 0c155f6b-b7d8-437b-a4cf-0c7e8afbd60a
+kind: Event
+lastTimestamp: null
+message: Successfully assigned demo/cluster-restore-dfd45 to nipun
+metadata:
+  name: cluster-restore-dfd45.183ca2f48c1e9f95
+  namespace: demo
+reason: Scheduled
+reportingComponent: default-scheduler
+reportingInstance: default-scheduler-nipun
+source: {}
+type: Normal

@@ -1,0 +1,20 @@
+apiVersion: addons.kubestash.com/v1alpha1
+kind: Function
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubestash
+    meta.helm.sh/release-namespace: stash
+  labels:
+    app.kubernetes.io/instance: kubestash
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubestash-catalog
+    app.kubernetes.io/version: v2025.3.24
+    helm.sh/chart: kubestash-catalog-v2025.3.24
+  name: volumesnapshot-backup
+spec:
+  args:
+  - backup
+  - --namespace=${namespace:=default}
+  - --backupsession=${backupSession:=}
+  - --volume-snapshot-class-name=${volumeSnapshotClassName:=}
+  image: ghcr.io/kubestash/volume-snapshotter:v0.16.0

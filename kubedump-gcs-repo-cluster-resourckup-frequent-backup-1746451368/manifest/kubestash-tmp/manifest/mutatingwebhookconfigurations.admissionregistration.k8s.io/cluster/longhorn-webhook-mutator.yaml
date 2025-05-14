@@ -1,0 +1,194 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    objectset.rio.cattle.io/applied: H4sIAAAAAAAA/8yWQXPaPBCG/8o3e1bAhoQveKaHhpBOaZpJIM4hGQ5rebEVZMkjydAMw3/vyECmaULbE+YGerWzz76S1ruCghym6BCiFaBS2qETWln/VyfPxJ0l1zJCtzg6J6kldFukEAGwvbpeKjIn2WIOEbQXIfvvm1DppwlxQ+6vYQoLggikVlmujTpZUpJrPT/h+E+htkT+Jt6+WEcFrBlwQ3Vt96Ig67AoIVKVlAwkJiT/WHGONocIeniOs1nY7faDEPth0j/v9gI67/R6ne7/p0E3oM7Zae+057Ptq6OoHDpt/JbtkoXoaQWYFsJaodWYFoKWD2Ts5hyeYBHClAGXgpQbaDUTmWfleFGpVPok15PAXU/CwThOR/fi4nL8MIon8ePoLriKx7UWuME8HE3i0RLnN5d3D/HLY3DVncSji8dADoCBJbMQ3rnVO/JXsl0NsKlun9UMSnT55uzb25B2XbbQyqvaOIj6Z0FnvWYwQyErQ7daCv4CEVyhkMCgQMfz18XhD+QOXk3detjaZW4JDQxMJWnrZSm+GF2VtXu/bpoyr731NiGHHa/okszu8j/BYDz8fD8EBvHtpf8xZWDI6srwOgkkyOc+w5SB5br0WDc7U1JYs8NRCJWJAjM6EpavnuU7KszIHAlSbY9vcjupWSql08YZFlpWReMUpDKhGqcwxCtjhMqedXIglo+NOOQz/p1AmzJH1VBym6Oh4qA94+N+ftBn8c4FhaXNtWv+PZRScGzKhar0E0JSDzdNMdSTzHF84jdXEp1Dnhek9t8OvyxSGs5mfob1olYE6+n6ZwAAAP//TVzc7eULAAA
+    objectset.rio.cattle.io/id: ""
+    objectset.rio.cattle.io/owner-gvk: /v1, Kind=Secret
+    objectset.rio.cattle.io/owner-name: longhorn-webhook-ca
+    objectset.rio.cattle.io/owner-namespace: longhorn-system
+  labels:
+    objectset.rio.cattle.io/hash: 6a8aff133901a91b98360e82662374030e254646
+  name: longhorn-webhook-mutator
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJwakNDQVUyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQTdNUnd3R2dZRFZRUUtFeE5rZVc1aGJXbGoKYkdsemRHVnVaWEl0YjNKbk1Sc3dHUVlEVlFRREV4SmtlVzVoYldsamJHbHpkR1Z1WlhJdFkyRXdIaGNOTWpVdwpOREl5TURVME9UQXdXaGNOTXpVd05ESXdNRFUwT1RBd1dqQTdNUnd3R2dZRFZRUUtFeE5rZVc1aGJXbGpiR2x6CmRHVnVaWEl0YjNKbk1Sc3dHUVlEVlFRREV4SmtlVzVoYldsamJHbHpkR1Z1WlhJdFkyRXdXVEFUQmdjcWhrak8KUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVEvU1RvTUpOUlpYYjM0QVVOaVdXaHArWmtRMFZBbjRPOGZSaStNRFVFRApUNkhSU0ZSa093eU05cERqSVZmL0VxNkdpSTI0QXBYcVEybXF5b1ZUTUZsMG8wSXdRREFPQmdOVkhROEJBZjhFCkJBTUNBcVF3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFkQmdOVkhRNEVGZ1FVVFU1TnhBdUlxSTM2bWhOL3VGK0QKc3NJVkhSTXdDZ1lJS29aSXpqMEVBd0lEUndBd1JBSWdkSkVib2J1U2hRTG5UR2EycjdBSGtkY2svMjBIUzUyUwp0TUE4SE05N2ZTc0NJSElvVVVWWkgvbVF2MnhRTVBKUTVWQmFJdEZLdXp3elFFOWxRd0NibU1uWAotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    service:
+      name: longhorn-admission-webhook
+      namespace: longhorn-system
+      path: /v1/webhook/mutation
+      port: 9502
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: mutator.longhorn.io
+  namespaceSelector: {}
+  objectSelector: {}
+  reinvocationPolicy: Never
+  rules:
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backups
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backingimages
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backingImageManagers
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backingimagedatasources
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - nodes
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - volumes
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - engines
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - recurringjobs
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    resources:
+    - engineimages
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    resources:
+    - orphans
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    resources:
+    - sharemanagers
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    resources:
+    - backupvolumes
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    resources:
+    - snapshots
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - replicas
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    resources:
+    - supportbundles
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    resources:
+    - systembackups
+    scope: Namespaced
+  - apiGroups:
+    - longhorn.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - volumeattachments
+    scope: Namespaced
+  sideEffects: None
+  timeoutSeconds: 10

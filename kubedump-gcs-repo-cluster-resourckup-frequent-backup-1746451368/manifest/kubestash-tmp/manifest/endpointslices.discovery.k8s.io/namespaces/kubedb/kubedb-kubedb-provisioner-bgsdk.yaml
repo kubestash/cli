@@ -1,0 +1,40 @@
+addressType: IPv4
+apiVersion: discovery.k8s.io/v1
+endpoints:
+- addresses:
+  - 10.42.0.26
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  nodeName: nipun
+  targetRef:
+    kind: Pod
+    name: kubedb-kubedb-provisioner-0
+    namespace: kubedb
+    uid: 170f819b-575f-4342-a7b5-3d94876321e9
+kind: EndpointSlice
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-04-28T06:00:08Z"
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubedb-provisioner
+    app.kubernetes.io/version: v0.53.1
+    endpointslice.kubernetes.io/managed-by: endpointslice-controller.k8s.io
+    helm.sh/chart: kubedb-provisioner-v0.53.0
+    kubernetes.io/service-name: kubedb-kubedb-provisioner
+  name: kubedb-kubedb-provisioner-bgsdk
+  namespace: kubedb
+  ownerReferences:
+  - apiVersion: v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Service
+    name: kubedb-kubedb-provisioner
+    uid: 0e6180d2-aeed-4944-96cd-a4562c96cc47
+ports:
+- name: metrics
+  port: 8080
+  protocol: TCP

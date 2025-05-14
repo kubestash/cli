@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 4
+eventTime: null
+firstTimestamp: "2025-05-05T12:42:32Z"
+involvedObject:
+  apiVersion: longhorn.io/v1beta2
+  kind: Engine
+  name: pvc-c5a10634-c0f3-42dd-94fe-f5dd706a084d-e-7c7d1dec
+  namespace: longhorn-system
+  resourceVersion: "1708384"
+  uid: af201653-7160-46f0-8045-1bb0d2ed3339
+kind: Event
+lastTimestamp: "2025-05-05T12:42:32Z"
+message: Stops pvc-c5a10634-c0f3-42dd-94fe-f5dd706a084d-e-7c7d1dec
+metadata:
+  name: pvc-c5a10634-c0f3-42dd-94fe-f5dd706a084d-e-7c7d1dec.183ca211a9d7805a
+  namespace: longhorn-system
+reason: Stop
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: longhorn-engine-controller
+type: Normal

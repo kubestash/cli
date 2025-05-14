@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T13:15:45Z"
+involvedObject:
+  apiVersion: batch/v1
+  kind: Job
+  name: cluster-restore
+  namespace: demo
+  resourceVersion: "1713666"
+  uid: b80144b3-3759-493e-bd11-f9cfdf07c4cb
+kind: Event
+lastTimestamp: "2025-05-05T13:15:45Z"
+message: Job completed
+metadata:
+  name: cluster-restore.183ca3e1b75ef199
+  namespace: demo
+reason: Completed
+reportingComponent: job-controller
+reportingInstance: ""
+source:
+  component: job-controller
+type: Normal

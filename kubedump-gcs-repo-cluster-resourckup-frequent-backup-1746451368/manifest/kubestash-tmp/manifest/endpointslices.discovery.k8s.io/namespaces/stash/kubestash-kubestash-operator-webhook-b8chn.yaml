@@ -1,0 +1,43 @@
+addressType: IPv4
+apiVersion: discovery.k8s.io/v1
+endpoints:
+- addresses:
+  - 10.42.0.3
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  nodeName: nipun
+  targetRef:
+    kind: Pod
+    name: kubestash-kubestash-operator-webhook-server-7998fcfd5-wb6cf
+    namespace: stash
+    uid: c0d61d39-a285-4588-a62b-bbd6f34095fe
+kind: EndpointSlice
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-04-28T05:55:36Z"
+  labels:
+    app.kubernetes.io/instance: kubestash
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubestash-operator
+    app.kubernetes.io/version: v0.17.0
+    endpointslice.kubernetes.io/managed-by: endpointslice-controller.k8s.io
+    helm.sh/chart: kubestash-operator-v0.17.0
+    kubernetes.io/service-name: kubestash-kubestash-operator-webhook
+  name: kubestash-kubestash-operator-webhook-b8chn
+  namespace: stash
+  ownerReferences:
+  - apiVersion: v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Service
+    name: kubestash-kubestash-operator-webhook
+    uid: 4a8cced4-bb0d-411f-abeb-127fca741f95
+ports:
+- name: metrics
+  port: 8443
+  protocol: TCP
+- name: https
+  port: 9443
+  protocol: TCP

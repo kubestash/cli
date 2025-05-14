@@ -1,0 +1,23 @@
+action: Binding
+apiVersion: events.k8s.io/v1
+deprecatedFirstTimestamp: null
+deprecatedLastTimestamp: null
+deprecatedSource: {}
+eventTime: "2025-05-05T13:15:33.307694Z"
+kind: Event
+metadata:
+  name: retention-policy-cluster-resources-backup-frequent-b-17464wc4lg.183ca3dee9746d80
+  namespace: demo
+note: Successfully assigned demo/retention-policy-cluster-resources-backup-frequent-b-17464wc4lg
+  to nipun
+reason: Scheduled
+regarding:
+  apiVersion: v1
+  kind: Pod
+  name: retention-policy-cluster-resources-backup-frequent-b-17464wc4lg
+  namespace: demo
+  resourceVersion: "1713596"
+  uid: 5be0fc37-0b07-4c43-b5af-eaf268502733
+reportingController: default-scheduler
+reportingInstance: default-scheduler-nipun
+type: Normal

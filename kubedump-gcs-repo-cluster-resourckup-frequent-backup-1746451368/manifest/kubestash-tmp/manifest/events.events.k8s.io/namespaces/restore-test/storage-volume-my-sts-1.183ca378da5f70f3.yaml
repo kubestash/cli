@@ -1,0 +1,21 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T13:08:14Z"
+deprecatedLastTimestamp: "2025-05-05T13:08:14Z"
+deprecatedSource:
+  component: driver.longhorn.io_csi-provisioner-8649bdf768-wmv44_b1799ee4-f3b1-4c58-b611-f1883c44a8fb
+eventTime: null
+kind: Event
+metadata:
+  name: storage-volume-my-sts-1.183ca378da5f70f3
+  namespace: restore-test
+note: Successfully provisioned volume pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68
+reason: ProvisioningSucceeded
+regarding:
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: storage-volume-my-sts-1
+  namespace: restore-test
+  resourceVersion: "1712334"
+  uid: bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68
+type: Normal

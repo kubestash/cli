@@ -1,0 +1,22 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:35:00Z"
+deprecatedLastTimestamp: "2025-05-05T12:35:00Z"
+deprecatedSource:
+  component: job-controller
+eventTime: null
+kind: Event
+metadata:
+  name: trigger-cluster-resources-backup-frequent-backup-29107475.183ca1a86397446b
+  namespace: demo
+note: 'Created pod: trigger-cluster-resources-backup-frequent-backup-29107475-vcckd'
+reason: SuccessfulCreate
+regarding:
+  apiVersion: batch/v1
+  kind: Job
+  name: trigger-cluster-resources-backup-frequent-backup-29107475
+  namespace: demo
+  resourceVersion: "1707494"
+  uid: 6554c6a5-0c38-4dae-a7cf-a2fa3d92c9da
+reportingController: job-controller
+type: Normal

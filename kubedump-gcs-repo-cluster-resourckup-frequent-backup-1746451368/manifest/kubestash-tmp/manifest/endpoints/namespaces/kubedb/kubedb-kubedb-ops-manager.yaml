@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-04-28T06:00:17Z"
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubedb-ops-manager
+    app.kubernetes.io/version: v0.40.1
+    helm.sh/chart: kubedb-ops-manager-v0.40.0
+  name: kubedb-kubedb-ops-manager
+  namespace: kubedb
+subsets:
+- addresses:
+  - ip: 10.42.0.29
+    nodeName: nipun
+    targetRef:
+      kind: Pod
+      name: kubedb-kubedb-ops-manager-0
+      namespace: kubedb
+      uid: 1b31e33e-790c-49f0-aaf6-dbb40a6566b9
+  ports:
+  - name: metrics
+    port: 8080
+    protocol: TCP

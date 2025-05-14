@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:35:00Z"
+involvedObject:
+  apiVersion: batch/v1
+  kind: CronJob
+  name: trigger-cluster-resources-backup-frequent-backup
+  namespace: demo
+  resourceVersion: "1707036"
+  uid: 5a1be4f4-e7a8-4c0d-a3b1-6a34534fda77
+kind: Event
+lastTimestamp: "2025-05-05T12:35:00Z"
+message: Created job trigger-cluster-resources-backup-frequent-backup-29107475
+metadata:
+  name: trigger-cluster-resources-backup-frequent-backup.183ca1a863454c8c
+  namespace: demo
+reason: SuccessfulCreate
+reportingComponent: cronjob-controller
+reportingInstance: ""
+source:
+  component: cronjob-controller
+type: Normal

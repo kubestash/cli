@@ -1,0 +1,92 @@
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  finalizers:
+  - longhorn.io
+  labels:
+    longhornvolume: pvc-5da021d2-072d-42e3-9051-e7f9fa4ba5d0
+    recurring-job-group.longhorn.io/default: enabled
+  name: pvc-5da021d2-072d-42e3-9051-e7f9fa4ba5d0
+  namespace: longhorn-system
+spec:
+  Standby: false
+  accessMode: rwo
+  backendStoreDriver: v1
+  backingImage: ""
+  backupCompressionMethod: lz4
+  dataLocality: disabled
+  dataSource: ""
+  disableFrontend: false
+  diskSelector: []
+  encrypted: false
+  engineImage: longhornio/longhorn-engine:v1.5.1
+  fromBackup: ""
+  frontend: blockdev
+  lastAttachedBy: ""
+  migratable: false
+  migrationNodeID: ""
+  nodeID: ""
+  nodeSelector: []
+  numberOfReplicas: 3
+  offlineReplicaRebuilding: disabled
+  replicaAutoBalance: ignored
+  replicaSoftAntiAffinity: ignored
+  replicaZoneSoftAntiAffinity: ignored
+  restoreVolumeRecurringJob: ignored
+  revisionCounterDisabled: false
+  size: "5368709120"
+  snapshotDataIntegrity: ignored
+  staleReplicaTimeout: 30
+  unmapMarkSnapChainRemoved: ignored
+status:
+  actualSize: 0
+  cloneStatus:
+    snapshot: ""
+    sourceVolume: ""
+    state: ""
+  conditions:
+  - lastProbeTime: ""
+    lastTransitionTime: "2025-05-05T13:07:49Z"
+    message: ""
+    reason: ""
+    status: "False"
+    type: toomanysnapshots
+  - lastProbeTime: ""
+    lastTransitionTime: "2025-05-05T13:07:49Z"
+    message: Reset schedulable due to allow volume creation with degraded availability
+    reason: ""
+    status: "True"
+    type: scheduled
+  - lastProbeTime: ""
+    lastTransitionTime: "2025-05-05T13:07:49Z"
+    message: ""
+    reason: ""
+    status: "False"
+    type: restore
+  currentImage: longhornio/longhorn-engine:v1.5.1
+  currentMigrationNodeID: ""
+  currentNodeID: ""
+  expansionRequired: false
+  frontendDisabled: false
+  isStandby: false
+  kubernetesStatus:
+    lastPVCRefAt: ""
+    lastPodRefAt: ""
+    namespace: restore-test
+    pvName: pvc-5da021d2-072d-42e3-9051-e7f9fa4ba5d0
+    pvStatus: Bound
+    pvcName: my-pvc
+    workloadsStatus: null
+  lastBackup: ""
+  lastBackupAt: ""
+  lastDegradedAt: ""
+  offlineReplicaRebuildingRequired: false
+  ownerID: nipun
+  pendingNodeID: ""
+  remountRequestedAt: ""
+  restoreInitiated: false
+  restoreRequired: false
+  robustness: unknown
+  shareEndpoint: ""
+  shareState: ""
+  state: detached

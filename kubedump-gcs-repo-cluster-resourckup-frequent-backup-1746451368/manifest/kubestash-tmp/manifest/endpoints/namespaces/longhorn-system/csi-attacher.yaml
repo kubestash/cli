@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-04-29T11:33:10Z"
+  labels:
+    app: csi-attacher
+    longhorn.io/managed-by: longhorn-manager
+  name: csi-attacher
+  namespace: longhorn-system
+subsets:
+- addresses:
+  - ip: 10.42.0.10
+    nodeName: nipun
+    targetRef:
+      kind: Pod
+      name: csi-attacher-547747c45f-xw2wj
+      namespace: longhorn-system
+      uid: 37f1f8b7-09bd-43a5-bf32-d46e7fc57836
+  - ip: 10.42.0.7
+    nodeName: nipun
+    targetRef:
+      kind: Pod
+      name: csi-attacher-547747c45f-8b896
+      namespace: longhorn-system
+      uid: 51f5ff91-c178-4aef-84e2-330caebe97d2
+  - ip: 10.42.0.8
+    nodeName: nipun
+    targetRef:
+      kind: Pod
+      name: csi-attacher-547747c45f-nxb64
+      namespace: longhorn-system
+      uid: b57f98cb-f037-423e-9024-b40642d5cbe4
+  ports:
+  - name: dummy
+    port: 12345
+    protocol: TCP

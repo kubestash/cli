@@ -1,0 +1,48 @@
+apiVersion: storage.kubestash.com/v1alpha1
+kind: BackupStorage
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"storage.kubestash.com/v1alpha1","kind":"BackupStorage","metadata":{"annotations":{},"name":"gcs-storage","namespace":"demo"},"spec":{"default":true,"deletionPolicy":"WipeOut","storage":{"gcs":{"bucket":"kubestash-qa","prefix":"demo","secretName":"gcs-secret"},"provider":"gcs"},"usagePolicy":{"allowedNamespaces":{"from":"All"}}}}
+  finalizers:
+  - kubestash.com/cleanup
+  name: gcs-storage
+  namespace: demo
+spec:
+  default: true
+  deletionPolicy: WipeOut
+  runtimeSettings: {}
+  storage:
+    gcs:
+      bucket: kubestash-qa
+      prefix: demo
+      secretName: gcs-secret
+    provider: gcs
+  usagePolicy:
+    allowedNamespaces:
+      from: All
+status:
+  conditions:
+  - lastTransitionTime: "2025-04-29T07:13:43Z"
+    message: Successfully initialized backend.
+    reason: BackendInitializationSucceeded
+    status: "True"
+    type: BackendInitialized
+  - lastTransitionTime: "2025-04-29T07:13:44Z"
+    message: Backend secret exists.
+    reason: BackendSecretAvailable
+    status: "True"
+    type: BackendSecretFound
+  phase: Ready
+  repositories:
+  - name: kubedump-gcs-repository
+    namespace: demo
+    path: /cluster-manifests
+    size: 4.362 MiB
+    synced: true
+  - name: kubedump-gcs-repo
+    namespace: demo
+    path: /cluster-backup
+    size: 3.152 MiB
+    synced: true
+  totalSize: 7.514 MiB

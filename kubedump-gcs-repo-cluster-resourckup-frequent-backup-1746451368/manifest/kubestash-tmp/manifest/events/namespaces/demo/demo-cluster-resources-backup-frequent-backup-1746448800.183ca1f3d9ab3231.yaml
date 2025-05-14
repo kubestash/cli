@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:40:24Z"
+involvedObject:
+  apiVersion: batch/v1
+  kind: Job
+  name: demo-cluster-resources-backup-frequent-backup-1746448800
+  namespace: demo
+  resourceVersion: "1708131"
+  uid: 38b0ef70-e64f-49c1-a784-9f30c2f20393
+kind: Event
+lastTimestamp: "2025-05-05T12:40:24Z"
+message: Job completed
+metadata:
+  name: demo-cluster-resources-backup-frequent-backup-1746448800.183ca1f3d9ab3231
+  namespace: demo
+reason: Completed
+reportingComponent: job-controller
+reportingInstance: ""
+source:
+  component: job-controller
+type: Normal

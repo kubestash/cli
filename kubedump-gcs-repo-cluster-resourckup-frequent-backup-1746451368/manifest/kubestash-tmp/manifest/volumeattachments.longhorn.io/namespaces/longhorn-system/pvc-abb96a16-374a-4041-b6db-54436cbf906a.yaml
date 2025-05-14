@@ -1,0 +1,38 @@
+apiVersion: longhorn.io/v1beta2
+kind: VolumeAttachment
+metadata:
+  finalizers:
+  - longhorn.io
+  labels:
+    longhornvolume: pvc-abb96a16-374a-4041-b6db-54436cbf906a
+  name: pvc-abb96a16-374a-4041-b6db-54436cbf906a
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: longhorn.io/v1beta2
+    kind: Volume
+    name: pvc-abb96a16-374a-4041-b6db-54436cbf906a
+    uid: 90832f93-8f32-4a1b-a00f-b8762eef0102
+spec:
+  attachmentTickets:
+    csi-d081fd0e690efdcedaa7e4001ace07ef2e2b49a11da3e717b1733491ef79b686:
+      generation: 0
+      id: csi-d081fd0e690efdcedaa7e4001ace07ef2e2b49a11da3e717b1733491ef79b686
+      nodeID: nipun
+      parameters:
+        disableFrontend: "false"
+        lastAttachedBy: ""
+      type: csi-attacher
+  volume: pvc-abb96a16-374a-4041-b6db-54436cbf906a
+status:
+  attachmentTicketStatuses:
+    csi-d081fd0e690efdcedaa7e4001ace07ef2e2b49a11da3e717b1733491ef79b686:
+      conditions:
+      - lastProbeTime: ""
+        lastTransitionTime: "2025-04-30T06:42:08Z"
+        message: ""
+        reason: ""
+        status: "True"
+        type: Satisfied
+      generation: 0
+      id: csi-d081fd0e690efdcedaa7e4001ace07ef2e2b49a11da3e717b1733491ef79b686
+      satisfied: true

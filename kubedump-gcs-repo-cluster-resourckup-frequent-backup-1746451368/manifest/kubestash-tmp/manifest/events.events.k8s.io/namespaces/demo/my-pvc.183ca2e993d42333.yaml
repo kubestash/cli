@@ -1,0 +1,21 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:57:59Z"
+deprecatedLastTimestamp: "2025-05-05T12:57:59Z"
+deprecatedSource:
+  component: driver.longhorn.io_csi-provisioner-8649bdf768-wmv44_b1799ee4-f3b1-4c58-b611-f1883c44a8fb
+eventTime: null
+kind: Event
+metadata:
+  name: my-pvc.183ca2e993d42333
+  namespace: demo
+note: Successfully provisioned volume pvc-2e83e939-a3ba-47a8-82e5-5ed26c9c579f
+reason: ProvisioningSucceeded
+regarding:
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: my-pvc
+  namespace: demo
+  resourceVersion: "1710991"
+  uid: 2e83e939-a3ba-47a8-82e5-5ed26c9c579f
+type: Normal

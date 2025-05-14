@@ -1,0 +1,99 @@
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  finalizers:
+  - longhorn.io
+  labels:
+    longhornvolume: pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68
+    recurring-job-group.longhorn.io/default: enabled
+    setting.longhorn.io/remove-snapshots-during-filesystem-trim: ignored
+    setting.longhorn.io/replica-auto-balance: ignored
+    setting.longhorn.io/snapshot-data-integrity: ignored
+  name: pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68
+  namespace: longhorn-system
+spec:
+  Standby: false
+  accessMode: rwo
+  backendStoreDriver: v1
+  backingImage: ""
+  backupCompressionMethod: lz4
+  dataLocality: disabled
+  dataSource: ""
+  disableFrontend: false
+  diskSelector: []
+  encrypted: false
+  engineImage: longhornio/longhorn-engine:v1.5.1
+  fromBackup: ""
+  frontend: blockdev
+  lastAttachedBy: ""
+  migratable: false
+  migrationNodeID: ""
+  nodeID: nipun
+  nodeSelector: []
+  numberOfReplicas: 3
+  offlineReplicaRebuilding: disabled
+  replicaAutoBalance: ignored
+  replicaSoftAntiAffinity: ignored
+  replicaZoneSoftAntiAffinity: ignored
+  restoreVolumeRecurringJob: ignored
+  revisionCounterDisabled: false
+  size: "5368709120"
+  snapshotDataIntegrity: ignored
+  staleReplicaTimeout: 30
+  unmapMarkSnapChainRemoved: ignored
+status:
+  actualSize: 153804800
+  cloneStatus:
+    snapshot: ""
+    sourceVolume: ""
+    state: ""
+  conditions:
+  - lastProbeTime: ""
+    lastTransitionTime: "2025-05-05T13:08:13Z"
+    message: ""
+    reason: ""
+    status: "False"
+    type: toomanysnapshots
+  - lastProbeTime: ""
+    lastTransitionTime: "2025-05-05T13:08:20Z"
+    message: replica scheduling failed
+    reason: ReplicaSchedulingFailure
+    status: "False"
+    type: scheduled
+  - lastProbeTime: ""
+    lastTransitionTime: "2025-05-05T13:08:13Z"
+    message: ""
+    reason: ""
+    status: "False"
+    type: restore
+  currentImage: longhornio/longhorn-engine:v1.5.1
+  currentMigrationNodeID: ""
+  currentNodeID: nipun
+  expansionRequired: false
+  frontendDisabled: false
+  isStandby: false
+  kubernetesStatus:
+    lastPVCRefAt: ""
+    lastPodRefAt: ""
+    namespace: restore-test
+    pvName: pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68
+    pvStatus: Bound
+    pvcName: storage-volume-my-sts-1
+    workloadsStatus:
+    - podName: my-sts-1
+      podStatus: Running
+      workloadName: my-sts
+      workloadType: StatefulSet
+  lastBackup: ""
+  lastBackupAt: ""
+  lastDegradedAt: "2025-05-05T13:08:25Z"
+  offlineReplicaRebuildingRequired: false
+  ownerID: nipun
+  pendingNodeID: ""
+  remountRequestedAt: ""
+  restoreInitiated: false
+  restoreRequired: false
+  robustness: degraded
+  shareEndpoint: ""
+  shareState: ""
+  state: attached

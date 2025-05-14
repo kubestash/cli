@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:52:06Z"
+involvedObject:
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: my-pvc
+  namespace: demo
+  resourceVersion: "1710203"
+  uid: dec9a754-9a98-4b88-a012-e84c276fb8d9
+kind: Event
+lastTimestamp: "2025-05-05T12:52:06Z"
+message: External provisioner is provisioning volume for claim "demo/my-pvc"
+metadata:
+  name: my-pvc.183ca29771174524
+  namespace: demo
+reason: Provisioning
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: driver.longhorn.io_csi-provisioner-8649bdf768-wmv44_b1799ee4-f3b1-4c58-b611-f1883c44a8fb
+type: Normal

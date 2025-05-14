@@ -1,0 +1,21 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 2
+deprecatedFirstTimestamp: "2025-05-05T12:57:49Z"
+deprecatedLastTimestamp: "2025-05-05T12:57:49Z"
+deprecatedSource:
+  component: longhorn-engine-controller
+eventTime: null
+kind: Event
+metadata:
+  name: pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9-e-96b9acec.183ca2e74c9a47ff
+  namespace: longhorn-system
+note: Stops pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9-e-96b9acec
+reason: Stop
+regarding:
+  apiVersion: longhorn.io/v1beta2
+  kind: Engine
+  name: pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9-e-96b9acec
+  namespace: longhorn-system
+  resourceVersion: "1710931"
+  uid: 61540ba2-9f89-4e21-b4d8-43a47fa4bce2
+type: Normal

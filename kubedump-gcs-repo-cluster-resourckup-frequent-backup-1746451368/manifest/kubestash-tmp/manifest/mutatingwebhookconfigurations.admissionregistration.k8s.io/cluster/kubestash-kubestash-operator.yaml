@@ -1,0 +1,154 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+  labels:
+    app.kubernetes.io/instance: kubestash
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubestash-operator
+    app.kubernetes.io/version: v0.17.0
+    helm.sh/chart: kubestash-operator-v0.17.0
+  name: kubestash-kubestash-operator
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lRQmhFcElqZlRJTnV5cC9vam1PYnc4VEFOQmdrcWhraUc5dzBCQVFzRkFEQU4KTVFzd0NRWURWUVFERXdKallUQWVGdzB5TlRBME1qSXdOVE0yTVRkYUZ3MHpOVEEwTWpBd05UTTJNVGRhTUEweApDekFKQmdOVkJBTVRBbU5oTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFzMjNoCmdIOXVTbHBOcXV5RVdqd2FQcTZUOVYyd0QvTUNRc1ZYcWFwZEdsMGttMTNYb1IwK3FxdlovMlVsQ3doQ25XUXAKdXczRjJnSWo4MFBVT1QwQVB1TU5udjhNd2RkR2lLMWx4UXNzNkxzeGJxSE5BblZxNHBMRXVVRmtyb1FQNXgwSAordzBZRmRBOEZlcHkrN0RCZ2pYNkpOTHY3Q2EwdTgrSjlmYlJkaG4yVWlTZkRTOFV2eUo4elB5UjhoMzhkM3QyCmZxM0t1Z2dpRGJnejZTQTUxVjBqLzRNZS9CaW9QM05EV1F1OEtlYkZFbGhJTnhTcGlPbkpCR21XcnMyWWRWYUQKS0VlMERHNW16WlhZWU9VZHIzalViZGNIbGIvV0RWaDdQZUgrTmdyamRia1RyN29jR0FINkpJb0xEd3ZURnVocgpBbWdLWWJsM1ZUUnVPQkpRdXdJREFRQUJvMkV3WHpBT0JnTlZIUThCQWY4RUJBTUNBcVF3SFFZRFZSMGxCQll3CkZBWUlLd1lCQlFVSEF3RUdDQ3NHQVFVRkJ3TUNNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdIUVlEVlIwT0JCWUUKRkh1ekxScmszTzhjcTBqN1hrQzRwT0ZRK3BrTU1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQ1dldURqMGg3cApLQmNLeHlCTmllaDlQYzE2UnVuL3RwTEtCditiOStKZ2ZxeTlNZE96eHhURVpXRlJwZjVWN1dVbVAzaHFCUDlMCk5XTUtnUWovd2FXTlMxWlR0TjBUejN4SGRXdldLU0p0bkFtWWdDZGV0K00zTFh2RGdpTG8yeDR1UXg3UnkyT2sKWmFpNE5mdHkwVXdvY3pueWFmQ2RoUCt2TTlBZ0xGcGc3LzlGNGI4UUZvYjI2bFp5TU40REhpQSt3UGJ1anJSQQpWTVFTdVJsUms2b0c0TWN6MmZOVjIzSkRJeExPRFkyb01ySUNpYStyb2VuOUVUbVdGM3dsNUMrUTFRcW5JdytDCm5oWVg5c1BBVUIyOUJmVHVhcWp5MVE5RzRNcjJMcVVDY0t0b1V5UGk2WlBzUUNQdDJQcTI0WFpDaTdlK05wQXkKd1ZJK3VkOG1mcmc1Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    service:
+      name: kubestash-kubestash-operator-webhook
+      namespace: stash
+      path: /mutate-storage-kubestash-com-v1alpha1-backupstorage
+      port: 443
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: mbackupstorage.kb.io
+  namespaceSelector: {}
+  objectSelector: {}
+  reinvocationPolicy: Never
+  rules:
+  - apiGroups:
+    - storage.kubestash.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupstorages
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 10
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lRQmhFcElqZlRJTnV5cC9vam1PYnc4VEFOQmdrcWhraUc5dzBCQVFzRkFEQU4KTVFzd0NRWURWUVFERXdKallUQWVGdzB5TlRBME1qSXdOVE0yTVRkYUZ3MHpOVEEwTWpBd05UTTJNVGRhTUEweApDekFKQmdOVkJBTVRBbU5oTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFzMjNoCmdIOXVTbHBOcXV5RVdqd2FQcTZUOVYyd0QvTUNRc1ZYcWFwZEdsMGttMTNYb1IwK3FxdlovMlVsQ3doQ25XUXAKdXczRjJnSWo4MFBVT1QwQVB1TU5udjhNd2RkR2lLMWx4UXNzNkxzeGJxSE5BblZxNHBMRXVVRmtyb1FQNXgwSAordzBZRmRBOEZlcHkrN0RCZ2pYNkpOTHY3Q2EwdTgrSjlmYlJkaG4yVWlTZkRTOFV2eUo4elB5UjhoMzhkM3QyCmZxM0t1Z2dpRGJnejZTQTUxVjBqLzRNZS9CaW9QM05EV1F1OEtlYkZFbGhJTnhTcGlPbkpCR21XcnMyWWRWYUQKS0VlMERHNW16WlhZWU9VZHIzalViZGNIbGIvV0RWaDdQZUgrTmdyamRia1RyN29jR0FINkpJb0xEd3ZURnVocgpBbWdLWWJsM1ZUUnVPQkpRdXdJREFRQUJvMkV3WHpBT0JnTlZIUThCQWY4RUJBTUNBcVF3SFFZRFZSMGxCQll3CkZBWUlLd1lCQlFVSEF3RUdDQ3NHQVFVRkJ3TUNNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdIUVlEVlIwT0JCWUUKRkh1ekxScmszTzhjcTBqN1hrQzRwT0ZRK3BrTU1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQ1dldURqMGg3cApLQmNLeHlCTmllaDlQYzE2UnVuL3RwTEtCditiOStKZ2ZxeTlNZE96eHhURVpXRlJwZjVWN1dVbVAzaHFCUDlMCk5XTUtnUWovd2FXTlMxWlR0TjBUejN4SGRXdldLU0p0bkFtWWdDZGV0K00zTFh2RGdpTG8yeDR1UXg3UnkyT2sKWmFpNE5mdHkwVXdvY3pueWFmQ2RoUCt2TTlBZ0xGcGc3LzlGNGI4UUZvYjI2bFp5TU40REhpQSt3UGJ1anJSQQpWTVFTdVJsUms2b0c0TWN6MmZOVjIzSkRJeExPRFkyb01ySUNpYStyb2VuOUVUbVdGM3dsNUMrUTFRcW5JdytDCm5oWVg5c1BBVUIyOUJmVHVhcWp5MVE5RzRNcjJMcVVDY0t0b1V5UGk2WlBzUUNQdDJQcTI0WFpDaTdlK05wQXkKd1ZJK3VkOG1mcmc1Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    service:
+      name: kubestash-kubestash-operator-webhook
+      namespace: stash
+      path: /mutate-storage-kubestash-com-v1alpha1-retentionpolicy
+      port: 443
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: mretentionpolicy.kb.io
+  namespaceSelector: {}
+  objectSelector: {}
+  reinvocationPolicy: Never
+  rules:
+  - apiGroups:
+    - storage.kubestash.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - retentionpolicies
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 10
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lRQmhFcElqZlRJTnV5cC9vam1PYnc4VEFOQmdrcWhraUc5dzBCQVFzRkFEQU4KTVFzd0NRWURWUVFERXdKallUQWVGdzB5TlRBME1qSXdOVE0yTVRkYUZ3MHpOVEEwTWpBd05UTTJNVGRhTUEweApDekFKQmdOVkJBTVRBbU5oTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFzMjNoCmdIOXVTbHBOcXV5RVdqd2FQcTZUOVYyd0QvTUNRc1ZYcWFwZEdsMGttMTNYb1IwK3FxdlovMlVsQ3doQ25XUXAKdXczRjJnSWo4MFBVT1QwQVB1TU5udjhNd2RkR2lLMWx4UXNzNkxzeGJxSE5BblZxNHBMRXVVRmtyb1FQNXgwSAordzBZRmRBOEZlcHkrN0RCZ2pYNkpOTHY3Q2EwdTgrSjlmYlJkaG4yVWlTZkRTOFV2eUo4elB5UjhoMzhkM3QyCmZxM0t1Z2dpRGJnejZTQTUxVjBqLzRNZS9CaW9QM05EV1F1OEtlYkZFbGhJTnhTcGlPbkpCR21XcnMyWWRWYUQKS0VlMERHNW16WlhZWU9VZHIzalViZGNIbGIvV0RWaDdQZUgrTmdyamRia1RyN29jR0FINkpJb0xEd3ZURnVocgpBbWdLWWJsM1ZUUnVPQkpRdXdJREFRQUJvMkV3WHpBT0JnTlZIUThCQWY4RUJBTUNBcVF3SFFZRFZSMGxCQll3CkZBWUlLd1lCQlFVSEF3RUdDQ3NHQVFVRkJ3TUNNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdIUVlEVlIwT0JCWUUKRkh1ekxScmszTzhjcTBqN1hrQzRwT0ZRK3BrTU1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQ1dldURqMGg3cApLQmNLeHlCTmllaDlQYzE2UnVuL3RwTEtCditiOStKZ2ZxeTlNZE96eHhURVpXRlJwZjVWN1dVbVAzaHFCUDlMCk5XTUtnUWovd2FXTlMxWlR0TjBUejN4SGRXdldLU0p0bkFtWWdDZGV0K00zTFh2RGdpTG8yeDR1UXg3UnkyT2sKWmFpNE5mdHkwVXdvY3pueWFmQ2RoUCt2TTlBZ0xGcGc3LzlGNGI4UUZvYjI2bFp5TU40REhpQSt3UGJ1anJSQQpWTVFTdVJsUms2b0c0TWN6MmZOVjIzSkRJeExPRFkyb01ySUNpYStyb2VuOUVUbVdGM3dsNUMrUTFRcW5JdytDCm5oWVg5c1BBVUIyOUJmVHVhcWp5MVE5RzRNcjJMcVVDY0t0b1V5UGk2WlBzUUNQdDJQcTI0WFpDaTdlK05wQXkKd1ZJK3VkOG1mcmc1Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    service:
+      name: kubestash-kubestash-operator-webhook
+      namespace: stash
+      path: /mutate-core-kubestash-com-v1alpha1-backupblueprint
+      port: 443
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: mbackupblueprint.kb.io
+  namespaceSelector: {}
+  objectSelector: {}
+  reinvocationPolicy: Never
+  rules:
+  - apiGroups:
+    - core.kubestash.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupblueprints
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 10
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lRQmhFcElqZlRJTnV5cC9vam1PYnc4VEFOQmdrcWhraUc5dzBCQVFzRkFEQU4KTVFzd0NRWURWUVFERXdKallUQWVGdzB5TlRBME1qSXdOVE0yTVRkYUZ3MHpOVEEwTWpBd05UTTJNVGRhTUEweApDekFKQmdOVkJBTVRBbU5oTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFzMjNoCmdIOXVTbHBOcXV5RVdqd2FQcTZUOVYyd0QvTUNRc1ZYcWFwZEdsMGttMTNYb1IwK3FxdlovMlVsQ3doQ25XUXAKdXczRjJnSWo4MFBVT1QwQVB1TU5udjhNd2RkR2lLMWx4UXNzNkxzeGJxSE5BblZxNHBMRXVVRmtyb1FQNXgwSAordzBZRmRBOEZlcHkrN0RCZ2pYNkpOTHY3Q2EwdTgrSjlmYlJkaG4yVWlTZkRTOFV2eUo4elB5UjhoMzhkM3QyCmZxM0t1Z2dpRGJnejZTQTUxVjBqLzRNZS9CaW9QM05EV1F1OEtlYkZFbGhJTnhTcGlPbkpCR21XcnMyWWRWYUQKS0VlMERHNW16WlhZWU9VZHIzalViZGNIbGIvV0RWaDdQZUgrTmdyamRia1RyN29jR0FINkpJb0xEd3ZURnVocgpBbWdLWWJsM1ZUUnVPQkpRdXdJREFRQUJvMkV3WHpBT0JnTlZIUThCQWY4RUJBTUNBcVF3SFFZRFZSMGxCQll3CkZBWUlLd1lCQlFVSEF3RUdDQ3NHQVFVRkJ3TUNNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdIUVlEVlIwT0JCWUUKRkh1ekxScmszTzhjcTBqN1hrQzRwT0ZRK3BrTU1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQ1dldURqMGg3cApLQmNLeHlCTmllaDlQYzE2UnVuL3RwTEtCditiOStKZ2ZxeTlNZE96eHhURVpXRlJwZjVWN1dVbVAzaHFCUDlMCk5XTUtnUWovd2FXTlMxWlR0TjBUejN4SGRXdldLU0p0bkFtWWdDZGV0K00zTFh2RGdpTG8yeDR1UXg3UnkyT2sKWmFpNE5mdHkwVXdvY3pueWFmQ2RoUCt2TTlBZ0xGcGc3LzlGNGI4UUZvYjI2bFp5TU40REhpQSt3UGJ1anJSQQpWTVFTdVJsUms2b0c0TWN6MmZOVjIzSkRJeExPRFkyb01ySUNpYStyb2VuOUVUbVdGM3dsNUMrUTFRcW5JdytDCm5oWVg5c1BBVUIyOUJmVHVhcWp5MVE5RzRNcjJMcVVDY0t0b1V5UGk2WlBzUUNQdDJQcTI0WFpDaTdlK05wQXkKd1ZJK3VkOG1mcmc1Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    service:
+      name: kubestash-kubestash-operator-webhook
+      namespace: stash
+      path: /mutate-core-kubestash-com-v1alpha1-backupconfiguration
+      port: 443
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: mbackupconfiguration.kb.io
+  namespaceSelector: {}
+  objectSelector: {}
+  reinvocationPolicy: Never
+  rules:
+  - apiGroups:
+    - core.kubestash.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupconfigurations
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 10
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lRQmhFcElqZlRJTnV5cC9vam1PYnc4VEFOQmdrcWhraUc5dzBCQVFzRkFEQU4KTVFzd0NRWURWUVFERXdKallUQWVGdzB5TlRBME1qSXdOVE0yTVRkYUZ3MHpOVEEwTWpBd05UTTJNVGRhTUEweApDekFKQmdOVkJBTVRBbU5oTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFzMjNoCmdIOXVTbHBOcXV5RVdqd2FQcTZUOVYyd0QvTUNRc1ZYcWFwZEdsMGttMTNYb1IwK3FxdlovMlVsQ3doQ25XUXAKdXczRjJnSWo4MFBVT1QwQVB1TU5udjhNd2RkR2lLMWx4UXNzNkxzeGJxSE5BblZxNHBMRXVVRmtyb1FQNXgwSAordzBZRmRBOEZlcHkrN0RCZ2pYNkpOTHY3Q2EwdTgrSjlmYlJkaG4yVWlTZkRTOFV2eUo4elB5UjhoMzhkM3QyCmZxM0t1Z2dpRGJnejZTQTUxVjBqLzRNZS9CaW9QM05EV1F1OEtlYkZFbGhJTnhTcGlPbkpCR21XcnMyWWRWYUQKS0VlMERHNW16WlhZWU9VZHIzalViZGNIbGIvV0RWaDdQZUgrTmdyamRia1RyN29jR0FINkpJb0xEd3ZURnVocgpBbWdLWWJsM1ZUUnVPQkpRdXdJREFRQUJvMkV3WHpBT0JnTlZIUThCQWY4RUJBTUNBcVF3SFFZRFZSMGxCQll3CkZBWUlLd1lCQlFVSEF3RUdDQ3NHQVFVRkJ3TUNNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdIUVlEVlIwT0JCWUUKRkh1ekxScmszTzhjcTBqN1hrQzRwT0ZRK3BrTU1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQ1dldURqMGg3cApLQmNLeHlCTmllaDlQYzE2UnVuL3RwTEtCditiOStKZ2ZxeTlNZE96eHhURVpXRlJwZjVWN1dVbVAzaHFCUDlMCk5XTUtnUWovd2FXTlMxWlR0TjBUejN4SGRXdldLU0p0bkFtWWdDZGV0K00zTFh2RGdpTG8yeDR1UXg3UnkyT2sKWmFpNE5mdHkwVXdvY3pueWFmQ2RoUCt2TTlBZ0xGcGc3LzlGNGI4UUZvYjI2bFp5TU40REhpQSt3UGJ1anJSQQpWTVFTdVJsUms2b0c0TWN6MmZOVjIzSkRJeExPRFkyb01ySUNpYStyb2VuOUVUbVdGM3dsNUMrUTFRcW5JdytDCm5oWVg5c1BBVUIyOUJmVHVhcWp5MVE5RzRNcjJMcVVDY0t0b1V5UGk2WlBzUUNQdDJQcTI0WFpDaTdlK05wQXkKd1ZJK3VkOG1mcmc1Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    service:
+      name: kubestash-kubestash-operator-webhook
+      namespace: stash
+      path: /mutate-core-kubestash-com-v1alpha1-hooktemplate
+      port: 443
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: mhooktemplate.kb.io
+  namespaceSelector: {}
+  objectSelector: {}
+  reinvocationPolicy: Never
+  rules:
+  - apiGroups:
+    - core.kubestash.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - hooktemplates
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 10

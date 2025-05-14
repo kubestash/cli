@@ -1,0 +1,22 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:49:13Z"
+deprecatedLastTimestamp: "2025-05-05T12:49:13Z"
+deprecatedSource:
+  component: job-controller
+eventTime: null
+kind: Event
+metadata:
+  name: cluster-restore.183ca26f2ff78e08
+  namespace: demo
+note: 'Created pod: cluster-restore-649x7'
+reason: SuccessfulCreate
+regarding:
+  apiVersion: batch/v1
+  kind: Job
+  name: cluster-restore
+  namespace: demo
+  resourceVersion: "1709785"
+  uid: 4a57cc2f-e511-4460-893f-1847829e9d27
+reportingController: job-controller
+type: Normal

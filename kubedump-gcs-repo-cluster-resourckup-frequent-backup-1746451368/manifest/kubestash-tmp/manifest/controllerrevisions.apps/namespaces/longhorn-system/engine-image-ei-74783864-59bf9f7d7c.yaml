@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+data:
+  spec:
+    template:
+      $patch: replace
+      metadata:
+        creationTimestamp: null
+        labels:
+          longhorn.io/component: engine-image
+          longhorn.io/engine-image: ei-74783864
+        name: engine-image-ei-74783864
+        ownerReferences:
+        - apiVersion: longhorn.io/v1beta2
+          blockOwnerDeletion: true
+          kind: EngineImage
+          name: ei-74783864
+          uid: e775c6b4-1ca8-464a-aa8a-369339100080
+      spec:
+        containers:
+        - args:
+          - -c
+          - diff /usr/local/bin/longhorn /data/longhorn > /dev/null 2>&1; if [ $?
+            -ne 0 ]; then cp -p /usr/local/bin/longhorn /data/ && echo installed;
+            fi && trap 'rm /data/longhorn* && echo cleaned up' EXIT && sleep infinity
+          command:
+          - /bin/bash
+          image: longhornio/longhorn-engine:v1.5.1
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - /data/longhorn version --client-only
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 4
+          name: engine-image-ei-74783864
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - ls /data/longhorn && /data/longhorn version --client-only
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 4
+          resources: {}
+          securityContext:
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /data/
+            name: data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: longhorn-service-account
+        serviceAccountName: longhorn-service-account
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - hostPath:
+            path: /var/lib/longhorn/engine-binaries/longhornio-longhorn-engine-v1.5.1
+            type: ""
+          name: data
+kind: ControllerRevision
+metadata:
+  annotations:
+    deprecated.daemonset.template.generation: "1"
+    longhorn.io/last-applied-tolerations: '[]'
+  labels:
+    controller-revision-hash: 59bf9f7d7c
+    longhorn.io/component: engine-image
+    longhorn.io/engine-image: ei-74783864
+  name: engine-image-ei-74783864-59bf9f7d7c
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DaemonSet
+    name: engine-image-ei-74783864
+    uid: ddeae8ee-7efd-4606-8181-bb75de2345a8
+revision: 1

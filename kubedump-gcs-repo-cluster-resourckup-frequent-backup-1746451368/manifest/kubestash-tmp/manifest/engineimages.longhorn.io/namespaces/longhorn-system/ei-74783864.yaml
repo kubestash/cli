@@ -1,0 +1,37 @@
+apiVersion: longhorn.io/v1beta2
+kind: EngineImage
+metadata:
+  finalizers:
+  - longhorn.io
+  labels:
+    longhorn.io/component: engine-image
+    longhorn.io/engine-image: ei-74783864
+    longhorn.io/managed-by: longhorn-manager
+  name: ei-74783864
+  namespace: longhorn-system
+spec:
+  image: longhornio/longhorn-engine:v1.5.1
+status:
+  buildDate: "2023-07-19T05:05:37+00:00"
+  cliAPIMinVersion: 3
+  cliAPIVersion: 8
+  conditions:
+  - lastProbeTime: ""
+    lastTransitionTime: "2025-04-22T05:49:42Z"
+    message: Engine image ei-74783864 (longhornio/longhorn-engine:v1.5.1) is fully
+      deployed on all ready nodes
+    reason: ""
+    status: "True"
+    type: ready
+  controllerAPIMinVersion: 3
+  controllerAPIVersion: 4
+  dataFormatMinVersion: 1
+  dataFormatVersion: 1
+  gitCommit: 0d8e42d0c74b1d0430e56efa1e8247c55f34cef3
+  noRefSince: ""
+  nodeDeploymentMap:
+    nipun: true
+  ownerID: nipun
+  refCount: 41
+  state: deployed
+  version: v1.5.1

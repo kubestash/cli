@@ -1,0 +1,23 @@
+action: Binding
+apiVersion: events.k8s.io/v1
+deprecatedFirstTimestamp: null
+deprecatedLastTimestamp: null
+deprecatedSource: {}
+eventTime: "2025-05-05T12:35:00.115363Z"
+kind: Event
+metadata:
+  name: trigger-cluster-resources-backup-frequent-backup-29107475-vcckd.183ca1a863e3e338
+  namespace: demo
+note: Successfully assigned demo/trigger-cluster-resources-backup-frequent-backup-29107475-vcckd
+  to nipun
+reason: Scheduled
+regarding:
+  apiVersion: v1
+  kind: Pod
+  name: trigger-cluster-resources-backup-frequent-backup-29107475-vcckd
+  namespace: demo
+  resourceVersion: "1707497"
+  uid: 8b12db74-0250-4b59-a46e-d00a2a19c705
+reportingController: default-scheduler
+reportingInstance: default-scheduler-nipun
+type: Normal

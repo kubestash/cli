@@ -1,0 +1,271 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2025-04-22T05:49:26Z"
+  generateName: csi-resizer-565567749d-
+  labels:
+    app: csi-resizer
+    pod-template-hash: 565567749d
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:generateName: {}
+        f:labels:
+          .: {}
+          f:app: {}
+          f:pod-template-hash: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"8973b648-ea3c-4ea1-95db-2422b1f4ed4e"}: {}
+      f:spec:
+        f:affinity:
+          .: {}
+          f:podAntiAffinity:
+            .: {}
+            f:preferredDuringSchedulingIgnoredDuringExecution: {}
+        f:containers:
+          k:{"name":"csi-resizer"}:
+            .: {}
+            f:args: {}
+            f:env:
+              .: {}
+              k:{"name":"ADDRESS"}:
+                .: {}
+                f:name: {}
+                f:value: {}
+              k:{"name":"POD_NAMESPACE"}:
+                .: {}
+                f:name: {}
+                f:valueFrom:
+                  .: {}
+                  f:fieldRef: {}
+            f:image: {}
+            f:imagePullPolicy: {}
+            f:name: {}
+            f:resources: {}
+            f:terminationMessagePath: {}
+            f:terminationMessagePolicy: {}
+            f:volumeMounts:
+              .: {}
+              k:{"mountPath":"/csi/"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+        f:dnsPolicy: {}
+        f:enableServiceLinks: {}
+        f:restartPolicy: {}
+        f:schedulerName: {}
+        f:securityContext: {}
+        f:serviceAccount: {}
+        f:serviceAccountName: {}
+        f:terminationGracePeriodSeconds: {}
+        f:volumes:
+          .: {}
+          k:{"name":"socket-dir"}:
+            .: {}
+            f:hostPath:
+              .: {}
+              f:path: {}
+              f:type: {}
+            f:name: {}
+    manager: k3s
+    operation: Update
+    time: "2025-04-22T05:49:26Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions:
+          k:{"type":"ContainersReady"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Initialized"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"PodReadyToStartContainers"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Ready"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+        f:containerStatuses: {}
+        f:hostIP: {}
+        f:hostIPs: {}
+        f:phase: {}
+        f:podIP: {}
+        f:podIPs:
+          .: {}
+          k:{"ip":"10.42.0.5"}:
+            .: {}
+            f:ip: {}
+        f:startTime: {}
+    manager: k3s
+    operation: Update
+    subresource: status
+    time: "2025-04-28T05:55:25Z"
+  name: csi-resizer-565567749d-fxxcv
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: csi-resizer-565567749d
+    uid: 8973b648-ea3c-4ea1-95db-2422b1f4ed4e
+  resourceVersion: "690574"
+  uid: 0153e6db-8cad-4748-8204-66ed9ed41193
+spec:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - csi-resizer
+          topologyKey: kubernetes.io/hostname
+        weight: 1
+  containers:
+  - args:
+    - --v=2
+    - --csi-address=$(ADDRESS)
+    - --timeout=1m50s
+    - --leader-election
+    - --leader-election-namespace=$(POD_NAMESPACE)
+    - --leader-election-namespace=$(POD_NAMESPACE)
+    - --handle-volume-inuse-error=false
+    env:
+    - name: ADDRESS
+      value: /csi/csi.sock
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.namespace
+    image: longhornio/csi-resizer:v1.7.0
+    imagePullPolicy: IfNotPresent
+    name: csi-resizer
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /csi/
+      name: socket-dir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-vmk68
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: nipun
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: longhorn-service-account
+  serviceAccountName: longhorn-service-account
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - hostPath:
+      path: /var/lib/kubelet/plugins/driver.longhorn.io
+      type: DirectoryOrCreate
+    name: socket-dir
+  - name: kube-api-access-vmk68
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:55:25Z"
+    status: "True"
+    type: PodReadyToStartContainers
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:49:26Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:55:25Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:55:25Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:49:26Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: containerd://bb320b4b3aa5b57a8c0b88d31fe5d0c06d008f3d37214fd23af8064fd769f8f0
+    image: docker.io/longhornio/csi-resizer:v1.7.0
+    imageID: docker.io/longhornio/csi-resizer@sha256:c97587ff279e15de17a80c9ee1ab07af055eec6799250dfcd81ffed9ea298ec6
+    lastState:
+      terminated:
+        containerID: containerd://b236b3144bf15bc9aa0d4e53e3bf3b6ff5cc243f51da74893ac8605076710f71
+        exitCode: 255
+        finishedAt: "2025-04-28T05:53:29Z"
+        reason: Unknown
+        startedAt: "2025-04-27T01:02:12Z"
+    name: csi-resizer
+    ready: true
+    restartCount: 2
+    started: true
+    state:
+      running:
+        startedAt: "2025-04-28T05:55:15Z"
+    volumeMounts:
+    - mountPath: /csi/
+      name: socket-dir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-vmk68
+      readOnly: true
+      recursiveReadOnly: Disabled
+  hostIP: 10.2.0.141
+  hostIPs:
+  - ip: 10.2.0.141
+  phase: Running
+  podIP: 10.42.0.5
+  podIPs:
+  - ip: 10.42.0.5
+  qosClass: BestEffort
+  startTime: "2025-04-22T05:49:26Z"

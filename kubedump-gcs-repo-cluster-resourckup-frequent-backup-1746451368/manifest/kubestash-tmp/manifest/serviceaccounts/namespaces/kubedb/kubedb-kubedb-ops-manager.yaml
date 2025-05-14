@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubedb
+    meta.helm.sh/release-namespace: kubedb
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubedb-ops-manager
+    app.kubernetes.io/version: v0.40.1
+    helm.sh/chart: kubedb-ops-manager-v0.40.0
+  name: kubedb-kubedb-ops-manager
+  namespace: kubedb

@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:25:01Z"
+involvedObject:
+  apiVersion: batch/v1
+  kind: Job
+  name: demo-cluster-resources-backup-frequent-backup-1746447900
+  namespace: demo
+  resourceVersion: "1706233"
+  uid: b03373f4-c154-4ef0-9d6d-e0a0ee92739c
+kind: Event
+lastTimestamp: "2025-05-05T12:25:01Z"
+message: 'Created pod: demo-cluster-resources-backup-frequent-backup-1746447900-9rm4z'
+metadata:
+  name: demo-cluster-resources-backup-frequent-backup-1746447900.183ca11cef029e98
+  namespace: demo
+reason: SuccessfulCreate
+reportingComponent: job-controller
+reportingInstance: ""
+source:
+  component: job-controller
+type: Normal

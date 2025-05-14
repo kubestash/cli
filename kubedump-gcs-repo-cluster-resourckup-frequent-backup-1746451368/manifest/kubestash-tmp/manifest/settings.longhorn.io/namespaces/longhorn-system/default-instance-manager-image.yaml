@@ -1,0 +1,8 @@
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  annotations:
+    longhorn.io/configmap-resource-version: ""
+  name: default-instance-manager-image
+  namespace: longhorn-system
+value: longhornio/longhorn-instance-manager:v1.5.1

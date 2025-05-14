@@ -1,0 +1,26 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:49:14Z"
+involvedObject:
+  apiVersion: v1
+  fieldPath: spec.containers{manifest-restore-0}
+  kind: Pod
+  name: cluster-restore-649x7
+  namespace: demo
+  resourceVersion: "1709789"
+  uid: 033bef84-1298-43b4-a3e4-447e98acc61f
+kind: Event
+lastTimestamp: "2025-05-05T12:49:14Z"
+message: Container image "arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64415"
+  already present on machine
+metadata:
+  name: cluster-restore-649x7.183ca26f4c9b3523
+  namespace: demo
+reason: Pulled
+reportingComponent: kubelet
+reportingInstance: nipun
+source:
+  component: kubelet
+  host: nipun
+type: Normal

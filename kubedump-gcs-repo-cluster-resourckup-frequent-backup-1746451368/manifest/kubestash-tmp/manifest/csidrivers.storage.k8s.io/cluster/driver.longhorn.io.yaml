@@ -1,0 +1,17 @@
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  annotations:
+    driver.longhorn.io/git-commit: 8ce69c8f280a5a2715c528034e0274391ad761c0
+    driver.longhorn.io/kubernetes-version: v1.32.3+k3s1
+    driver.longhorn.io/version: v1.5.1
+  name: driver.longhorn.io
+spec:
+  attachRequired: true
+  fsGroupPolicy: ReadWriteOnceWithFSType
+  podInfoOnMount: true
+  requiresRepublish: false
+  seLinuxMount: false
+  storageCapacity: false
+  volumeLifecycleModes:
+  - Persistent

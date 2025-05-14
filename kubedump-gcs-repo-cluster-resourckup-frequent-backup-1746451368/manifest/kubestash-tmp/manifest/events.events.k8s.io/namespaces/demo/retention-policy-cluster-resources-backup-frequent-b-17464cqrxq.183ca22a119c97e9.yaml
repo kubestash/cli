@@ -1,0 +1,25 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:44:17Z"
+deprecatedLastTimestamp: "2025-05-05T12:44:17Z"
+deprecatedSource:
+  component: kubelet
+  host: nipun
+eventTime: null
+kind: Event
+metadata:
+  name: retention-policy-cluster-resources-backup-frequent-b-17464cqrxq.183ca22a119c97e9
+  namespace: demo
+note: Started container update-retention-policy-status
+reason: Started
+regarding:
+  apiVersion: v1
+  fieldPath: spec.containers{update-retention-policy-status}
+  kind: Pod
+  name: retention-policy-cluster-resources-backup-frequent-b-17464cqrxq
+  namespace: demo
+  resourceVersion: "1708790"
+  uid: 65b52d36-31de-4833-a9f5-c79b84af4c29
+reportingController: kubelet
+reportingInstance: nipun
+type: Normal

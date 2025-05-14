@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:52:14Z"
+involvedObject:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9
+  namespace: longhorn-system
+  resourceVersion: "1710279"
+  uid: db89c3e8-5766-4940-973c-12867d949324
+kind: Event
+lastTimestamp: "2025-05-05T12:52:14Z"
+message: volume pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9 has been attached to nipun
+metadata:
+  name: pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9.183ca29939227650
+  namespace: longhorn-system
+reason: Attached
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: longhorn-volume-controller
+type: Normal

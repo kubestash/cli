@@ -1,0 +1,14 @@
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  name: nipun
+  namespace: kube-node-lease
+  ownerReferences:
+  - apiVersion: v1
+    kind: Node
+    name: nipun
+    uid: 55416f4d-f113-4210-9fa6-9f1719adf3c7
+spec:
+  holderIdentity: nipun
+  leaseDurationSeconds: 40
+  renewTime: "2025-05-05T13:22:50.005787Z"

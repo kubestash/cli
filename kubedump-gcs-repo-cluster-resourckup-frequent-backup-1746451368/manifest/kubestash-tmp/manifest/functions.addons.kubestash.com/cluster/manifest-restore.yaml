@@ -1,0 +1,28 @@
+apiVersion: addons.kubestash.com/v1alpha1
+kind: Function
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"addons.kubestash.com/v1alpha1","kind":"Function","metadata":{"annotations":{},"name":"manifest-restore"},"spec":{"args":["restore","--namespace=${namespace:=default}","--restoresession=${restoreSession:=}","--snapshot=${snapshot:=}","--enable-cache=${enableCache:=}","--scratch-dir=${scratchDir:=}","--include-rbac-resources=${includeRBACResources:=}","--override-resources=${overrideResources:=}","--and-label-selectors=${ANDedLabelSelector:=}","--or-label-selectors=${ORedLabelSelector:=}"],"image":"arnabbaishnab7620/manifest:v0.9.0-1-g1625f005d-dirty_linux_amd64102"}}
+    meta.helm.sh/release-name: kubestash
+    meta.helm.sh/release-namespace: stash
+  labels:
+    app.kubernetes.io/instance: kubestash
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubestash-catalog
+    app.kubernetes.io/version: v2025.3.24
+    helm.sh/chart: kubestash-catalog-v2025.3.24
+  name: manifest-restore
+spec:
+  args:
+  - restore
+  - --namespace=${namespace:=default}
+  - --restoresession=${restoreSession:=}
+  - --snapshot=${snapshot:=}
+  - --enable-cache=${enableCache:=}
+  - --scratch-dir=${scratchDir:=}
+  - --include-rbac-resources=${includeRBACResources:=}
+  - --override-resources=${overrideResources:=}
+  - --and-label-selectors=${ANDedLabelSelector:=}
+  - --or-label-selectors=${ORedLabelSelector:=}
+  image: arnabbaishnab7620/manifest:v0.9.0-1-g1625f005d-dirty_linux_amd64102

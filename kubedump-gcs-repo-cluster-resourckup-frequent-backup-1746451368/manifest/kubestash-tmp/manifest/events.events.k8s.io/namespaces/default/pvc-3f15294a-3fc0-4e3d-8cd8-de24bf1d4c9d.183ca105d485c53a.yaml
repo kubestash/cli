@@ -1,0 +1,21 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 5
+deprecatedFirstTimestamp: "2025-05-05T12:23:21Z"
+deprecatedLastTimestamp: "2025-05-05T12:23:32Z"
+deprecatedSource:
+  component: driver.longhorn.io_csi-provisioner-8649bdf768-wmv44_b1799ee4-f3b1-4c58-b611-f1883c44a8fb
+eventTime: null
+kind: Event
+metadata:
+  name: pvc-3f15294a-3fc0-4e3d-8cd8-de24bf1d4c9d.183ca105d485c53a
+  namespace: default
+note: persistentvolume pvc-3f15294a-3fc0-4e3d-8cd8-de24bf1d4c9d is still attached
+  to node nipun
+reason: VolumeFailedDelete
+regarding:
+  apiVersion: v1
+  kind: PersistentVolume
+  name: pvc-3f15294a-3fc0-4e3d-8cd8-de24bf1d4c9d
+  resourceVersion: "1705981"
+  uid: 2f6686a9-a9f9-4474-b800-e087c6f5a82f
+type: Warning

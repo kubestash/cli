@@ -1,0 +1,19 @@
+apiVersion: longhorn.io/v1beta2
+kind: VolumeAttachment
+metadata:
+  finalizers:
+  - longhorn.io
+  labels:
+    longhornvolume: pvc-72f98dca-c270-4812-afb5-f745b181043e
+  name: pvc-72f98dca-c270-4812-afb5-f745b181043e
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: longhorn.io/v1beta2
+    kind: Volume
+    name: pvc-72f98dca-c270-4812-afb5-f745b181043e
+    uid: cf192bdd-53ae-40c8-b326-347071b16546
+spec:
+  attachmentTickets: {}
+  volume: pvc-72f98dca-c270-4812-afb5-f745b181043e
+status:
+  attachmentTicketStatuses: {}

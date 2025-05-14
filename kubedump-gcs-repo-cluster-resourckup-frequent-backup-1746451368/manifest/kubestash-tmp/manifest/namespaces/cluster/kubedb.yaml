@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: kubedb
+    name: kubedb
+  name: kubedb
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active

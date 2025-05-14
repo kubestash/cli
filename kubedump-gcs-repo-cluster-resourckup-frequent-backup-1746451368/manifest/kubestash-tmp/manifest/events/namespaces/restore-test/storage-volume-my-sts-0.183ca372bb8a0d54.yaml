@@ -1,0 +1,25 @@
+apiVersion: v1
+count: 2
+eventTime: null
+firstTimestamp: "2025-05-05T13:07:48Z"
+involvedObject:
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: storage-volume-my-sts-0
+  namespace: restore-test
+  resourceVersion: "1712174"
+  uid: cf75d66b-7a67-42e0-9284-94ec6950a72c
+kind: Event
+lastTimestamp: "2025-05-05T13:07:48Z"
+message: Waiting for a volume to be created either by the external provisioner 'driver.longhorn.io'
+  or manually by the system administrator. If volume creation is delayed, please verify
+  that the provisioner is running and correctly registered.
+metadata:
+  name: storage-volume-my-sts-0.183ca372bb8a0d54
+  namespace: restore-test
+reason: ExternalProvisioning
+reportingComponent: persistentvolume-controller
+reportingInstance: ""
+source:
+  component: persistentvolume-controller
+type: Normal

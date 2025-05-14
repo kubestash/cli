@@ -1,0 +1,314 @@
+apiVersion: v1
+kind: Node
+metadata:
+  annotations:
+    alpha.kubernetes.io/provided-node-ip: 10.2.0.141
+    csi.volume.kubernetes.io/nodeid: '{"driver.longhorn.io":"nipun"}'
+    flannel.alpha.coreos.com/backend-data: '{"VNI":1,"VtepMAC":"d2:ba:34:1a:68:24"}'
+    flannel.alpha.coreos.com/backend-type: vxlan
+    flannel.alpha.coreos.com/kube-subnet-manager: "true"
+    flannel.alpha.coreos.com/public-ip: 10.2.0.141
+    k3s.io/hostname: nipun
+    k3s.io/internal-ip: 10.2.0.141
+    k3s.io/node-args: '["server","--disable","traefik","--disable","metrics-server","--tls-san","103.108.60.196"]'
+    k3s.io/node-config-hash: 5TECHRW4P6C7NTISMKDBUTKYZEOZSEL7DO223JQOU2TDDIXDTG5A====
+    k3s.io/node-env: '{}'
+    node.alpha.kubernetes.io/ttl: "0"
+    volumes.kubernetes.io/controller-managed-attach-detach: "true"
+  finalizers:
+  - wrangler.cattle.io/node
+  labels:
+    beta.kubernetes.io/arch: amd64
+    beta.kubernetes.io/instance-type: k3s
+    beta.kubernetes.io/os: linux
+    kubernetes.io/arch: amd64
+    kubernetes.io/hostname: nipun
+    kubernetes.io/os: linux
+    node-role.kubernetes.io/control-plane: "true"
+    node-role.kubernetes.io/master: "true"
+    node.kubernetes.io/instance-type: k3s
+  name: nipun
+spec:
+  podCIDR: 10.42.0.0/24
+  podCIDRs:
+  - 10.42.0.0/24
+  providerID: k3s://nipun
+status:
+  addresses:
+  - address: 10.2.0.141
+    type: InternalIP
+  - address: nipun
+    type: Hostname
+  allocatable:
+    cpu: "8"
+    ephemeral-storage: "97743690881"
+    hugepages-1Gi: "0"
+    hugepages-2Mi: "0"
+    memory: 32866236Ki
+    pods: "110"
+  capacity:
+    cpu: "8"
+    ephemeral-storage: 100476656Ki
+    hugepages-1Gi: "0"
+    hugepages-2Mi: "0"
+    memory: 32866236Ki
+    pods: "110"
+  conditions:
+  - lastHeartbeatTime: "2025-05-05T13:22:49Z"
+    lastTransitionTime: "2025-04-21T12:06:40Z"
+    message: kubelet has sufficient memory available
+    reason: KubeletHasSufficientMemory
+    status: "False"
+    type: MemoryPressure
+  - lastHeartbeatTime: "2025-05-05T13:22:49Z"
+    lastTransitionTime: "2025-04-21T12:06:40Z"
+    message: kubelet has no disk pressure
+    reason: KubeletHasNoDiskPressure
+    status: "False"
+    type: DiskPressure
+  - lastHeartbeatTime: "2025-05-05T13:22:49Z"
+    lastTransitionTime: "2025-04-21T12:06:40Z"
+    message: kubelet has sufficient PID available
+    reason: KubeletHasSufficientPID
+    status: "False"
+    type: PIDPressure
+  - lastHeartbeatTime: "2025-05-05T13:22:49Z"
+    lastTransitionTime: "2025-04-21T12:06:40Z"
+    message: kubelet is posting ready status
+    reason: KubeletReady
+    status: "True"
+    type: Ready
+  daemonEndpoints:
+    kubeletEndpoint:
+      Port: 10250
+  images:
+  - names:
+    - docker.io/longhornio/longhorn-engine@sha256:a2f4482d486a3b6cbfda7247cbd076b6b4c5b6f4a001b69bbbca174c4e77c75e
+    - docker.io/longhornio/longhorn-engine:v1.5.1
+    sizeBytes: 282616158
+  - names:
+    - docker.io/longhornio/longhorn-instance-manager@sha256:15a2d7a141a345af64c9857ad175b220f58d65f6d1d795aca03e324401c0bfbc
+    - docker.io/longhornio/longhorn-instance-manager:v1.5.1
+    sizeBytes: 279297937
+  - names:
+    - docker.io/longhornio/longhorn-manager@sha256:f29f6b568bbb76a73569b73e00ff3ed4b42fc500a2863e0523aeb8313bf9495f
+    - docker.io/longhornio/longhorn-manager:v1.5.1
+    sizeBytes: 113885562
+  - names:
+    - ghcr.io/kubedb/kubedb-ops-manager@sha256:6226d69babde03b9fe09cfb8d7d95531f85a87a88e8e39495793d01279600843
+    - ghcr.io/kubedb/kubedb-ops-manager:v0.40.1
+    sizeBytes: 107641357
+  - names:
+    - ghcr.io/kubedb/kubedb-provisioner@sha256:b64831595af140673e87e9d14229ccb2bb99c6fdc1877c87b5c18f36af40b4b6
+    - ghcr.io/kubedb/kubedb-provisioner:v0.53.1
+    sizeBytes: 104540666
+  - names:
+    - ghcr.io/anisurrahman75/kubestash@sha256:7e9c27550bebedd9561f5a871202e57d312f3e1d1f056901e84435ea4128bbd8
+    sizeBytes: 86752548
+  - names:
+    - ghcr.io/anisurrahman75/kubestash@sha256:fe42cebd10fc8282d4d7b5afdd8468941dba8aaf5fb3b630042b5daf0f90bda9
+    - ghcr.io/anisurrahman75/kubestash:fix-rbac-permissions_linux_amd64
+    sizeBytes: 86750530
+  - names:
+    - ghcr.io/anisurrahman75/kubestash@sha256:1a937cc83889957bfa3e0313e582059ad0df6985b3e0c835319a6898ccc6f6a4
+    sizeBytes: 86748530
+  - names:
+    - ghcr.io/kubestash/kubestash@sha256:6043d3fe5fabcc157a3fce937c97062e9bdb556d57d3af2f314aa07bba7d255e
+    - ghcr.io/kubestash/kubestash:v0.17.0
+    sizeBytes: 86748040
+  - names:
+    - docker.io/arnabbaishnab7620/kubestash@sha256:490c83e415ddb871059b6305c4866f2d3ebd55cca47dc43256525b889507b0f9
+    - docker.io/arnabbaishnab7620/kubestash:final-test_linux_amd64301
+    sizeBytes: 86746817
+  - names:
+    - docker.io/arnabbaishnab7620/kubestash@sha256:2615c61154331a0b0d7629b93a3af0907ca65e5230464ce1f6430e52730261df
+    - docker.io/arnabbaishnab7620/kubestash:v0.16.0-15-gde23a072-dirty_linux_amd6401
+    sizeBytes: 86746718
+  - names:
+    - docker.io/arnabbaishnab7620/kubestash@sha256:e16899f045bb6b6bc34dbc1a88a41e59c148a6a869707c67bfcdb3f15926a0dc
+    - docker.io/arnabbaishnab7620/kubestash:rbac-permission-test_linux_amd6408
+    sizeBytes: 86745305
+  - names:
+    - docker.io/arnabbaishnab7620/kubestash@sha256:0bcb136c67971ec7b4f777c4b4e98e183a68a611fbc466b06529ae423cd24c7a
+    - docker.io/arnabbaishnab7620/kubestash:rbac-permission-test_linux_amd6407
+    sizeBytes: 86741870
+  - names:
+    - docker.io/arnabbaishnab7620/kubestash@sha256:2dcc018fe991922491703ed68e97c635ec2910447c49cecc2e25fd0a54e49620
+    - docker.io/arnabbaishnab7620/kubestash:replicaset-error_linux_amd6403
+    sizeBytes: 86741434
+  - names:
+    - docker.io/longhornio/longhorn-ui@sha256:14379e9f7b0bc1ac298a38001c5a28cdd8863202eae956988fc5c093204c680f
+    - docker.io/longhornio/longhorn-ui:v1.5.1
+    sizeBytes: 72844275
+  - names:
+    - docker.io/library/nginx@sha256:c15da6c91de8d2f436196f3a768483ad32c258ed4e1beb3d367a27ed67253e66
+    - docker.io/library/nginx:latest
+    sizeBytes: 72404038
+  - names:
+    - docker.io/library/nginx@sha256:5ed8fcc66f4ed123c1b2560ed708dc148755b6e4cbd8b943fab094f2c6bfa91e
+    sizeBytes: 72403299
+  - names:
+    - ghcr.io/kubedb/kubedb-autoscaler@sha256:71d682cd10c4503bdc221649dc489082cd4add2b27f9524bda6ee169f199aad9
+    - ghcr.io/kubedb/kubedb-autoscaler:v0.38.0
+    sizeBytes: 67048697
+  - names:
+    - ghcr.io/kubedb/kubedb-crd-manager@sha256:d7c59e6450cd252d5c3589b2f0d2a890722ae6c70181ec39aff829fd95d8b966
+    - ghcr.io/kubedb/kubedb-crd-manager:v0.8.0
+    sizeBytes: 57842027
+  - names:
+    - ghcr.io/kubedb/kubedb-webhook-server@sha256:bcafce36849ce95b4d09619025beef0a2c211266acb3e8f0e1ec078a550fd23d
+    - ghcr.io/kubedb/kubedb-webhook-server:v0.29.1
+    sizeBytes: 54701418
+  - names:
+    - ghcr.io/appscode/petset@sha256:717af9a4934317649ef78f4df31bfafae40faa1577860a61a6abdcf0522ce382
+    - ghcr.io/appscode/petset:v0.0.10
+    sizeBytes: 47007788
+  - names:
+    - docker.io/arnabbaishnab7620/manifest@sha256:1b72c498de15d33be60176f30cf4697d3873b7c35ebada4f81df6f3644ed12c9
+    - docker.io/arnabbaishnab7620/manifest:restore-namespace-fix_linux_amd64307
+    sizeBytes: 46285705
+  - names:
+    - docker.io/arnabbaishnab7620/manifest@sha256:227cf746d43aae3904efb64d960ea678bad5843858fce54f9e53a0458eb98786
+    - docker.io/arnabbaishnab7620/manifest:restore-namespace-fix_linux_amd64202
+    sizeBytes: 46282320
+  - names:
+    - docker.io/arnabbaishnab7620/manifest@sha256:7c15524df41ef37beca9094e74434fed3e5670b88646fc0f5ff548ccf93fe8b6
+    - docker.io/arnabbaishnab7620/manifest:restore-namespace-fix_linux_amd64203
+    sizeBytes: 46281330
+  - names:
+    - docker.io/arnabbaishnab7620/manifest@sha256:3e47a621b033203746b94441404f5a0c826a7a976bb054c410036546878ca658
+    - docker.io/arnabbaishnab7620/manifest:restore-namespace-fix_linux_amd64201
+    sizeBytes: 46276961
+  - names:
+    - docker.io/arnabbaishnab7620/manifest@sha256:09f3a732e5c8d40b8aa8d6080bce480e51ecfea64c5a6f09bcb7bdfdc6dd1855
+    - docker.io/arnabbaishnab7620/manifest:v0.9.0-1-g1625f005d-dirty_linux_amd64102
+    sizeBytes: 46276854
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:1cd71075260943098a275bcff4a2977cf26fdf3839e28299ba7d517a75f34fe0
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64411
+    sizeBytes: 46154723
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:baa3e07b8ecd59a6be0e5c6a61bd2b3d5a2da0bf49a0687c2cbac95c08d387ed
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64410
+    sizeBytes: 46149996
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:2cc0b782fb327e6be7b2415767b6e6c5c8910635afe4bbee75973597765f493e
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64409
+    sizeBytes: 46149776
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:eda0c04667ca59993fad901915e31eecbae888c6ab878f2517226a8a960fc121
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64412
+    sizeBytes: 46146943
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:14ba5cc4dc13183da504edf8c8a3f0af1963b190651a08de9159238f0662f5e1
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64408
+    sizeBytes: 46144954
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:ec577ffa417cbac17ee2d71506cc555326a5118521e82e20411ab686c8ec6753
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64402
+    sizeBytes: 46143187
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:10a75db219f4d0d8605ae781e6081052624b5c8bd479b3ede385b0083dd91061
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64407
+    sizeBytes: 46140379
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:78cb9f8eb70e200dd262905ea163a9fe4e9b0216712c127c73597e2cb26a0452
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64401
+    sizeBytes: 46139906
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:8511df3c9c4eb1c42f0f79af60c4cbf2964737fc3dbe17c2da9d814eed306d41
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64415
+    sizeBytes: 46139844
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:3200d7323fccd615de59c88573693dab514a75849190a2071dba20dc802181b9
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64403
+    sizeBytes: 46139441
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:5d3f0d81b7b5f45ea4dfb88c388d15a3d62e04eade2d1daa759039a2d3ec12dd
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64404
+    sizeBytes: 46138636
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:629b9387975c646d6c0fec8bf0480702c4c0730cf6d2ec72444f8aa59b675d68
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64405
+    sizeBytes: 46138583
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:2f22e63a40f3776155a1b143419b7e87087af319f15f7520dcaac74c8c699c2b
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64413
+    sizeBytes: 46138280
+  - names:
+    - docker.io/arnabbaishnab7620/kubedump@sha256:a7d117f7701fa5c6fffef556b5f34595ed842fcbfde11f4011cb903075e53d28
+    - docker.io/arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64414
+    sizeBytes: 46138219
+  - names:
+    - ghcr.io/appscode/sidekick@sha256:4501fa583ff7cf1e150535e7f7671c087a724e526093a7f03379fa47f7c8efd0
+    - ghcr.io/appscode/sidekick:v0.0.11
+    sizeBytes: 38645217
+  - names:
+    - docker.io/longhornio/csi-provisioner@sha256:e205c61f10d9f0273431213abb8312205d56ceaf73c1fe4701e477c8e3e575c6
+    - docker.io/longhornio/csi-provisioner:v3.4.1
+    sizeBytes: 27612597
+  - names:
+    - registry.k8s.io/sig-storage/snapshot-controller@sha256:32b8e4254751c9935c796e6e5c07fe804250bd5032ab78f7133a00f75d504596
+    - registry.k8s.io/sig-storage/snapshot-controller:v8.0.1
+    sizeBytes: 26543742
+  - names:
+    - docker.io/longhornio/csi-resizer@sha256:c97587ff279e15de17a80c9ee1ab07af055eec6799250dfcd81ffed9ea298ec6
+    - docker.io/longhornio/csi-resizer:v1.7.0
+    sizeBytes: 25809150
+  - names:
+    - docker.io/longhornio/csi-snapshotter@sha256:c1f4824a3b6e75966a2f7930a63e6698d5a2673304abef8ea7c81571a3fde2d1
+    - docker.io/longhornio/csi-snapshotter:v6.2.1
+    sizeBytes: 25537611
+  - names:
+    - docker.io/longhornio/csi-attacher@sha256:39b52d8c2a665c743e15cfe019116339a8f21786bf254610e6077d5a29319afd
+    - docker.io/longhornio/csi-attacher:v4.2.0
+    sizeBytes: 25507871
+  - names:
+    - ghcr.io/appscode/kubectl-nonroot@sha256:d966cd567ccee51becfa1841b4f1827f17eb182e7ac8a862728fb08753f85d70
+    - ghcr.io/appscode/kubectl-nonroot:1.31
+    sizeBytes: 22282259
+  - names:
+    - ghcr.io/appscode/kubectl@sha256:82b4df61cba64205ccaa8cde233eba4060b471c9f4cf37d888b5e376f4faf091
+    - ghcr.io/appscode/kubectl:v1.31
+    sizeBytes: 22282119
+  - names:
+    - docker.io/rancher/mirrored-coredns-coredns@sha256:82979ddf442c593027a57239ad90616deb874e90c365d1a96ad508c2104bdea5
+    - docker.io/rancher/mirrored-coredns-coredns:1.12.0
+    sizeBytes: 20938299
+  - names:
+    - docker.io/rancher/local-path-provisioner@sha256:80496fdeb307541007621959aa13aed41d31db9cd2dc4167c19833e0bfa3878c
+    - docker.io/rancher/local-path-provisioner:v0.0.31
+    sizeBytes: 20727855
+  nodeInfo:
+    architecture: amd64
+    bootID: d1bc40d9-e2e8-4ceb-ae97-8f1ed5fabe07
+    containerRuntimeVersion: containerd://2.0.4-k3s2
+    kernelVersion: 6.8.0-58-generic
+    kubeProxyVersion: v1.32.3+k3s1
+    kubeletVersion: v1.32.3+k3s1
+    machineID: 023dbf84356d563a963a08f636cb435f
+    operatingSystem: linux
+    osImage: Ubuntu 24.04.1 LTS
+    systemUUID: 023dbf84-356d-563a-963a-08f636cb435f
+  runtimeHandlers:
+  - features:
+      recursiveReadOnlyMounts: true
+      userNamespaces: true
+    name: runc
+  - features:
+      recursiveReadOnlyMounts: true
+      userNamespaces: true
+    name: ""
+  - features:
+      recursiveReadOnlyMounts: false
+      userNamespaces: false
+    name: runhcs-wcow-process
+  volumesAttached:
+  - devicePath: ""
+    name: kubernetes.io/csi/driver.longhorn.io^pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c
+  - devicePath: ""
+    name: kubernetes.io/csi/driver.longhorn.io^pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68
+  volumesInUse:
+  - kubernetes.io/csi/driver.longhorn.io^pvc-9134954b-1ae3-425b-bd5c-9319525004f8
+  - kubernetes.io/csi/driver.longhorn.io^pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68
+  - kubernetes.io/csi/driver.longhorn.io^pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c

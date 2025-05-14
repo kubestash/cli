@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: alpaca-prod
+  name: alpaca-prod
+  namespace: default
+spec:
+  clusterIP: 10.43.235.26
+  clusterIPs:
+  - 10.43.235.26
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - nodePort: 31294
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: alpaca-prod
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}

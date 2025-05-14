@@ -1,0 +1,21 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 2
+deprecatedFirstTimestamp: "2025-05-05T12:52:08Z"
+deprecatedLastTimestamp: "2025-05-05T12:57:51Z"
+deprecatedSource:
+  component: longhorn-volume-controller
+eventTime: null
+kind: Event
+metadata:
+  name: pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9.183ca297b9829635
+  namespace: longhorn-system
+note: volume pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9 has been detached
+reason: Detached
+regarding:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9
+  namespace: longhorn-system
+  resourceVersion: "1710251"
+  uid: db89c3e8-5766-4940-973c-12867d949324
+type: Normal

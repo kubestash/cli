@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  annotations:
+    longhorn.io/volume-scheduling-error: replica scheduling failed
+    pv.kubernetes.io/provisioned-by: driver.longhorn.io
+    volume.kubernetes.io/provisioner-deletion-secret-name: ""
+    volume.kubernetes.io/provisioner-deletion-secret-namespace: ""
+  finalizers:
+  - kubernetes.io/pv-protection
+  - external-attacher/driver-longhorn-io
+  name: pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: storage-volume-my-sts-1
+    namespace: restore-test
+    resourceVersion: "1712334"
+    uid: bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68
+  csi:
+    driver: driver.longhorn.io
+    fsType: ext4
+    volumeAttributes:
+      dataLocality: disabled
+      fromBackup: ""
+      fsType: ext4
+      numberOfReplicas: "3"
+      staleReplicaTimeout: "30"
+      storage.kubernetes.io/csiProvisionerIdentity: 1745819895176-8081-driver.longhorn.io
+    volumeHandle: pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: longhorn
+  volumeMode: Filesystem
+status:
+  lastPhaseTransitionTime: "2025-05-05T13:08:14Z"
+  phase: Bound

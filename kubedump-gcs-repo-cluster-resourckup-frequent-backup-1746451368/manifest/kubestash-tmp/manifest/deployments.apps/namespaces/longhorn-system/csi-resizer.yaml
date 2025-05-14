@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    driver.longhorn.io/git-commit: 8ce69c8f280a5a2715c528034e0274391ad761c0
+    driver.longhorn.io/kubernetes-version: v1.32.3+k3s1
+    driver.longhorn.io/version: v1.5.1
+    longhorn.io/last-applied-tolerations: '[]'
+  labels:
+    app: csi-resizer
+    longhorn.io/managed-by: longhorn-manager
+  name: csi-resizer
+  namespace: longhorn-system
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: csi-resizer
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: csi-resizer
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - csi-resizer
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+      containers:
+      - args:
+        - --v=2
+        - --csi-address=$(ADDRESS)
+        - --timeout=1m50s
+        - --leader-election
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        - --handle-volume-inuse-error=false
+        env:
+        - name: ADDRESS
+          value: /csi/csi.sock
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: longhornio/csi-resizer:v1.7.0
+        imagePullPolicy: IfNotPresent
+        name: csi-resizer
+        resources: {}
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /csi/
+          name: socket-dir
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: longhorn-service-account
+      serviceAccountName: longhorn-service-account
+      volumes:
+      - hostPath:
+          path: /var/lib/kubelet/plugins/driver.longhorn.io
+          type: DirectoryOrCreate
+        name: socket-dir
+status:
+  availableReplicas: 3
+  conditions:
+  - lastTransitionTime: "2025-04-22T05:49:26Z"
+    lastUpdateTime: "2025-04-22T05:49:38Z"
+    message: ReplicaSet "csi-resizer-565567749d" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2025-04-28T05:55:47Z"
+    lastUpdateTime: "2025-04-28T05:55:47Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  observedGeneration: 1
+  readyReplicas: 3
+  replicas: 3
+  updatedReplicas: 3

@@ -1,0 +1,22 @@
+action: Binding
+apiVersion: events.k8s.io/v1
+deprecatedFirstTimestamp: null
+deprecatedLastTimestamp: null
+deprecatedSource: {}
+eventTime: "2025-05-05T13:08:16.729100Z"
+kind: Event
+metadata:
+  name: my-sts-1.183ca3794357c28d
+  namespace: restore-test
+note: Successfully assigned restore-test/my-sts-1 to nipun
+reason: Scheduled
+regarding:
+  apiVersion: v1
+  kind: Pod
+  name: my-sts-1
+  namespace: restore-test
+  resourceVersion: "1712341"
+  uid: 9078152d-30ac-4c94-ab93-67a36337eab3
+reportingController: default-scheduler
+reportingInstance: default-scheduler-nipun
+type: Normal

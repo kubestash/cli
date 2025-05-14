@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  annotations:
+    longhorn.io/volume-scheduling-error: ""
+    pv.kubernetes.io/provisioned-by: driver.longhorn.io
+    volume.kubernetes.io/provisioner-deletion-secret-name: ""
+    volume.kubernetes.io/provisioner-deletion-secret-namespace: ""
+  finalizers:
+  - kubernetes.io/pv-protection
+  name: pvc-5da021d2-072d-42e3-9051-e7f9fa4ba5d0
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: my-pvc
+    namespace: restore-test
+    resourceVersion: "1712151"
+    uid: 5da021d2-072d-42e3-9051-e7f9fa4ba5d0
+  csi:
+    driver: driver.longhorn.io
+    fsType: ext4
+    volumeAttributes:
+      dataLocality: disabled
+      fromBackup: ""
+      fsType: ext4
+      numberOfReplicas: "3"
+      staleReplicaTimeout: "30"
+      storage.kubernetes.io/csiProvisionerIdentity: 1745819895176-8081-driver.longhorn.io
+    volumeHandle: pvc-5da021d2-072d-42e3-9051-e7f9fa4ba5d0
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: longhorn
+  volumeMode: Filesystem
+status:
+  lastPhaseTransitionTime: "2025-05-05T13:07:50Z"
+  phase: Bound

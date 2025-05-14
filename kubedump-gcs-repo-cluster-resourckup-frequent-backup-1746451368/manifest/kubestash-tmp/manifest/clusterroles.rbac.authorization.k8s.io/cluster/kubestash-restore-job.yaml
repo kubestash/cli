@@ -1,0 +1,122 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: kubestash-restore
+    app.kubernetes.io/managed-by: kubestash.com
+    kubestash.com/invoker-name: my-app-restoresession
+    kubestash.com/invoker-namespace: demo
+  name: kubestash-restore-job
+rules:
+- apiGroups:
+  - core.kubestash.com
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - storage.kubestash.com
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - config.kubestash.com
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - kubedb.com
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - appcatalog.appscode.com
+  resources:
+  - appbindings
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - endpoints
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - create
+  - list
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - create
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - get
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshots
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - configmaps
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - create
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  - daemonsets
+  verbs:
+  - get
+  - create
+- apiGroups:
+  - elasticsearch.kubedb.com
+  resources:
+  - elasticsearchdashboards
+  verbs:
+  - list
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  verbs:
+  - get
+  - create
+- apiGroups:
+  - archiver.kubedb.com
+  resources:
+  - '*'
+  verbs:
+  - get
+  - create

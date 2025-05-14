@@ -1,0 +1,17 @@
+apiVersion: storage.kubestash.com/v1alpha1
+kind: RetentionPolicy
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"storage.kubestash.com/v1alpha1","kind":"RetentionPolicy","metadata":{"annotations":{},"name":"demo-retention","namespace":"demo"},"spec":{"failedSnapshots":{"last":1},"maxRetentionPeriod":"2mo","successfulSnapshots":{"last":2},"usagePolicy":{"allowedNamespaces":{"from":"All"}}}}
+  name: demo-retention
+  namespace: demo
+spec:
+  failedSnapshots:
+    last: 1
+  maxRetentionPeriod: 2mo
+  successfulSnapshots:
+    last: 2
+  usagePolicy:
+    allowedNamespaces:
+      from: All

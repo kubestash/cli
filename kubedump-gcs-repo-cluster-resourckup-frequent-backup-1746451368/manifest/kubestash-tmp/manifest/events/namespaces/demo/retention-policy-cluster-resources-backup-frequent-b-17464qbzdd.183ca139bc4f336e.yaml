@@ -1,0 +1,25 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:27:04Z"
+involvedObject:
+  apiVersion: v1
+  fieldPath: spec.initContainers{builtin-cleaner}
+  kind: Pod
+  name: retention-policy-cluster-resources-backup-frequent-b-17464qbzdd
+  namespace: demo
+  resourceVersion: "1706641"
+  uid: f1739245-a3a1-4842-a68d-a75045ca8e59
+kind: Event
+lastTimestamp: "2025-05-05T12:27:04Z"
+message: Started container builtin-cleaner
+metadata:
+  name: retention-policy-cluster-resources-backup-frequent-b-17464qbzdd.183ca139bc4f336e
+  namespace: demo
+reason: Started
+reportingComponent: kubelet
+reportingInstance: nipun
+source:
+  component: kubelet
+  host: nipun
+type: Normal

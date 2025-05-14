@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: trigger-cluster-resources-backup-frequent-backup
+  namespace: demo
+  ownerReferences:
+  - apiVersion: core.kubestash.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: BackupConfiguration
+    name: cluster-resources-backup
+    uid: c25b6c2c-6fe0-417e-8b44-f5c46dfc1277
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubestash-cron-job
+subjects:
+- kind: ServiceAccount
+  name: trigger-cluster-resources-backup-frequent-backup
+  namespace: demo

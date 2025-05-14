@@ -1,0 +1,24 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 2
+deprecatedFirstTimestamp: "2025-05-05T12:26:16Z"
+deprecatedLastTimestamp: "2025-05-05T12:26:16Z"
+deprecatedSource:
+  component: persistentvolume-controller
+eventTime: null
+kind: Event
+metadata:
+  name: my-pvc.183ca12e6ef6acf5
+  namespace: demo
+note: Waiting for a volume to be created either by the external provisioner 'driver.longhorn.io'
+  or manually by the system administrator. If volume creation is delayed, please verify
+  that the provisioner is running and correctly registered.
+reason: ExternalProvisioning
+regarding:
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: my-pvc
+  namespace: demo
+  resourceVersion: "1706413"
+  uid: c5a10634-c0f3-42dd-94fe-f5dd706a084d
+reportingController: persistentvolume-controller
+type: Normal

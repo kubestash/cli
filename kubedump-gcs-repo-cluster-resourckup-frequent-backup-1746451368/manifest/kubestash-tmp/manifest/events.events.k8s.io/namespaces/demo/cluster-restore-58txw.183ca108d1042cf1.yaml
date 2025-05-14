@@ -1,0 +1,25 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:23:34Z"
+deprecatedLastTimestamp: "2025-05-05T12:23:34Z"
+deprecatedSource:
+  component: kubelet
+  host: nipun
+eventTime: null
+kind: Event
+metadata:
+  name: cluster-restore-58txw.183ca108d1042cf1
+  namespace: demo
+note: Started container manifest-restore-0
+reason: Started
+regarding:
+  apiVersion: v1
+  fieldPath: spec.containers{manifest-restore-0}
+  kind: Pod
+  name: cluster-restore-58txw
+  namespace: demo
+  resourceVersion: "1706049"
+  uid: 8d9415fd-662f-4595-a4e5-f679b64e8b41
+reportingController: kubelet
+reportingInstance: nipun
+type: Normal

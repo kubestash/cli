@@ -1,0 +1,98 @@
+apiVersion: longhorn.io/v1beta2
+kind: Engine
+metadata:
+  finalizers:
+  - longhorn.io
+  labels:
+    longhornnode: nipun
+    longhornvolume: pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c
+  name: pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c-e-a39a21f8
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: longhorn.io/v1beta2
+    kind: Volume
+    name: pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c
+    uid: b542cc6f-73b1-4ec2-83b0-2c2652678fcd
+spec:
+  active: true
+  backendStoreDriver: v1
+  backupVolume: ""
+  desireState: running
+  disableFrontend: false
+  engineImage: longhornio/longhorn-engine:v1.5.1
+  frontend: blockdev
+  logRequested: false
+  nodeID: nipun
+  replicaAddressMap:
+    pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c-r-b6d16451: 10.42.0.30:10022
+  requestedBackupRestore: ""
+  requestedDataSource: ""
+  revisionCounterDisabled: false
+  salvageRequested: false
+  unmapMarkSnapChainRemovedEnabled: false
+  upgradedReplicaAddressMap: {}
+  volumeName: pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c
+  volumeSize: "5368709120"
+status:
+  backupStatus: null
+  cloneStatus:
+    tcp://10.42.0.30:10022:
+      error: ""
+      fromReplicaAddress: ""
+      isCloning: false
+      progress: 0
+      snapshotName: ""
+      state: ""
+  conditions:
+  - lastProbeTime: ""
+    lastTransitionTime: "2025-05-05T13:07:49Z"
+    message: ""
+    reason: ""
+    status: "True"
+    type: InstanceCreation
+  currentImage: longhornio/longhorn-engine:v1.5.1
+  currentReplicaAddressMap:
+    pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c-r-b6d16451: 10.42.0.30:10022
+  currentSize: "5368709120"
+  currentState: running
+  endpoint: /dev/longhorn/pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c
+  instanceManagerName: instance-manager-ef1115894363ba2a8eb6fe29edee468c
+  ip: 10.42.0.30
+  isExpanding: false
+  lastExpansionError: ""
+  lastExpansionFailedAt: ""
+  lastRestoredBackup: ""
+  logFetched: false
+  ownerID: nipun
+  port: 10032
+  purgeStatus:
+    tcp://10.42.0.30:10022:
+      error: ""
+      isPurging: false
+      progress: 0
+      state: ""
+  rebuildStatus: {}
+  replicaModeMap:
+    pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c-r-b6d16451: RW
+  restoreStatus:
+    tcp://10.42.0.30:10022:
+      backupURL: ""
+      currentRestoringBackup: ""
+      isRestoring: false
+      lastRestored: ""
+      state: ""
+  salvageExecuted: false
+  snapshots:
+    volume-head:
+      children: {}
+      created: "2025-05-05T13:07:51Z"
+      labels: {}
+      name: volume-head
+      parent: ""
+      removed: false
+      size: "153804800"
+      usercreated: false
+  snapshotsError: ""
+  started: true
+  storageIP: 10.42.0.30
+  unmapMarkSnapChainRemovedEnabled: false

@@ -1,0 +1,15 @@
+apiVersion: storage.k8s.io/v1
+kind: VolumeAttachment
+metadata:
+  annotations:
+    csi.alpha.kubernetes.io/node-id: nipun
+  finalizers:
+  - external-attacher/driver-longhorn-io
+  name: csi-7774fe315b14de7e782a793e45b2d4bd46ff61b6602f34e60270bab59dcbbef0
+spec:
+  attacher: driver.longhorn.io
+  nodeName: nipun
+  source:
+    persistentVolumeName: pvc-9134954b-1ae3-425b-bd5c-9319525004f8
+status:
+  attached: false

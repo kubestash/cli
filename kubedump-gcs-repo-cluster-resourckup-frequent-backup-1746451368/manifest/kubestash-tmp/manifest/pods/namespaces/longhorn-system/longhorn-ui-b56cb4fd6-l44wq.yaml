@@ -1,0 +1,299 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2025-04-22T05:48:48Z"
+  generateName: longhorn-ui-b56cb4fd6-
+  labels:
+    app: longhorn-ui
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/version: v1.5.1
+    helm.sh/chart: longhorn-1.5.1
+    pod-template-hash: b56cb4fd6
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:generateName: {}
+        f:labels:
+          .: {}
+          f:app: {}
+          f:app.kubernetes.io/instance: {}
+          f:app.kubernetes.io/managed-by: {}
+          f:app.kubernetes.io/name: {}
+          f:app.kubernetes.io/version: {}
+          f:helm.sh/chart: {}
+          f:pod-template-hash: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"b8e2f111-be7f-4ef3-83b9-3aa415fa5f61"}: {}
+      f:spec:
+        f:affinity:
+          .: {}
+          f:podAntiAffinity:
+            .: {}
+            f:preferredDuringSchedulingIgnoredDuringExecution: {}
+        f:containers:
+          k:{"name":"longhorn-ui"}:
+            .: {}
+            f:env:
+              .: {}
+              k:{"name":"LONGHORN_MANAGER_IP"}:
+                .: {}
+                f:name: {}
+                f:value: {}
+              k:{"name":"LONGHORN_UI_PORT"}:
+                .: {}
+                f:name: {}
+                f:value: {}
+            f:image: {}
+            f:imagePullPolicy: {}
+            f:name: {}
+            f:ports:
+              .: {}
+              k:{"containerPort":8000,"protocol":"TCP"}:
+                .: {}
+                f:containerPort: {}
+                f:name: {}
+                f:protocol: {}
+            f:resources: {}
+            f:terminationMessagePath: {}
+            f:terminationMessagePolicy: {}
+            f:volumeMounts:
+              .: {}
+              k:{"mountPath":"/var/cache/nginx/"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+              k:{"mountPath":"/var/config/nginx/"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+              k:{"mountPath":"/var/run/"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+        f:dnsPolicy: {}
+        f:enableServiceLinks: {}
+        f:restartPolicy: {}
+        f:schedulerName: {}
+        f:securityContext: {}
+        f:terminationGracePeriodSeconds: {}
+        f:volumes:
+          .: {}
+          k:{"name":"nginx-cache"}:
+            .: {}
+            f:emptyDir: {}
+            f:name: {}
+          k:{"name":"nginx-config"}:
+            .: {}
+            f:emptyDir: {}
+            f:name: {}
+          k:{"name":"var-run"}:
+            .: {}
+            f:emptyDir: {}
+            f:name: {}
+    manager: k3s
+    operation: Update
+    time: "2025-04-22T05:48:48Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions:
+          k:{"type":"ContainersReady"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Initialized"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"PodReadyToStartContainers"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Ready"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+        f:containerStatuses: {}
+        f:hostIP: {}
+        f:hostIPs: {}
+        f:phase: {}
+        f:podIP: {}
+        f:podIPs:
+          .: {}
+          k:{"ip":"10.42.0.253"}:
+            .: {}
+            f:ip: {}
+        f:startTime: {}
+    manager: k3s
+    operation: Update
+    subresource: status
+    time: "2025-04-28T05:57:36Z"
+  name: longhorn-ui-b56cb4fd6-l44wq
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: longhorn-ui-b56cb4fd6
+    uid: b8e2f111-be7f-4ef3-83b9-3aa415fa5f61
+  resourceVersion: "690833"
+  uid: ed153b5e-e8e4-4901-8194-6c66f59c65d8
+spec:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - longhorn-ui
+          topologyKey: kubernetes.io/hostname
+        weight: 1
+  containers:
+  - env:
+    - name: LONGHORN_MANAGER_IP
+      value: http://longhorn-backend:9500
+    - name: LONGHORN_UI_PORT
+      value: "8000"
+    image: longhornio/longhorn-ui:v1.5.1
+    imagePullPolicy: IfNotPresent
+    name: longhorn-ui
+    ports:
+    - containerPort: 8000
+      name: http
+      protocol: TCP
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/cache/nginx/
+      name: nginx-cache
+    - mountPath: /var/config/nginx/
+      name: nginx-config
+    - mountPath: /var/run/
+      name: var-run
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-bw8pr
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: nipun
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - emptyDir: {}
+    name: nginx-cache
+  - emptyDir: {}
+    name: nginx-config
+  - emptyDir: {}
+    name: var-run
+  - name: kube-api-access-bw8pr
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:55:20Z"
+    status: "True"
+    type: PodReadyToStartContainers
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:48:48Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:57:36Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:57:36Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:48:48Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: containerd://63134cdca4ce690d240af27111b0dc9d3c4cfffc6dc2602ce73d52a65037bd4f
+    image: docker.io/longhornio/longhorn-ui:v1.5.1
+    imageID: docker.io/longhornio/longhorn-ui@sha256:14379e9f7b0bc1ac298a38001c5a28cdd8863202eae956988fc5c093204c680f
+    lastState:
+      terminated:
+        containerID: containerd://ebfbd662a370e31d75868ec6405247c22858d1dbb2831eda0156a00f99969ddf
+        exitCode: 1
+        finishedAt: "2025-04-28T05:56:18Z"
+        reason: Error
+        startedAt: "2025-04-28T05:55:17Z"
+    name: longhorn-ui
+    ready: true
+    restartCount: 4
+    started: true
+    state:
+      running:
+        startedAt: "2025-04-28T05:57:35Z"
+    volumeMounts:
+    - mountPath: /var/cache/nginx/
+      name: nginx-cache
+    - mountPath: /var/config/nginx/
+      name: nginx-config
+    - mountPath: /var/run/
+      name: var-run
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-bw8pr
+      readOnly: true
+      recursiveReadOnly: Disabled
+  hostIP: 10.2.0.141
+  hostIPs:
+  - ip: 10.2.0.141
+  phase: Running
+  podIP: 10.42.0.253
+  podIPs:
+  - ip: 10.42.0.253
+  qosClass: BestEffort
+  startTime: "2025-04-22T05:48:48Z"

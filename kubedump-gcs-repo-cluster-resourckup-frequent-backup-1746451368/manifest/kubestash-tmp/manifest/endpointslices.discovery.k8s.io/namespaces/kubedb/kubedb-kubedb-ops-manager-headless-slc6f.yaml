@@ -1,0 +1,45 @@
+addressType: IPv4
+apiVersion: discovery.k8s.io/v1
+endpoints:
+- addresses:
+  - 10.42.0.29
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  hostname: kubedb-kubedb-ops-manager-0
+  nodeName: nipun
+  targetRef:
+    kind: Pod
+    name: kubedb-kubedb-ops-manager-0
+    namespace: kubedb
+    uid: 1b31e33e-790c-49f0-aaf6-dbb40a6566b9
+kind: EndpointSlice
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-04-28T06:00:17Z"
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubedb-ops-manager
+    app.kubernetes.io/version: v0.40.1
+    endpointslice.kubernetes.io/managed-by: endpointslice-controller.k8s.io
+    helm.sh/chart: kubedb-ops-manager-v0.40.0
+    kubernetes.io/service-name: kubedb-kubedb-ops-manager-headless
+    service.kubernetes.io/headless: ""
+  name: kubedb-kubedb-ops-manager-headless-slc6f
+  namespace: kubedb
+  ownerReferences:
+  - apiVersion: v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Service
+    name: kubedb-kubedb-ops-manager-headless
+    uid: acc7d460-8d7d-475d-a617-c911b596abde
+ports:
+- name: probes
+  port: 8081
+  protocol: TCP
+- name: metrics
+  port: 8080
+  protocol: TCP

@@ -1,0 +1,65 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    objectset.rio.cattle.io/applied: H4sIAAAAAAAA/4xSQY8TPQz9K598zjcsnd22jMRhVYSEkFYVC72gPbiJ22abSaI40wVV89+Rp50pFFo4+tl+frbfHjDaBSW2wUMlAX3L5CXkYjvlwoZXu9egYGu9gQpmDedQfyIOTdL0jlbW2yy9CmrKaDAjVHtA70NGSbCEYflMOjPlItlQaMzZkTBboQR1MR9ePKX/17vtZWnqv4/Wm7dXdF0n91iTsBvT0ZZ8qvinXo6ohQBaBTpRt/NnWxNnrCNUvnFOgcMluauX2CBvoILJ+ObNSJu72yWOy5WelNpMltPJaHo7GtOY7mhyU5ZkSKZdU94q4EhaJq5TaCJUcL5aJ14Kjp+9Fx5QEF2T0A3EoICtXzcOU48Je0zElHb0xW99ePHvLTnDUK3QMSlgHaJoe+gPZEDB7uAyhurrXoi6/6CbJ+szpVlwTX1MPnPwc8xykELWKA5fhWHnxz7O37s5nJP1a2jVH3r1hvSWm/rUPTshZ/1PQ03nedYbqjs/h0j+fv5hUT4OUEwhUsr2cMT+2r+iw+xqD+IEXDqCKqeGfpcOxyX/XtoOyMFNF5DuP6bn4BwSro+U7ZPkM+amk4laU8xkHs4s8bMbOn8Hf/ga98YWVjKL4bOCtu2PAAAA//+gOtjyVQQAAA
+    objectset.rio.cattle.io/id: ""
+    objectset.rio.cattle.io/owner-gvk: apiextensions.k8s.io/v1, Kind=CustomResourceDefinition
+    objectset.rio.cattle.io/owner-name: addons.k3s.cattle.io
+    objectset.rio.cattle.io/owner-namespace: ""
+  labels:
+    objectset.rio.cattle.io/hash: 76092cd54ba63fc73cd7b8728426e6e5e7033ede
+  name: addons.k3s.cattle.io
+spec:
+  conversion:
+    strategy: None
+  group: k3s.cattle.io
+  names:
+    kind: Addon
+    listKind: AddonList
+    plural: addons
+    singular: addon
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.source
+      name: Source
+      type: string
+    - jsonPath: .spec.checksum
+      name: Checksum
+      type: string
+    name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            properties:
+              checksum:
+                nullable: true
+                type: string
+              source:
+                nullable: true
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: Addon
+    listKind: AddonList
+    plural: addons
+    singular: addon
+  conditions:
+  - lastTransitionTime: "2025-04-21T12:06:40Z"
+    message: no conflicts found
+    reason: NoConflicts
+    status: "True"
+    type: NamesAccepted
+  - lastTransitionTime: "2025-04-21T12:06:40Z"
+    message: the initial names have been accepted
+    reason: InitialNamesAccepted
+    status: "True"
+    type: Established
+  storedVersions:
+  - v1

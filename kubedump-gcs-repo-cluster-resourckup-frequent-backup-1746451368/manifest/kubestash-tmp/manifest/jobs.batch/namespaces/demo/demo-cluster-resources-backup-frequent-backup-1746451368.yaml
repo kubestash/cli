@@ -1,0 +1,158 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  creationTimestamp: "2025-05-05T13:22:49Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/component: kubestash-backup
+    app.kubernetes.io/managed-by: kubestash.com
+    kubestash.com/invoker-name: cluster-resources-backup-frequent-backup-1746451368
+    kubestash.com/invoker-namespace: demo
+    kubestash.com/session-name: frequent-backup
+  managedFields:
+  - apiVersion: batch/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/component: {}
+          f:app.kubernetes.io/managed-by: {}
+          f:kubestash.com/invoker-name: {}
+          f:kubestash.com/invoker-namespace: {}
+          f:kubestash.com/session-name: {}
+      f:spec:
+        f:backoffLimit: {}
+        f:completionMode: {}
+        f:completions: {}
+        f:manualSelector: {}
+        f:parallelism: {}
+        f:podReplacementPolicy: {}
+        f:suspend: {}
+        f:template:
+          f:metadata:
+            f:labels:
+              .: {}
+              f:app.kubernetes.io/component: {}
+              f:app.kubernetes.io/managed-by: {}
+              f:kubestash.com/invoker-name: {}
+              f:kubestash.com/invoker-namespace: {}
+              f:kubestash.com/session-name: {}
+          f:spec:
+            f:containers:
+              k:{"name":"manifest-backup-0"}:
+                .: {}
+                f:args: {}
+                f:image: {}
+                f:imagePullPolicy: {}
+                f:name: {}
+                f:resources: {}
+                f:terminationMessagePath: {}
+                f:terminationMessagePolicy: {}
+                f:volumeMounts:
+                  .: {}
+                  k:{"mountPath":"/kubestash-tmp"}:
+                    .: {}
+                    f:mountPath: {}
+                    f:name: {}
+            f:dnsPolicy: {}
+            f:restartPolicy: {}
+            f:schedulerName: {}
+            f:securityContext:
+              .: {}
+              f:runAsUser: {}
+            f:serviceAccount: {}
+            f:serviceAccountName: {}
+            f:terminationGracePeriodSeconds: {}
+            f:volumes:
+              .: {}
+              k:{"name":"kubestash-tmp-volume"}:
+                .: {}
+                f:emptyDir: {}
+                f:name: {}
+    manager: kubestash
+    operation: Update
+    time: "2025-05-05T13:22:49Z"
+  - apiVersion: batch/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:active: {}
+        f:ready: {}
+        f:startTime: {}
+        f:terminating: {}
+        f:uncountedTerminatedPods: {}
+    manager: k3s
+    operation: Update
+    subresource: status
+    time: "2025-05-05T13:22:51Z"
+  name: demo-cluster-resources-backup-frequent-backup-1746451368
+  namespace: demo
+  resourceVersion: "1714595"
+  uid: 0a440905-94ce-48f5-8dbd-b64da0d59098
+spec:
+  backoffLimit: 0
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podReplacementPolicy: TerminatingOrFailed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: 0a440905-94ce-48f5-8dbd-b64da0d59098
+  suspend: false
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: kubestash-backup
+        app.kubernetes.io/managed-by: kubestash.com
+        batch.kubernetes.io/controller-uid: 0a440905-94ce-48f5-8dbd-b64da0d59098
+        batch.kubernetes.io/job-name: demo-cluster-resources-backup-frequent-backup-1746451368
+        controller-uid: 0a440905-94ce-48f5-8dbd-b64da0d59098
+        job-name: demo-cluster-resources-backup-frequent-backup-1746451368
+        kubestash.com/invoker-name: cluster-resources-backup-frequent-backup-1746451368
+        kubestash.com/invoker-namespace: demo
+        kubestash.com/session-name: frequent-backup
+    spec:
+      containers:
+      - args:
+        - backup
+        - --namespace=demo
+        - --backupsession=cluster-resources-backup-frequent-backup-1746451368
+        - --enable-cache=true
+        - --scratch-dir=/kubestash-tmp
+        - --sanitize=true
+        - --and-label-selectors=
+        - --or-label-selectors=
+        - --include-cluster-resources=true
+        - --include-namespaces=
+        - --include-resources=
+        - --exclude-resources=
+        - --exclude-namespaces=
+        image: arnabbaishnab7620/kubedump:kubedump-restore_linux_amd64415
+        imagePullPolicy: IfNotPresent
+        name: manifest-backup-0
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /kubestash-tmp
+          name: kubestash-tmp-volume
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 65534
+      serviceAccount: cluster-resource-reader-writter
+      serviceAccountName: cluster-resource-reader-writter
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: kubestash-tmp-volume
+status:
+  active: 1
+  ready: 1
+  startTime: "2025-05-05T13:22:49Z"
+  terminating: 0
+  uncountedTerminatedPods: {}

@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    driver.longhorn.io/git-commit: 8ce69c8f280a5a2715c528034e0274391ad761c0
+    driver.longhorn.io/kubernetes-version: v1.32.3+k3s1
+    driver.longhorn.io/version: v1.5.1
+    longhorn.io/last-applied-tolerations: '[]'
+  labels:
+    app: csi-provisioner
+    pod-template-hash: 8649bdf768
+  name: csi-provisioner-8649bdf768
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: csi-provisioner
+    uid: b8fafb2e-45d7-4e8e-9d9d-e5bf4e84f6a0
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: csi-provisioner
+      pod-template-hash: 8649bdf768
+  template:
+    metadata:
+      labels:
+        app: csi-provisioner
+        pod-template-hash: 8649bdf768
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - csi-provisioner
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+      containers:
+      - args:
+        - --v=2
+        - --csi-address=$(ADDRESS)
+        - --timeout=1m50s
+        - --leader-election
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        - --default-fstype=ext4
+        env:
+        - name: ADDRESS
+          value: /csi/csi.sock
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: longhornio/csi-provisioner:v3.4.1
+        imagePullPolicy: IfNotPresent
+        name: csi-provisioner
+        resources: {}
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /csi/
+          name: socket-dir
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: longhorn-service-account
+      serviceAccountName: longhorn-service-account
+      volumes:
+      - hostPath:
+          path: /var/lib/kubelet/plugins/driver.longhorn.io
+          type: DirectoryOrCreate
+        name: socket-dir
+status:
+  availableReplicas: 3
+  fullyLabeledReplicas: 3
+  observedGeneration: 1
+  readyReplicas: 3
+  replicas: 3

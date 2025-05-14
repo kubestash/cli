@@ -1,0 +1,25 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:27:04Z"
+deprecatedLastTimestamp: "2025-05-05T12:27:04Z"
+deprecatedSource:
+  component: kubelet
+  host: nipun
+eventTime: null
+kind: Event
+metadata:
+  name: retention-policy-cluster-resources-backup-frequent-b-17464qbzdd.183ca139acb76d02
+  namespace: demo
+note: Container image "ghcr.io/kubestash/kubestash:v0.17.0" already present on machine
+reason: Pulled
+regarding:
+  apiVersion: v1
+  fieldPath: spec.initContainers{builtin-cleaner}
+  kind: Pod
+  name: retention-policy-cluster-resources-backup-frequent-b-17464qbzdd
+  namespace: demo
+  resourceVersion: "1706641"
+  uid: f1739245-a3a1-4842-a68d-a75045ca8e59
+reportingController: kubelet
+reportingInstance: nipun
+type: Normal

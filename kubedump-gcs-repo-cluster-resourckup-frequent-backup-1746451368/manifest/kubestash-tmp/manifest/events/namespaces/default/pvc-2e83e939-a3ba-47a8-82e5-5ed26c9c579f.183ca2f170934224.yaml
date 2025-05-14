@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 5
+eventTime: null
+firstTimestamp: "2025-05-05T12:58:33Z"
+involvedObject:
+  apiVersion: v1
+  kind: PersistentVolume
+  name: pvc-2e83e939-a3ba-47a8-82e5-5ed26c9c579f
+  resourceVersion: "1711188"
+  uid: 017ed4a6-7631-49e9-99ee-de3b7d8cc0f7
+kind: Event
+lastTimestamp: "2025-05-05T12:58:41Z"
+message: persistentvolume pvc-2e83e939-a3ba-47a8-82e5-5ed26c9c579f is still attached
+  to node nipun
+metadata:
+  name: pvc-2e83e939-a3ba-47a8-82e5-5ed26c9c579f.183ca2f170934224
+  namespace: default
+reason: VolumeFailedDelete
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: driver.longhorn.io_csi-provisioner-8649bdf768-wmv44_b1799ee4-f3b1-4c58-b611-f1883c44a8fb
+type: Warning

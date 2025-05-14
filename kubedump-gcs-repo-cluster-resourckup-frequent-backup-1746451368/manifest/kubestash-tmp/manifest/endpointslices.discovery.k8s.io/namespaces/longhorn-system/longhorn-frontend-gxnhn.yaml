@@ -1,0 +1,53 @@
+addressType: IPv4
+apiVersion: discovery.k8s.io/v1
+endpoints:
+- addresses:
+  - 10.42.0.253
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  nodeName: nipun
+  targetRef:
+    kind: Pod
+    name: longhorn-ui-b56cb4fd6-l44wq
+    namespace: longhorn-system
+    uid: ed153b5e-e8e4-4901-8194-6c66f59c65d8
+- addresses:
+  - 10.42.0.6
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  nodeName: nipun
+  targetRef:
+    kind: Pod
+    name: longhorn-ui-b56cb4fd6-dz68b
+    namespace: longhorn-system
+    uid: 8365db4b-1b54-4a18-8872-3e8abc53e2fd
+kind: EndpointSlice
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-04-28T05:57:37Z"
+  labels:
+    app: longhorn-ui
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/version: v1.5.1
+    endpointslice.kubernetes.io/managed-by: endpointslice-controller.k8s.io
+    helm.sh/chart: longhorn-1.5.1
+    kubernetes.io/service-name: longhorn-frontend
+  name: longhorn-frontend-gxnhn
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Service
+    name: longhorn-frontend
+    uid: 48d1dfcd-b3f4-479c-9bb0-11b245e1948c
+ports:
+- name: http
+  port: 8000
+  protocol: TCP

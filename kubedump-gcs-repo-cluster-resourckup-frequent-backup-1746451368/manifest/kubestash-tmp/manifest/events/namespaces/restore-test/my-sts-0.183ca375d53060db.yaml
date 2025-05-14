@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T13:08:01Z"
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: my-sts-0
+  namespace: restore-test
+  resourceVersion: "1712258"
+  uid: b3468731-c161-4cf1-9cd7-dbf12feb97c6
+kind: Event
+lastTimestamp: "2025-05-05T13:08:01Z"
+message: 'AttachVolume.Attach succeeded for volume "pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c" '
+metadata:
+  name: my-sts-0.183ca375d53060db
+  namespace: restore-test
+reason: SuccessfulAttachVolume
+reportingComponent: attachdetach-controller
+reportingInstance: ""
+source:
+  component: attachdetach-controller
+type: Normal

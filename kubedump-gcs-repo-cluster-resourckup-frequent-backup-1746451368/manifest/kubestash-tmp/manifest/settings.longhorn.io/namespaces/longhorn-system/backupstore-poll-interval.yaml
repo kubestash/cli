@@ -1,0 +1,8 @@
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  annotations:
+    longhorn.io/configmap-resource-version: "25376"
+  name: backupstore-poll-interval
+  namespace: longhorn-system
+value: "300"
