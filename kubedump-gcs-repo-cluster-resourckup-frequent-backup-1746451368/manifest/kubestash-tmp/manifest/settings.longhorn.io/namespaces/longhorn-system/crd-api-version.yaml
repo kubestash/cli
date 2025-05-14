@@ -1,6 +1,0 @@
-apiVersion: longhorn.io/v1beta2
-kind: Setting
-metadata:
-  name: crd-api-version
-  namespace: longhorn-system
-value: longhorn.io/v1beta2

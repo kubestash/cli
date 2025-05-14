@@ -1,5 +1,0 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: validatingadmissionpolicy-status-controller
-  namespace: kube-system
