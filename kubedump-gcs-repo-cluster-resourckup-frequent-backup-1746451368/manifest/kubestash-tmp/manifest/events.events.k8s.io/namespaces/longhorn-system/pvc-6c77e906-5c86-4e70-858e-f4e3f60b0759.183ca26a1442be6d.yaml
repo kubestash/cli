@@ -1,0 +1,22 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:48:52Z"
+deprecatedLastTimestamp: "2025-05-05T12:48:52Z"
+deprecatedSource:
+  component: longhorn-kubernetes-pv-controller
+eventTime: null
+kind: Event
+metadata:
+  name: pvc-6c77e906-5c86-4e70-858e-f4e3f60b0759.183ca26a1442be6d
+  namespace: longhorn-system
+note: Persistent Volume pvc-6c77e906-5c86-4e70-858e-f4e3f60b0759 stopped to use Longhorn
+  volume pvc-6c77e906-5c86-4e70-858e-f4e3f60b0759
+reason: Stop
+regarding:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-6c77e906-5c86-4e70-858e-f4e3f60b0759
+  namespace: longhorn-system
+  resourceVersion: "1709745"
+  uid: e0deec36-fa19-47b3-8895-097a718b152f
+type: Normal

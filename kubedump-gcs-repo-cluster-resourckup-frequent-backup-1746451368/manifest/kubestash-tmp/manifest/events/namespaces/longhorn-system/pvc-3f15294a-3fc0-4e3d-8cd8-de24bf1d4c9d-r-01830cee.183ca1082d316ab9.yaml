@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 2
+eventTime: null
+firstTimestamp: "2025-05-05T12:23:32Z"
+involvedObject:
+  apiVersion: longhorn.io/v1beta2
+  kind: Replica
+  name: pvc-3f15294a-3fc0-4e3d-8cd8-de24bf1d4c9d-r-01830cee
+  namespace: longhorn-system
+  resourceVersion: "1706024"
+  uid: a85d4423-ec85-47d6-b9c3-ac2fabda259f
+kind: Event
+lastTimestamp: "2025-05-05T12:23:32Z"
+message: Stops pvc-3f15294a-3fc0-4e3d-8cd8-de24bf1d4c9d-r-01830cee
+metadata:
+  name: pvc-3f15294a-3fc0-4e3d-8cd8-de24bf1d4c9d-r-01830cee.183ca1082d316ab9
+  namespace: longhorn-system
+reason: Stop
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: longhorn-replica-controller
+type: Normal

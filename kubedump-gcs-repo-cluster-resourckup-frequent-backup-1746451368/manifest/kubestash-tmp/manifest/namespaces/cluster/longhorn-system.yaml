@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: longhorn-system
+    name: longhorn-system
+  name: longhorn-system
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active

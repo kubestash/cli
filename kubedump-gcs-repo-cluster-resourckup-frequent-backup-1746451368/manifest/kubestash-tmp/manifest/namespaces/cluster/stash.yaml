@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: stash
+    name: stash
+  name: stash
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active

@@ -1,0 +1,206 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2025-04-22T05:47:57Z"
+  generateName: snapshot-controller-c9dbc9f5d-
+  labels:
+    app.kubernetes.io/name: snapshot-controller
+    pod-template-hash: c9dbc9f5d
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:generateName: {}
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/name: {}
+          f:pod-template-hash: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"323e77ed-4ee8-444d-8233-6169dec68cef"}: {}
+      f:spec:
+        f:containers:
+          k:{"name":"snapshot-controller"}:
+            .: {}
+            f:args: {}
+            f:image: {}
+            f:imagePullPolicy: {}
+            f:name: {}
+            f:resources: {}
+            f:terminationMessagePath: {}
+            f:terminationMessagePolicy: {}
+        f:dnsPolicy: {}
+        f:enableServiceLinks: {}
+        f:restartPolicy: {}
+        f:schedulerName: {}
+        f:securityContext: {}
+        f:serviceAccount: {}
+        f:serviceAccountName: {}
+        f:terminationGracePeriodSeconds: {}
+    manager: k3s
+    operation: Update
+    time: "2025-04-22T05:47:57Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions:
+          k:{"type":"ContainersReady"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Initialized"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"PodReadyToStartContainers"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Ready"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+        f:containerStatuses: {}
+        f:hostIP: {}
+        f:hostIPs: {}
+        f:phase: {}
+        f:podIP: {}
+        f:podIPs:
+          .: {}
+          k:{"ip":"10.42.0.24"}:
+            .: {}
+            f:ip: {}
+        f:startTime: {}
+    manager: k3s
+    operation: Update
+    subresource: status
+    time: "2025-04-28T05:56:16Z"
+  name: snapshot-controller-c9dbc9f5d-rzfw4
+  namespace: kube-system
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: snapshot-controller-c9dbc9f5d
+    uid: 323e77ed-4ee8-444d-8233-6169dec68cef
+  resourceVersion: "690680"
+  uid: ce7f0cd3-d7e5-4bc2-a60b-aec7613547bc
+spec:
+  containers:
+  - args:
+    - --v=5
+    - --leader-election=true
+    image: registry.k8s.io/sig-storage/snapshot-controller:v8.0.1
+    imagePullPolicy: IfNotPresent
+    name: snapshot-controller
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-2sknj
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: nipun
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: snapshot-controller
+  serviceAccountName: snapshot-controller
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: kube-api-access-2sknj
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:56:16Z"
+    status: "True"
+    type: PodReadyToStartContainers
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:47:57Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:56:16Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:56:16Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:47:57Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: containerd://113284bdf015eb124cacb74eb27476bac8a0d1aab2d0e30e2dfdc0c054eb639e
+    image: registry.k8s.io/sig-storage/snapshot-controller:v8.0.1
+    imageID: registry.k8s.io/sig-storage/snapshot-controller@sha256:32b8e4254751c9935c796e6e5c07fe804250bd5032ab78f7133a00f75d504596
+    lastState:
+      terminated:
+        containerID: containerd://557fe0a7ecbd94015d1249d42ae460683feb34479eef6f0af6c6fdc49fff5fe8
+        exitCode: 255
+        finishedAt: "2025-04-28T05:53:29Z"
+        reason: Unknown
+        startedAt: "2025-04-27T01:02:12Z"
+    name: snapshot-controller
+    ready: true
+    restartCount: 2
+    started: true
+    state:
+      running:
+        startedAt: "2025-04-28T05:56:14Z"
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-2sknj
+      readOnly: true
+      recursiveReadOnly: Disabled
+  hostIP: 10.2.0.141
+  hostIPs:
+  - ip: 10.2.0.141
+  phase: Running
+  podIP: 10.42.0.24
+  podIPs:
+  - ip: 10.42.0.24
+  qosClass: BestEffort
+  startTime: "2025-04-22T05:47:57Z"

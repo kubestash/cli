@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:57:57Z"
+involvedObject:
+  apiVersion: apps/v1
+  kind: ReplicaSet
+  name: my-deployment-5686b8d7f5
+  namespace: demo
+  resourceVersion: "1711010"
+  uid: 05c1f4ec-93f3-43e5-a5cc-d223b2e2a61e
+kind: Event
+lastTimestamp: "2025-05-05T12:57:57Z"
+message: 'Created pod: my-deployment-5686b8d7f5-zh6sx'
+metadata:
+  name: my-deployment-5686b8d7f5.183ca2e9189d4d93
+  namespace: demo
+reason: SuccessfulCreate
+reportingComponent: replicaset-controller
+reportingInstance: ""
+source:
+  component: replicaset-controller
+type: Normal

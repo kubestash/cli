@@ -1,0 +1,8 @@
+apiVersion: v1
+data:
+  clusterDNS: 10.43.0.10
+  clusterDomain: cluster.local
+kind: ConfigMap
+metadata:
+  name: cluster-dns
+  namespace: kube-system

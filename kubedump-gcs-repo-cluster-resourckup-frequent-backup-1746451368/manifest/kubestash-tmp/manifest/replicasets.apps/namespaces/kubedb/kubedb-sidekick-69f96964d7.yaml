@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubedb
+    meta.helm.sh/release-namespace: kubedb
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/name: sidekick
+    pod-template-hash: 69f96964d7
+  name: kubedb-sidekick-69f96964d7
+  namespace: kubedb
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: kubedb-sidekick
+    uid: 3c9a429c-ca1b-4ac5-9b78-99462e649de5
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: kubedb
+      app.kubernetes.io/name: sidekick
+      pod-template-hash: 69f96964d7
+  template:
+    metadata:
+      annotations:
+        reload: 365270fbe3c0b8a40d5d2f6fcd661e10312109d6e03e57a783c2cc6683b61e7c
+      labels:
+        app.kubernetes.io/instance: kubedb
+        app.kubernetes.io/name: sidekick
+        pod-template-hash: 69f96964d7
+    spec:
+      containers:
+      - args:
+        - run
+        - --v=3
+        - --leader-elect=false
+        - --metrics-secure=true
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --cert-dir=/var/serving-cert
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: ghcr.io/appscode/sidekick:v0.0.11
+        imagePullPolicy: Always
+        name: operator
+        ports:
+        - containerPort: 8081
+          name: probes
+          protocol: TCP
+        - containerPort: 8443
+          name: metrics
+          protocol: TCP
+        - containerPort: 9443
+          name: https
+          protocol: TCP
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/serving-cert
+          name: serving-cert
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: kubedb-sidekick
+      serviceAccountName: kubedb-sidekick
+      volumes:
+      - name: serving-cert
+        secret:
+          defaultMode: 420
+          secretName: kubedb-sidekick-cert
+status:
+  availableReplicas: 1
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1

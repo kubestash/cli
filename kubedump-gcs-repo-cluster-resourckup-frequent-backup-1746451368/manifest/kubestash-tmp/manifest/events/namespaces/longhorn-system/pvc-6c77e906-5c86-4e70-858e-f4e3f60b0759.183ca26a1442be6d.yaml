@@ -1,0 +1,24 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:48:52Z"
+involvedObject:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-6c77e906-5c86-4e70-858e-f4e3f60b0759
+  namespace: longhorn-system
+  resourceVersion: "1709745"
+  uid: e0deec36-fa19-47b3-8895-097a718b152f
+kind: Event
+lastTimestamp: "2025-05-05T12:48:52Z"
+message: Persistent Volume pvc-6c77e906-5c86-4e70-858e-f4e3f60b0759 stopped to use
+  Longhorn volume pvc-6c77e906-5c86-4e70-858e-f4e3f60b0759
+metadata:
+  name: pvc-6c77e906-5c86-4e70-858e-f4e3f60b0759.183ca26a1442be6d
+  namespace: longhorn-system
+reason: Stop
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: longhorn-kubernetes-pv-controller
+type: Normal

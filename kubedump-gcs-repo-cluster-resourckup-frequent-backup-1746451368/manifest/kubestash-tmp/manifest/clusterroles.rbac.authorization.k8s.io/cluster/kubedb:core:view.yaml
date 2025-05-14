@@ -1,0 +1,22 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+  name: kubedb:core:view
+rules:
+- apiGroups:
+  - kubedb.com
+  - archiver.kubedb.com
+  - catalog.kubedb.com
+  - elasticsearch.kubedb.com
+  - kafka.kubedb.com
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch

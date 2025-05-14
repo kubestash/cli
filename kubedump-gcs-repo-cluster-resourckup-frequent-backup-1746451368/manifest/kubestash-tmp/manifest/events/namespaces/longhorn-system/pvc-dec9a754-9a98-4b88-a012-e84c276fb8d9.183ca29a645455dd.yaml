@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 3
+eventTime: null
+firstTimestamp: "2025-05-05T12:52:19Z"
+involvedObject:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9
+  namespace: longhorn-system
+  resourceVersion: "1710318"
+  uid: db89c3e8-5766-4940-973c-12867d949324
+kind: Event
+lastTimestamp: "2025-05-05T12:57:50Z"
+message: volume pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9 became degraded
+metadata:
+  name: pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9.183ca29a645455dd
+  namespace: longhorn-system
+reason: Degraded
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: longhorn-volume-controller
+type: Normal

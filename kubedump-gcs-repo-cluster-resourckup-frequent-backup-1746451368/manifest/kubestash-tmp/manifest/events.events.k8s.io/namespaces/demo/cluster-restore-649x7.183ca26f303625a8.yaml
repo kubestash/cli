@@ -1,0 +1,22 @@
+action: Binding
+apiVersion: events.k8s.io/v1
+deprecatedFirstTimestamp: null
+deprecatedLastTimestamp: null
+deprecatedSource: {}
+eventTime: "2025-05-05T12:49:13.946829Z"
+kind: Event
+metadata:
+  name: cluster-restore-649x7.183ca26f303625a8
+  namespace: demo
+note: Successfully assigned demo/cluster-restore-649x7 to nipun
+reason: Scheduled
+regarding:
+  apiVersion: v1
+  kind: Pod
+  name: cluster-restore-649x7
+  namespace: demo
+  resourceVersion: "1709787"
+  uid: 033bef84-1298-43b4-a3e4-447e98acc61f
+reportingController: default-scheduler
+reportingInstance: default-scheduler-nipun
+type: Normal

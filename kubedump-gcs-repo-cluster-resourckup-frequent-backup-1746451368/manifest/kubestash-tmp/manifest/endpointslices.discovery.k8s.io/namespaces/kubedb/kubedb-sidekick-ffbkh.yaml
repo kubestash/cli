@@ -1,0 +1,43 @@
+addressType: IPv4
+apiVersion: discovery.k8s.io/v1
+endpoints:
+- addresses:
+  - 10.42.0.21
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  nodeName: nipun
+  targetRef:
+    kind: Pod
+    name: kubedb-sidekick-69f96964d7-g7hgk
+    namespace: kubedb
+    uid: 533a8007-7289-4243-9486-bcb92187ce1b
+kind: EndpointSlice
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-04-28T05:57:39Z"
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: sidekick
+    app.kubernetes.io/version: v0.0.11
+    endpointslice.kubernetes.io/managed-by: endpointslice-controller.k8s.io
+    helm.sh/chart: sidekick-v2025.3.14
+    kubernetes.io/service-name: kubedb-sidekick
+  name: kubedb-sidekick-ffbkh
+  namespace: kubedb
+  ownerReferences:
+  - apiVersion: v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Service
+    name: kubedb-sidekick
+    uid: 9f521db1-9aa0-4877-a185-54078b568b1c
+ports:
+- name: metrics
+  port: 8443
+  protocol: TCP
+- name: https
+  port: 9443
+  protocol: TCP

@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T13:10:35Z"
+involvedObject:
+  apiVersion: longhorn.io/v1beta2
+  kind: Replica
+  name: pvc-6d686767-4923-4f3a-9032-31ea5d19c6d0-r-66ed99c3
+  namespace: longhorn-system
+  resourceVersion: "1712771"
+  uid: 4dffe13d-ba0b-492b-b02c-c1962560f751
+kind: Event
+lastTimestamp: "2025-05-05T13:10:35Z"
+message: Starts pvc-6d686767-4923-4f3a-9032-31ea5d19c6d0-r-66ed99c3
+metadata:
+  name: pvc-6d686767-4923-4f3a-9032-31ea5d19c6d0-r-66ed99c3.183ca399ab684ae8
+  namespace: longhorn-system
+reason: Start
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: longhorn-replica-controller
+type: Normal

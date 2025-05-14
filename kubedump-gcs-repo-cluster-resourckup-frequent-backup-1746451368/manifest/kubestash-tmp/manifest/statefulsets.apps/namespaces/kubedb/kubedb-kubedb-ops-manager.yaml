@@ -1,0 +1,162 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubedb
+    meta.helm.sh/release-namespace: kubedb
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubedb-ops-manager
+    app.kubernetes.io/version: v0.40.1
+    helm.sh/chart: kubedb-ops-manager-v0.40.0
+  name: kubedb-kubedb-ops-manager
+  namespace: kubedb
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: Parallel
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: kubedb
+      app.kubernetes.io/name: kubedb-ops-manager
+  serviceName: kubedb-kubedb-ops-manager-headless
+  template:
+    metadata:
+      annotations:
+        reload: uqmkxGPH
+      labels:
+        app.kubernetes.io/instance: kubedb
+        app.kubernetes.io/name: kubedb-ops-manager
+    spec:
+      containers:
+      - args:
+        - operator
+        - --v=5
+        - --use-kubeapiserver-fqdn-for-aks=true
+        - --metrics-bind-address=:8080
+        - --health-probe-bind-address=:8081
+        - --recommendation-resync-period=1h0m0s
+        - --gen-rotate-tls-recommendation-before-expiry-year=0
+        - --gen-rotate-tls-recommendation-before-expiry-month=1
+        - --gen-rotate-tls-recommendation-before-expiry-day=0
+        - --license-file=/var/run/secrets/appscode/license/key.txt
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: POD_SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.serviceAccountName
+        - name: GODEBUG
+          value: x509negativeserial=1
+        image: ghcr.io/kubedb/kubedb-ops-manager:v0.40.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: probes
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: operator
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        - containerPort: 8081
+          name: probes
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /readyz
+            port: probes
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmpdir
+        - mountPath: /var/run/secrets/appscode/license
+          name: license
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - kubectl wait --for=create -n kubedb service -l 'app.kubernetes.io/name=kubedb-webhook-server'
+          --timeout=5m && kubectl wait --for=condition=kubedb.com/conversion=true
+          -n kubedb pods -l 'app.kubernetes.io/instance=kubedb,app.kubernetes.io/name=kubedb-webhook-server'
+          --timeout=5m
+        image: ghcr.io/appscode/kubectl-nonroot:1.31
+        imagePullPolicy: IfNotPresent
+        name: wait
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePolicy: File
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: kubedb-kubedb-ops-manager
+      serviceAccountName: kubedb-kubedb-ops-manager
+      volumes:
+      - emptyDir: {}
+        name: tmpdir
+      - name: license
+        secret:
+          defaultMode: 420
+          secretName: kubedb-kubedb-ops-manager-license
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+status:
+  availableReplicas: 1
+  collisionCount: 0
+  currentReplicas: 1
+  currentRevision: kubedb-kubedb-ops-manager-75cc487fc9
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updateRevision: kubedb-kubedb-ops-manager-75cc487fc9
+  updatedReplicas: 1

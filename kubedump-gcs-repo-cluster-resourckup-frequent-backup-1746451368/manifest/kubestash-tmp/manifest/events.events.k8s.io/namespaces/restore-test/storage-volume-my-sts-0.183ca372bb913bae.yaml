@@ -1,0 +1,21 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T13:07:48Z"
+deprecatedLastTimestamp: "2025-05-05T13:07:48Z"
+deprecatedSource:
+  component: driver.longhorn.io_csi-provisioner-8649bdf768-wmv44_b1799ee4-f3b1-4c58-b611-f1883c44a8fb
+eventTime: null
+kind: Event
+metadata:
+  name: storage-volume-my-sts-0.183ca372bb913bae
+  namespace: restore-test
+note: External provisioner is provisioning volume for claim "restore-test/storage-volume-my-sts-0"
+reason: Provisioning
+regarding:
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: storage-volume-my-sts-0
+  namespace: restore-test
+  resourceVersion: "1712174"
+  uid: cf75d66b-7a67-42e0-9284-94ec6950a72c
+type: Normal

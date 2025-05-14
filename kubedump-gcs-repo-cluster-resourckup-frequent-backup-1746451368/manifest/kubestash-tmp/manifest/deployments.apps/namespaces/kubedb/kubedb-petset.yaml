@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubedb
+    meta.helm.sh/release-namespace: kubedb
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: petset
+    app.kubernetes.io/version: v0.0.10
+    helm.sh/chart: petset-v2025.3.14
+  name: kubedb-petset
+  namespace: kubedb
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: kubedb
+      app.kubernetes.io/name: petset
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        reload: 93de2383e8a4d7e3c971e842a35678d5aff634d8501b4d165f6ab23e281f19bb
+      labels:
+        app.kubernetes.io/instance: kubedb
+        app.kubernetes.io/name: petset
+    spec:
+      containers:
+      - args:
+        - run
+        - --v=3
+        - --leader-elect=false
+        - --metrics-secure=true
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --cert-dir=/var/serving-cert
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: ghcr.io/appscode/petset:v0.0.10
+        imagePullPolicy: IfNotPresent
+        name: operator
+        ports:
+        - containerPort: 8081
+          name: probes
+          protocol: TCP
+        - containerPort: 8443
+          name: metrics
+          protocol: TCP
+        - containerPort: 9443
+          name: https
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/serving-cert
+          name: serving-cert
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 65535
+      serviceAccount: kubedb-petset
+      serviceAccountName: kubedb-petset
+      volumes:
+      - name: serving-cert
+        secret:
+          defaultMode: 420
+          secretName: kubedb-petset-cert
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2025-04-22T05:39:51Z"
+    lastUpdateTime: "2025-04-22T05:39:52Z"
+    message: ReplicaSet "kubedb-petset-7ff5d6f654" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2025-04-28T05:55:20Z"
+    lastUpdateTime: "2025-04-28T05:55:20Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

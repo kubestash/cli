@@ -1,0 +1,24 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T13:22:42Z"
+involvedObject:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-9134954b-1ae3-425b-bd5c-9319525004f8
+  namespace: longhorn-system
+  resourceVersion: "1714505"
+  uid: 31614a87-50c1-4da7-a3b3-7da4ce2f4045
+kind: Event
+lastTimestamp: "2025-05-05T13:22:42Z"
+message: Persistent Volume pvc-9134954b-1ae3-425b-bd5c-9319525004f8 started to use/reuse
+  Longhorn volume pvc-9134954b-1ae3-425b-bd5c-9319525004f8
+metadata:
+  name: pvc-9134954b-1ae3-425b-bd5c-9319525004f8.183ca442dc14c683
+  namespace: longhorn-system
+reason: Start
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: longhorn-kubernetes-pv-controller
+type: Normal

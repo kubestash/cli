@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T13:08:12Z"
+involvedObject:
+  apiVersion: apps/v1
+  kind: StatefulSet
+  name: my-sts
+  namespace: restore-test
+  resourceVersion: "1712185"
+  uid: 2e2a6c60-08de-43da-90a0-57f4c064b591
+kind: Event
+lastTimestamp: "2025-05-05T13:08:12Z"
+message: create Pod my-sts-1 in StatefulSet my-sts successful
+metadata:
+  name: my-sts.183ca37861da8434
+  namespace: restore-test
+reason: SuccessfulCreate
+reportingComponent: statefulset-controller
+reportingInstance: ""
+source:
+  component: statefulset-controller
+type: Normal

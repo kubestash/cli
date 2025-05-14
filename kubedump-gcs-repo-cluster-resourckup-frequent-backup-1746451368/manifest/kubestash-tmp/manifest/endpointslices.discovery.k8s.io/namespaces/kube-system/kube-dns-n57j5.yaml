@@ -1,0 +1,45 @@
+addressType: IPv4
+apiVersion: discovery.k8s.io/v1
+endpoints:
+- addresses:
+  - 10.42.0.254
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  nodeName: nipun
+  targetRef:
+    kind: Pod
+    name: coredns-ff8999cc5-2wc5g
+    namespace: kube-system
+    uid: bac3ce8e-6d4d-48e5-81ce-cdbe5da56e56
+kind: EndpointSlice
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-04-28T05:57:36Z"
+  labels:
+    endpointslice.kubernetes.io/managed-by: endpointslice-controller.k8s.io
+    k8s-app: kube-dns
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: CoreDNS
+    kubernetes.io/service-name: kube-dns
+    objectset.rio.cattle.io/hash: bce283298811743a0386ab510f2f67ef74240c57
+  name: kube-dns-n57j5
+  namespace: kube-system
+  ownerReferences:
+  - apiVersion: v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Service
+    name: kube-dns
+    uid: 61b23722-86ba-4060-928b-b6127db26655
+ports:
+- name: metrics
+  port: 9153
+  protocol: TCP
+- name: dns
+  port: 53
+  protocol: UDP
+- name: dns-tcp
+  port: 53
+  protocol: TCP

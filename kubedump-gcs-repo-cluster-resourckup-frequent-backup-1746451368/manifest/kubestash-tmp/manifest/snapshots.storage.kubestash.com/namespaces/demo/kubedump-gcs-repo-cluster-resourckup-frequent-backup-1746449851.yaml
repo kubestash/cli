@@ -1,0 +1,44 @@
+apiVersion: storage.kubestash.com/v1alpha1
+kind: Snapshot
+metadata:
+  finalizers:
+  - kubestash.com/cleanup
+  labels:
+    kubestash.com/app-ref-kind: ""
+    kubestash.com/app-ref-name: na
+    kubestash.com/app-ref-namespace: ""
+    kubestash.com/repo-name: kubedump-gcs-repo
+  name: kubedump-gcs-repo-cluster-resourckup-frequent-backup-1746449851
+  namespace: demo
+  ownerReferences:
+  - apiVersion: storage.kubestash.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Repository
+    name: kubedump-gcs-repo
+    uid: a3ef1184-20a4-4451-b608-9f1f3d9c9d05
+spec:
+  appRef:
+    apiGroup: na
+    name: na
+  backupSession: cluster-resources-backup-frequent-backup-1746449851
+  deletionPolicy: Delete
+  repository: kubedump-gcs-repo
+  session: frequent-backup
+  snapshotID: 01JTG8BRXJ2EXHE4YT3BWP70AH
+  type: FullBackup
+  version: v1
+status:
+  components:
+    manifest:
+      phase: Running
+  conditions:
+  - lastTransitionTime: "2025-05-05T12:57:31Z"
+    message: Recent snapshot list updated successfully
+    reason: SuccessfullyUpdatedRecentSnapshotList
+    status: "True"
+    type: RecentSnapshotListUpdated
+  phase: Running
+  snapshotTime: "2025-05-05T12:57:31Z"
+  totalComponents: 1
+  verificationStatus: NotVerified

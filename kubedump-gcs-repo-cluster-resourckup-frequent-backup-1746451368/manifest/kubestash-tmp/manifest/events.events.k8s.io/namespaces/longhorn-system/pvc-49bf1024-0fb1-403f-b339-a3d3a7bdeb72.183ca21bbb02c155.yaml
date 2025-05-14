@@ -1,0 +1,21 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 3
+deprecatedFirstTimestamp: "2025-05-05T12:43:15Z"
+deprecatedLastTimestamp: "2025-05-05T12:45:36Z"
+deprecatedSource:
+  component: longhorn-volume-controller
+eventTime: null
+kind: Event
+metadata:
+  name: pvc-49bf1024-0fb1-403f-b339-a3d3a7bdeb72.183ca21bbb02c155
+  namespace: longhorn-system
+note: volume pvc-49bf1024-0fb1-403f-b339-a3d3a7bdeb72 became degraded
+reason: Degraded
+regarding:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-49bf1024-0fb1-403f-b339-a3d3a7bdeb72
+  namespace: longhorn-system
+  resourceVersion: "1708609"
+  uid: 4d71e27c-d40e-434d-ad42-9772875e7d99
+type: Normal

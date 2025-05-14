@@ -1,0 +1,21 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:45:39Z"
+deprecatedLastTimestamp: "2025-05-05T12:45:39Z"
+deprecatedSource:
+  component: longhorn-volume-controller
+eventTime: null
+kind: Event
+metadata:
+  name: pvc-49bf1024-0fb1-403f-b339-a3d3a7bdeb72.183ca23d365558e5
+  namespace: longhorn-system
+note: Deleting volume pvc-49bf1024-0fb1-403f-b339-a3d3a7bdeb72
+reason: Delete
+regarding:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-49bf1024-0fb1-403f-b339-a3d3a7bdeb72
+  namespace: longhorn-system
+  resourceVersion: "1709108"
+  uid: 4d71e27c-d40e-434d-ad42-9772875e7d99
+type: Normal

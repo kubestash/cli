@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T13:21:05Z"
+involvedObject:
+  apiVersion: batch/v1
+  kind: Job
+  name: retention-policy-cluster-resources-backup-frequent-b-1746451200
+  namespace: demo
+  resourceVersion: "1714257"
+  uid: ba56f8a4-6db8-4fb4-94c6-4a671aa229df
+kind: Event
+lastTimestamp: "2025-05-05T13:21:05Z"
+message: Job completed
+metadata:
+  name: retention-policy-cluster-resources-backup-frequent-b-1746451200.183ca42c3d9d387d
+  namespace: demo
+reason: Completed
+reportingComponent: job-controller
+reportingInstance: ""
+source:
+  component: job-controller
+type: Normal

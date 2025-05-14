@@ -1,0 +1,23 @@
+action: Binding
+apiVersion: v1
+eventTime: "2025-05-05T12:27:02.095167Z"
+firstTimestamp: null
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: retention-policy-cluster-resources-backup-frequent-b-17464qbzdd
+  namespace: demo
+  resourceVersion: "1706638"
+  uid: f1739245-a3a1-4842-a68d-a75045ca8e59
+kind: Event
+lastTimestamp: null
+message: Successfully assigned demo/retention-policy-cluster-resources-backup-frequent-b-17464qbzdd
+  to nipun
+metadata:
+  name: retention-policy-cluster-resources-backup-frequent-b-17464qbzdd.183ca13917aa8e5c
+  namespace: demo
+reason: Scheduled
+reportingComponent: default-scheduler
+reportingInstance: default-scheduler-nipun
+source: {}
+type: Normal

@@ -1,0 +1,25 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T13:08:38Z"
+deprecatedLastTimestamp: "2025-05-05T13:08:38Z"
+deprecatedSource:
+  component: kubelet
+  host: nipun
+eventTime: null
+kind: Event
+metadata:
+  name: my-sts-1.183ca37e3e80f52c
+  namespace: restore-test
+note: 'Created container: my-container'
+reason: Created
+regarding:
+  apiVersion: v1
+  fieldPath: spec.containers{my-container}
+  kind: Pod
+  name: my-sts-1
+  namespace: restore-test
+  resourceVersion: "1712387"
+  uid: 9078152d-30ac-4c94-ab93-67a36337eab3
+reportingController: kubelet
+reportingInstance: nipun
+type: Normal

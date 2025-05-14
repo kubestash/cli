@@ -1,0 +1,22 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:43:02Z"
+deprecatedLastTimestamp: "2025-05-05T12:43:02Z"
+deprecatedSource:
+  component: replicaset-controller
+eventTime: null
+kind: Event
+metadata:
+  name: my-deployment-5686b8d7f5.183ca2189f6920f8
+  namespace: demo
+note: 'Created pod: my-deployment-5686b8d7f5-lfmrr'
+reason: SuccessfulCreate
+regarding:
+  apiVersion: apps/v1
+  kind: ReplicaSet
+  name: my-deployment-5686b8d7f5
+  namespace: demo
+  resourceVersion: "1708529"
+  uid: 08cf76b3-38ff-4259-8a0c-1a94d3db6ace
+reportingController: replicaset-controller
+type: Normal

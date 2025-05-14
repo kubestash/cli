@@ -1,0 +1,22 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:52:21Z"
+deprecatedLastTimestamp: "2025-05-05T12:52:21Z"
+deprecatedSource:
+  component: attachdetach-controller
+eventTime: null
+kind: Event
+metadata:
+  name: my-deployment-5686b8d7f5-m9mdj.183ca29adc971e86
+  namespace: demo
+note: 'AttachVolume.Attach succeeded for volume "pvc-dec9a754-9a98-4b88-a012-e84c276fb8d9" '
+reason: SuccessfulAttachVolume
+regarding:
+  apiVersion: v1
+  kind: Pod
+  name: my-deployment-5686b8d7f5-m9mdj
+  namespace: demo
+  resourceVersion: "1710268"
+  uid: df6890ee-bcb6-4d23-b4b7-01c52fadab47
+reportingController: attachdetach-controller
+type: Normal

@@ -1,0 +1,22 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T13:22:42Z"
+deprecatedLastTimestamp: "2025-05-05T13:22:42Z"
+deprecatedSource:
+  component: longhorn-kubernetes-pv-controller
+eventTime: null
+kind: Event
+metadata:
+  name: pvc-9134954b-1ae3-425b-bd5c-9319525004f8.183ca442dc14c683
+  namespace: longhorn-system
+note: Persistent Volume pvc-9134954b-1ae3-425b-bd5c-9319525004f8 started to use/reuse
+  Longhorn volume pvc-9134954b-1ae3-425b-bd5c-9319525004f8
+reason: Start
+regarding:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-9134954b-1ae3-425b-bd5c-9319525004f8
+  namespace: longhorn-system
+  resourceVersion: "1714505"
+  uid: 31614a87-50c1-4da7-a3b3-7da4ce2f4045
+type: Normal

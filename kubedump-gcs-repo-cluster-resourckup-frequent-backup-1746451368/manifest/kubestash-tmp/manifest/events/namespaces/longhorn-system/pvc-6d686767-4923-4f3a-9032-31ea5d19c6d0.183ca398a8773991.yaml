@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 2
+eventTime: null
+firstTimestamp: "2025-05-05T13:10:31Z"
+involvedObject:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-6d686767-4923-4f3a-9032-31ea5d19c6d0
+  namespace: longhorn-system
+  resourceVersion: "1712743"
+  uid: 32ac8970-88f9-4f8a-8aa3-ab4097933f71
+kind: Event
+lastTimestamp: "2025-05-05T13:12:17Z"
+message: volume pvc-6d686767-4923-4f3a-9032-31ea5d19c6d0 has been detached
+metadata:
+  name: pvc-6d686767-4923-4f3a-9032-31ea5d19c6d0.183ca398a8773991
+  namespace: longhorn-system
+reason: Detached
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: longhorn-volume-controller
+type: Normal

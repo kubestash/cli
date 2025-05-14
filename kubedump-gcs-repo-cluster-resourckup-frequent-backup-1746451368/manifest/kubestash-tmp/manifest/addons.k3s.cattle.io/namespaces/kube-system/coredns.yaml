@@ -1,0 +1,12 @@
+apiVersion: k3s.cattle.io/v1
+kind: Addon
+metadata:
+  annotations:
+    addon.k3s.cattle.io/gvks: /v1, Kind=ServiceAccount;rbac.authorization.k8s.io/v1,
+      Kind=ClusterRole;rbac.authorization.k8s.io/v1, Kind=ClusterRoleBinding;/v1,
+      Kind=ConfigMap;apps/v1, Kind=Deployment;/v1, Kind=Service
+  name: coredns
+  namespace: kube-system
+spec:
+  checksum: 2a9569547585803532236d732be6a06ddf872b01338cdd08150c7eab1199dae2
+  source: /var/lib/rancher/k3s/server/manifests/coredns.yaml

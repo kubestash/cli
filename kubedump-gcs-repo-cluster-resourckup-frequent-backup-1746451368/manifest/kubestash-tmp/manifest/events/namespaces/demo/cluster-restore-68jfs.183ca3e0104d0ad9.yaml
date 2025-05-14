@@ -1,0 +1,22 @@
+action: Binding
+apiVersion: v1
+eventTime: "2025-05-05T13:15:38.254392Z"
+firstTimestamp: null
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: cluster-restore-68jfs
+  namespace: demo
+  resourceVersion: "1713631"
+  uid: f3c163b5-2c88-4059-ae0d-d43003bd86a8
+kind: Event
+lastTimestamp: null
+message: Successfully assigned demo/cluster-restore-68jfs to nipun
+metadata:
+  name: cluster-restore-68jfs.183ca3e0104d0ad9
+  namespace: demo
+reason: Scheduled
+reportingComponent: default-scheduler
+reportingInstance: default-scheduler-nipun
+source: {}
+type: Normal

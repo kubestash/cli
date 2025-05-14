@@ -1,0 +1,48 @@
+apiVersion: flowcontrol.apiserver.k8s.io/v1
+kind: FlowSchema
+metadata:
+  annotations:
+    apf.kubernetes.io/autoupdate-spec: "true"
+  name: workload-leader-election
+spec:
+  distinguisherMethod:
+    type: ByUser
+  matchingPrecedence: 200
+  priorityLevelConfiguration:
+    name: leader-election
+  rules:
+  - resourceRules:
+    - apiGroups:
+      - ""
+      namespaces:
+      - '*'
+      resources:
+      - endpoints
+      - configmaps
+      verbs:
+      - get
+      - create
+      - update
+    - apiGroups:
+      - coordination.k8s.io
+      namespaces:
+      - '*'
+      resources:
+      - leases
+      verbs:
+      - get
+      - create
+      - update
+    subjects:
+    - kind: ServiceAccount
+      serviceAccount:
+        name: '*'
+        namespace: kube-system
+status:
+  conditions:
+  - lastTransitionTime: "2025-04-21T12:06:36Z"
+    message: This FlowSchema references the PriorityLevelConfiguration object named
+      "leader-election" and it exists
+    reason: Found
+    status: "False"
+    type: Dangling

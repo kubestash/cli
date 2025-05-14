@@ -1,0 +1,23 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: csi-provisioner
+  namespace: longhorn-system
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: csi-provisioner
+status:
+  conditions:
+  - lastTransitionTime: "2025-04-30T06:42:06Z"
+    message: ""
+    observedGeneration: 1
+    reason: SufficientPods
+    status: "True"
+    type: DisruptionAllowed
+  currentHealthy: 3
+  desiredHealthy: 1
+  disruptionsAllowed: 2
+  expectedPods: 3
+  observedGeneration: 1

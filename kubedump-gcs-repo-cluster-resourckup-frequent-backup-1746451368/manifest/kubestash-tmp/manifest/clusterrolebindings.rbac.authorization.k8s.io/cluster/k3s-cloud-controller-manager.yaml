@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    objectset.rio.cattle.io/applied: H4sIAAAAAAAA/4yRwU7jMBCGX2U15ySbNsnWtbSHXQ4cuFWCC+IwsaetieOJPE4RVH13lBYkDqX0aM3nz57/3wMO7oGiOA6gIbZoChzTlqN7w+Q4FJ2SwvHv3Qwy6FywoOHGj5IortjTfxesCxvIoKeEFhOC3gOGwOl4XaYjt89kklAqouPCYEqeJqebZJB9O+eXQDHf7DrQ0FXyZbKbZb/uXLB//1nL4UdFwJ5AgzH9VagMaCa+G1vK5VUS9XDIwGNL/uJCW5QtaGhKtaz/qKZuTFOreT2rzGJdNqSqBS1bpdblHG3ZzCfpx9e6SnLjebS54ZAie08x7zHghuKERfa0ovUx3MHdRh6HS3Wd7Qqufk3G04KgH/efonuheKXhRJ1N8enwHgAA//8jSlYUcgIAAA
+    objectset.rio.cattle.io/id: ""
+    objectset.rio.cattle.io/owner-gvk: k3s.cattle.io/v1, Kind=Addon
+    objectset.rio.cattle.io/owner-name: ccm
+    objectset.rio.cattle.io/owner-namespace: kube-system
+  labels:
+    objectset.rio.cattle.io/hash: 5089468545c5482413c7f05e837e9b88f02ad052
+  name: k3s-cloud-controller-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: k3s-cloud-controller-manager
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: k3s-cloud-controller-manager
+  namespace: kube-system

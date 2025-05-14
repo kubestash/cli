@@ -1,0 +1,22 @@
+action: Binding
+apiVersion: events.k8s.io/v1
+deprecatedFirstTimestamp: null
+deprecatedLastTimestamp: null
+deprecatedSource: {}
+eventTime: "2025-05-05T12:52:11.162766Z"
+kind: Event
+metadata:
+  name: my-deployment-5686b8d7f5-m9mdj.183ca298731abd51
+  namespace: demo
+note: Successfully assigned demo/my-deployment-5686b8d7f5-m9mdj to nipun
+reason: Scheduled
+regarding:
+  apiVersion: v1
+  kind: Pod
+  name: my-deployment-5686b8d7f5-m9mdj
+  namespace: demo
+  resourceVersion: "1710227"
+  uid: df6890ee-bcb6-4d23-b4b7-01c52fadab47
+reportingController: default-scheduler
+reportingInstance: default-scheduler-nipun
+type: Normal

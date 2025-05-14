@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:42:34Z"
+involvedObject:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-c5a10634-c0f3-42dd-94fe-f5dd706a084d
+  namespace: longhorn-system
+  resourceVersion: "1708423"
+  uid: a608808b-1ff2-46e1-bc43-1189877066e3
+kind: Event
+lastTimestamp: "2025-05-05T12:42:34Z"
+message: Deleting volume pvc-c5a10634-c0f3-42dd-94fe-f5dd706a084d
+metadata:
+  name: pvc-c5a10634-c0f3-42dd-94fe-f5dd706a084d.183ca2123e7282ff
+  namespace: longhorn-system
+reason: Delete
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: longhorn-volume-controller
+type: Normal

@@ -1,0 +1,23 @@
+action: Scheduling
+apiVersion: events.k8s.io/v1
+deprecatedFirstTimestamp: null
+deprecatedLastTimestamp: null
+deprecatedSource: {}
+eventTime: "2025-05-05T13:08:12.948266Z"
+kind: Event
+metadata:
+  name: my-sts-1.183ca37861fcc6a1
+  namespace: restore-test
+note: '0/1 nodes are available: pod has unbound immediate PersistentVolumeClaims.
+  preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling.'
+reason: FailedScheduling
+regarding:
+  apiVersion: v1
+  kind: Pod
+  name: my-sts-1
+  namespace: restore-test
+  resourceVersion: "1712332"
+  uid: 9078152d-30ac-4c94-ab93-67a36337eab3
+reportingController: default-scheduler
+reportingInstance: default-scheduler-nipun
+type: Warning

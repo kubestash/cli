@@ -1,0 +1,26 @@
+addressType: IPv4
+apiVersion: discovery.k8s.io/v1
+endpoints: null
+kind: EndpointSlice
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-04-22T05:48:48Z"
+  labels:
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/version: v1.5.1
+    endpointslice.kubernetes.io/managed-by: endpointslice-controller.k8s.io
+    helm.sh/chart: longhorn-1.5.1
+    kubernetes.io/service-name: longhorn-engine-manager
+    service.kubernetes.io/headless: ""
+  name: longhorn-engine-manager-589b5
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Service
+    name: longhorn-engine-manager
+    uid: 62e4374a-f847-494d-adfb-761fe53c26b3
+ports: null

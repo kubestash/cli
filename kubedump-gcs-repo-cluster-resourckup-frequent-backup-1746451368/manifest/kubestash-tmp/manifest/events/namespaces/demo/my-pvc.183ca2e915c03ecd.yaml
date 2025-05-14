@@ -1,0 +1,25 @@
+apiVersion: v1
+count: 3
+eventTime: null
+firstTimestamp: "2025-05-05T12:57:57Z"
+involvedObject:
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: my-pvc
+  namespace: demo
+  resourceVersion: "1710991"
+  uid: 2e83e939-a3ba-47a8-82e5-5ed26c9c579f
+kind: Event
+lastTimestamp: "2025-05-05T12:57:58Z"
+message: Waiting for a volume to be created either by the external provisioner 'driver.longhorn.io'
+  or manually by the system administrator. If volume creation is delayed, please verify
+  that the provisioner is running and correctly registered.
+metadata:
+  name: my-pvc.183ca2e915c03ecd
+  namespace: demo
+reason: ExternalProvisioning
+reportingComponent: persistentvolume-controller
+reportingInstance: ""
+source:
+  component: persistentvolume-controller
+type: Normal

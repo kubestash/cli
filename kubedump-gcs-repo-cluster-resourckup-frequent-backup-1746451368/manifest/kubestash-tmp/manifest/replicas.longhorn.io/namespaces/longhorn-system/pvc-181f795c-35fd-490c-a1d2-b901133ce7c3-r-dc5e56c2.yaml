@@ -1,0 +1,57 @@
+apiVersion: longhorn.io/v1beta2
+kind: Replica
+metadata:
+  finalizers:
+  - longhorn.io
+  labels:
+    longhorn.io/backing-image: ""
+    longhorndiskuuid: ""
+    longhornnode: ""
+    longhornvolume: pvc-181f795c-35fd-490c-a1d2-b901133ce7c3
+  name: pvc-181f795c-35fd-490c-a1d2-b901133ce7c3-r-dc5e56c2
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: longhorn.io/v1beta2
+    kind: Volume
+    name: pvc-181f795c-35fd-490c-a1d2-b901133ce7c3
+    uid: a2ba2087-e36d-4d61-99f5-4198a17d8a0c
+spec:
+  active: true
+  backendStoreDriver: v1
+  backingImage: ""
+  dataDirectoryName: ""
+  desireState: stopped
+  diskID: ""
+  diskPath: ""
+  engineImage: longhornio/longhorn-engine:v1.5.1
+  engineName: pvc-181f795c-35fd-490c-a1d2-b901133ce7c3-e-fe97bc80
+  failedAt: ""
+  hardNodeAffinity: ""
+  healthyAt: ""
+  logRequested: false
+  nodeID: ""
+  rebuildRetryCount: 5
+  revisionCounterDisabled: false
+  salvageRequested: false
+  unmapMarkDiskChainRemovedEnabled: false
+  volumeName: pvc-181f795c-35fd-490c-a1d2-b901133ce7c3
+  volumeSize: "5368709120"
+status:
+  conditions:
+  - lastProbeTime: ""
+    lastTransitionTime: "2025-04-30T06:42:26Z"
+    message: ""
+    reason: ""
+    status: "True"
+    type: InstanceCreation
+  currentImage: ""
+  currentState: stopped
+  evictionRequested: false
+  instanceManagerName: ""
+  ip: ""
+  logFetched: false
+  ownerID: nipun
+  port: 0
+  salvageExecuted: false
+  started: false
+  storageIP: ""

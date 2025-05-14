@@ -1,0 +1,23 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T13:10:32Z"
+involvedObject:
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: my-pvc
+  namespace: demo
+  resourceVersion: "1712695"
+  uid: 6d686767-4923-4f3a-9032-31ea5d19c6d0
+kind: Event
+lastTimestamp: "2025-05-05T13:10:32Z"
+message: Successfully provisioned volume pvc-6d686767-4923-4f3a-9032-31ea5d19c6d0
+metadata:
+  name: my-pvc.183ca398f20c0355
+  namespace: demo
+reason: ProvisioningSucceeded
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: driver.longhorn.io_csi-provisioner-8649bdf768-wmv44_b1799ee4-f3b1-4c58-b611-f1883c44a8fb
+type: Normal

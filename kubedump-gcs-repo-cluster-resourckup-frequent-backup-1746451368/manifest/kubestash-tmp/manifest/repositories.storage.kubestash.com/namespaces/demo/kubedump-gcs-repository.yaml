@@ -1,0 +1,45 @@
+apiVersion: storage.kubestash.com/v1alpha1
+kind: Repository
+metadata:
+  finalizers:
+  - kubestash.com/cleanup
+  name: kubedump-gcs-repository
+  namespace: demo
+spec:
+  appRef:
+    apiGroup: na
+    name: na
+  deletionPolicy: WipeOut
+  encryptionSecret:
+    name: encrypt-secret
+    namespace: demo
+  path: /cluster-manifests
+  storageRef:
+    name: gcs-storage
+    namespace: demo
+status:
+  componentPaths:
+  - repository/v1/frequent-backup/manifest
+  - repository/frequent-backup/manifest
+  conditions:
+  - lastTransitionTime: "2025-05-02T06:44:57Z"
+    message: Successfully initialized repository
+    reason: RepositoryInitializationSucceeded
+    status: "True"
+    type: RepositoryInitialized
+  integrity: true
+  lastBackupTime: "2025-05-05T12:11:29Z"
+  phase: Ready
+  recentSnapshots:
+  - name: kubedump-gcs-repository-cluster-ckup-frequent-backup-1746447300
+    phase: Succeeded
+    session: frequent-backup
+    size: 4.397 MiB
+    snapshotTime: "2025-05-05T12:15:00Z"
+  - name: kubedump-gcs-repository-cluster-ckup-frequent-backup-1746447600
+    phase: Succeeded
+    session: frequent-backup
+    size: 4.362 MiB
+    snapshotTime: "2025-05-05T12:20:00Z"
+  size: 4.362 MiB
+  snapshotCount: 3

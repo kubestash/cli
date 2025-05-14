@@ -1,0 +1,22 @@
+action: Binding
+apiVersion: v1
+eventTime: "2025-05-05T12:45:53.965987Z"
+firstTimestamp: null
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: my-deployment-5686b8d7f5-ndr9q
+  namespace: demo
+  resourceVersion: "1709166"
+  uid: 82c838e2-0920-425c-b065-2499b5585c36
+kind: Event
+lastTimestamp: null
+message: Successfully assigned demo/my-deployment-5686b8d7f5-ndr9q to nipun
+metadata:
+  name: my-deployment-5686b8d7f5-ndr9q.183ca240a06ca9f1
+  namespace: demo
+reason: Scheduled
+reportingComponent: default-scheduler
+reportingInstance: default-scheduler-nipun
+source: {}
+type: Normal

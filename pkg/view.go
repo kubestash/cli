@@ -19,19 +19,19 @@ package pkg
 import (
 	_ "bufio"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	_ "log"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"sigs.k8s.io/yaml"
 	"slices"
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/list"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -42,7 +42,6 @@ import (
 	"kubestash.dev/apimachinery/pkg/restic"
 	"kubestash.dev/cli/pkg/filter"
 	_ "kubestash.dev/cli/pkg/tree"
-	"sigs.k8s.io/yaml"
 )
 
 type viewOptions struct {
@@ -377,21 +376,49 @@ func getResourceFromGroupResource(gv string) string {
 	return parts[0]
 }
 
-func (viewOpt *viewOptions) extractLabels(fileName string) []string {
-	data, err := ioutil.ReadFile(fileName)
+func parseYAMLToUnstructured(content []byte) (*unstructured.Unstructured, error) {
+	fmt.Println("### Raw YAML content ###")
+	fmt.Println(string(content)) // 👈 show actual file contents for debugging
+
+	var obj map[string]interface{}
+	if err := yaml.Unmarshal(content, &obj); err != nil {
+		return nil, err
+	}
+	return &unstructured.Unstructured{Object: obj}, nil
+}
+
+func (opt *viewOptions) getFileContentViaDocker(snapshotID, filePath string) (*unstructured.Unstructured, error) {
+	currentUser, err := user.Current()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current user: %v", err)
+	}
+	args := []string{
+		"run",
+		"--rm",
+		"-u", currentUser.Uid,
+		"-v", ScratchDir + ":" + ScratchDir,
+		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
+		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
+		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
+		imgRestic.ToContainerImage(),
+		"dump", // dump command to show content of a file
+		snapshotID,
+		filePath, // file path within the snapshot
+	}
+	klog.Infoln("###Inside the file read from container function\n")
+	klog.Infoln("Running docker with args:", args)
+	cmd := exec.Command(CmdDocker, args...)
+	output, _ := cmd.CombinedOutput()
+	return parseYAMLToUnstructured(output)
+}
+
+func (viewOpt *viewOptions) extractLabels(snapshotID, fileName string) []string {
+	unstructuredObject, err := viewOpt.getFileContentViaDocker(snapshotID, fileName)
 	if err != nil {
 		fmt.Printf("Error reading file %s: %s\n", fileName, err)
 	}
-	jsonData, err := yaml.YAMLToJSON(data)
-	if err != nil {
-		fmt.Printf("Error parsing file %s: %s\n", fileName, err)
-	}
-	obj := &unstructured.Unstructured{}
-	err = obj.UnmarshalJSON(jsonData)
-	if err != nil {
-		log.Fatalf("Failed to unmarshal to Unstructured: %v", err)
-	}
-	return labelsToStrings(obj.GetLabels())
+	klog.Infoln("###Unstructered Object string view", unstructuredObject)
+	return labelsToStrings(unstructuredObject.GetLabels())
 }
 
 func (viewOpt *viewOptions) matchLabels(labels []string) bool {
@@ -406,7 +433,7 @@ func labelsToStrings(labels map[string]string) []string {
 	return out
 }
 
-func (opt viewOptions) shouldShow(file string) bool {
+func (opt viewOptions) shouldShow(snapshotID, file string) bool {
 	parts := strings.Split(file, "/")
 	parts[len(parts)-1] = strings.TrimSuffix(parts[len(parts)-1], filepath.Ext(parts[len(parts)-1]))
 	resource := getResourceFromGroupResource(parts[0])
@@ -423,11 +450,16 @@ func (opt viewOptions) shouldShow(file string) bool {
 	} else if globalIncludeExclude.ShouldIncludeResource(resource, true) && globalIncludeExclude.ShouldIncludeNamespace(namespace) {
 		passed = true
 	}
-	if passed {
-		labels := opt.extractLabels("/tmp/scratch/manifest" + file)
-		return opt.matchLabels(labels)
-	}
-	return false
+	opt.extractLabels(snapshotID, "/kubestash-tmp/manifest"+file)
+
+	return passed
+	/*
+		if passed {
+			labels := opt.extractLabels(snapshotID, "/kubestash-tmp/manifest"+file)
+			return opt.matchLabels(labels)
+		}
+		return false
+		/**/
 }
 
 func (opt *viewOptions) showInTreeFormat(files []string) {
@@ -442,48 +474,49 @@ func (opt *viewOptions) showInTreeFormat(files []string) {
 		if extension != ".yaml" && extension != ".json" {
 			continue
 		}
-		file := strings.TrimPrefix(file, "/kubestash-tmp/manifest")
-		if opt.shouldShow(file) {
-			parts := strings.Split(file, "/")
-			currentPath := ""
-			for i, part := range parts {
-				currentPath += part
-				if !seen[currentPath] {
-					// Set indentation level
-					for lvl := 0; lvl < i; lvl++ {
-						l.Indent()
-					}
-					l.AppendItem(part)
-					seen[currentPath] = true
-					// Reset indentation
-					for lvl := 0; lvl < i; lvl++ {
-						l.UnIndent()
-					}
+		parts := strings.Split(file, "/")
+		currentPath := ""
+		for i, part := range parts {
+			currentPath += part
+			if !seen[currentPath] {
+				// Set indentation level
+				for lvl := 0; lvl < i; lvl++ {
+					l.Indent()
 				}
-				currentPath += "/"
+				l.AppendItem(part)
+				seen[currentPath] = true
+				// Reset indentation
+				for lvl := 0; lvl < i; lvl++ {
+					l.UnIndent()
+				}
 			}
+			currentPath += "/"
 		}
 	}
 	fmt.Println(l.Render())
 }
 
-func (opt *viewOptions) filterFiles(files []string) []string {
+func (opt *viewOptions) filterFiles(snapshotID string, files []string) []string {
 	filteredFiles := []string{}
+	counter := 10
 	for _, file := range files {
 		extension := filepath.Ext(file)
 		if extension != ".yaml" && extension != ".json" {
 			continue
 		}
 		file := strings.TrimPrefix(file, "/kubestash-tmp/manifest")
-		if opt.shouldShow(file) {
+		if opt.shouldShow(snapshotID, file) {
 			filteredFiles = append(filteredFiles, file)
+		}
+		counter--
+		if counter == 0 {
+			break
 		}
 	}
 	return filteredFiles
 }
 
 func (opt *viewOptions) listFilesViaDocker(snapshotID string) error {
-	// Get current user for peremission handling
 	resourceFilter := filter.NewIncludeExclude().Includes(opt.IncludeResources...).Excludes(opt.ExcludeResources...)
 	namespaceFilter := filter.NewIncludeExclude().Includes(opt.IncludeNamespaces...).Excludes(opt.ExcludeNamespaces...)
 	globalIncludeExclude = filter.NewGlobalIncludeExclude(resourceFilter, namespaceFilter, opt.IncludeClusterResources)
@@ -514,7 +547,7 @@ func (opt *viewOptions) listFilesViaDocker(snapshotID string) error {
 	klog.Infoln("###Docker command output:", string(output))
 
 	files := strings.Split(string(output), "\n")
-	filteredFiles := opt.filterFiles(files)
+	filteredFiles := opt.filterFiles(snapshotID, files)
 	opt.showInTreeFormat(filteredFiles)
 
 	return nil

@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubedb
+    meta.helm.sh/release-namespace: kubedb
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/name: kubedb-webhook-server
+    pod-template-hash: 68fc69b889
+  name: kubedb-kubedb-webhook-server-68fc69b889
+  namespace: kubedb
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: kubedb-kubedb-webhook-server
+    uid: be6fb557-3c02-4627-8b44-9dc8e43f67f8
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: kubedb
+      app.kubernetes.io/name: kubedb-webhook-server
+      pod-template-hash: 68fc69b889
+  template:
+    metadata:
+      annotations:
+        reload: JbwUPLLS
+      labels:
+        app.kubernetes.io/instance: kubedb
+        app.kubernetes.io/name: kubedb-webhook-server
+        pod-template-hash: 68fc69b889
+    spec:
+      containers:
+      - args:
+        - run
+        - --v=3
+        - --leader-elect=false
+        - --metrics-secure=true
+        - --metrics-bind-address=:8443
+        - --health-probe-bind-address=:8081
+        - --cert-dir=/var/serving-cert
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: ghcr.io/kubedb/kubedb-webhook-server:v0.29.1
+        imagePullPolicy: IfNotPresent
+        name: operator
+        ports:
+        - containerPort: 8081
+          name: probes
+          protocol: TCP
+        - containerPort: 8443
+          name: metrics
+          protocol: TCP
+        - containerPort: 9443
+          name: https
+          protocol: TCP
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmpdir
+        - mountPath: /var/serving-cert
+          name: serving-cert
+      nodeSelector:
+        kubernetes.io/os: linux
+      readinessGates:
+      - conditionType: kubedb.com/conversion
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: kubedb-kubedb-webhook-server
+      serviceAccountName: kubedb-kubedb-webhook-server
+      volumes:
+      - emptyDir: {}
+        name: tmpdir
+      - name: serving-cert
+        secret:
+          defaultMode: 420
+          secretName: kubedb-kubedb-webhook-server-cert
+status:
+  availableReplicas: 1
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1

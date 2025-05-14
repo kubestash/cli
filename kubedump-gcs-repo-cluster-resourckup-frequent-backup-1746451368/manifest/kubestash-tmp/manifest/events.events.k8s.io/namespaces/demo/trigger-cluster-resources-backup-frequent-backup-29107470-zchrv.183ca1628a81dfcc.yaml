@@ -1,0 +1,23 @@
+action: Binding
+apiVersion: events.k8s.io/v1
+deprecatedFirstTimestamp: null
+deprecatedLastTimestamp: null
+deprecatedSource: {}
+eventTime: "2025-05-05T12:30:00.115540Z"
+kind: Event
+metadata:
+  name: trigger-cluster-resources-backup-frequent-backup-29107470-zchrv.183ca1628a81dfcc
+  namespace: demo
+note: Successfully assigned demo/trigger-cluster-resources-backup-frequent-backup-29107470-zchrv
+  to nipun
+reason: Scheduled
+regarding:
+  apiVersion: v1
+  kind: Pod
+  name: trigger-cluster-resources-backup-frequent-backup-29107470-zchrv
+  namespace: demo
+  resourceVersion: "1706981"
+  uid: fb0882f5-9c83-4b44-b8f7-736fe2868d7b
+reportingController: default-scheduler
+reportingInstance: default-scheduler-nipun
+type: Normal

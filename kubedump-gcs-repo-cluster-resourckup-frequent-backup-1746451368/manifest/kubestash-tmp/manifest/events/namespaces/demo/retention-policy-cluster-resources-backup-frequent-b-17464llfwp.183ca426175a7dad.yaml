@@ -1,0 +1,26 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T13:20:39Z"
+involvedObject:
+  apiVersion: v1
+  fieldPath: spec.initContainers{init-retention-policy}
+  kind: Pod
+  name: retention-policy-cluster-resources-backup-frequent-b-17464llfwp
+  namespace: demo
+  resourceVersion: "1714168"
+  uid: 3ba1c368-9cf4-44e2-a7f7-c90fe6bac84d
+kind: Event
+lastTimestamp: "2025-05-05T13:20:39Z"
+message: Container image "ghcr.io/kubestash/kubestash:v0.17.0" already present on
+  machine
+metadata:
+  name: retention-policy-cluster-resources-backup-frequent-b-17464llfwp.183ca426175a7dad
+  namespace: demo
+reason: Pulled
+reportingComponent: kubelet
+reportingInstance: nipun
+source:
+  component: kubelet
+  host: nipun
+type: Normal

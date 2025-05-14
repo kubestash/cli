@@ -1,0 +1,24 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T13:20:04Z"
+involvedObject:
+  apiVersion: batch/v1
+  kind: CronJob
+  name: trigger-cluster-resources-backup-frequent-backup
+  namespace: demo
+  resourceVersion: "1714052"
+  uid: a53cc658-92ae-4c0e-b8db-126893e7b848
+kind: Event
+lastTimestamp: "2025-05-05T13:20:04Z"
+message: 'Saw completed job: trigger-cluster-resources-backup-frequent-backup-29107520,
+  condition: Complete'
+metadata:
+  name: trigger-cluster-resources-backup-frequent-backup.183ca41e040f9ce4
+  namespace: demo
+reason: SawCompletedJob
+reportingComponent: cronjob-controller
+reportingInstance: ""
+source:
+  component: cronjob-controller
+type: Normal

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubestash
+    meta.helm.sh/release-namespace: stash
+  labels:
+    app.kubernetes.io/instance: kubestash
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubestash-operator
+    app.kubernetes.io/version: v0.17.0
+    helm.sh/chart: kubestash-operator-v0.17.0
+  name: kubestash-kubestash-operator
+  namespace: stash

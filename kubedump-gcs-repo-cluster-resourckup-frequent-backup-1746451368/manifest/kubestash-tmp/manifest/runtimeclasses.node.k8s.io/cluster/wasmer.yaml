@@ -1,0 +1,13 @@
+apiVersion: node.k8s.io/v1
+handler: wasmer
+kind: RuntimeClass
+metadata:
+  annotations:
+    objectset.rio.cattle.io/applied: H4sIAAAAAAAA/4yQu27DMAxFf6W4s+LCMZw4AjoUHbt16E5JdKPapgJRcVAE/vfCaIYufYzEJQ8PeQWd4itnjUlgISlwNXRaxXQ/1zA4koSRMywupBNnGAxRAixezlLixE8jqcJg4kKBCsFeQSKpUIlJdC2Te2dflEuVY6o8lTLyuiCuGJgf83QRzpu3eYDF0Oi3ZK7N3XOU8PAYQpI/EUITwyJ/Geu/+vVEfh0azo43+qGFJywGIzkef73qSHqERbvfNrVjOuzazvfbtveB/Lbpa9/uupb83jnfH7pmhd78bh9els8AAAD///XoQSeVAQAA
+    objectset.rio.cattle.io/id: ""
+    objectset.rio.cattle.io/owner-gvk: k3s.cattle.io/v1, Kind=Addon
+    objectset.rio.cattle.io/owner-name: runtimes
+    objectset.rio.cattle.io/owner-namespace: kube-system
+  labels:
+    objectset.rio.cattle.io/hash: 57231bea9658cf25fcdac23f1c5685ac7bbcf983
+  name: wasmer

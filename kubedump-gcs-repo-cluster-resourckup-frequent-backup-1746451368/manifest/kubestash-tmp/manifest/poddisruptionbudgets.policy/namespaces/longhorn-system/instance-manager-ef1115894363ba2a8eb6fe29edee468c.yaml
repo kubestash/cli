@@ -1,0 +1,27 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: instance-manager-ef1115894363ba2a8eb6fe29edee468c
+  namespace: longhorn-system
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      longhorn.io/component: instance-manager
+      longhorn.io/instance-manager-image: imi-a21ea71c
+      longhorn.io/instance-manager-type: aio
+      longhorn.io/managed-by: longhorn-manager
+      longhorn.io/node: nipun
+status:
+  conditions:
+  - lastTransitionTime: "2025-04-22T05:49:38Z"
+    message: ""
+    observedGeneration: 1
+    reason: InsufficientPods
+    status: "False"
+    type: DisruptionAllowed
+  currentHealthy: 1
+  desiredHealthy: 1
+  disruptionsAllowed: 0
+  expectedPods: 1
+  observedGeneration: 1

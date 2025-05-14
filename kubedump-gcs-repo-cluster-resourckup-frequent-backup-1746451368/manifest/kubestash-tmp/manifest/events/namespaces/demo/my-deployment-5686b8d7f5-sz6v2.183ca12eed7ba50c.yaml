@@ -1,0 +1,23 @@
+action: Scheduling
+apiVersion: v1
+eventTime: "2025-05-05T12:26:18.437776Z"
+firstTimestamp: null
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: my-deployment-5686b8d7f5-sz6v2
+  namespace: demo
+  resourceVersion: "1706437"
+  uid: c4b1327e-d023-43f0-8232-fd6960389e88
+kind: Event
+lastTimestamp: null
+message: '0/1 nodes are available: pod has unbound immediate PersistentVolumeClaims.
+  preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling.'
+metadata:
+  name: my-deployment-5686b8d7f5-sz6v2.183ca12eed7ba50c
+  namespace: demo
+reason: FailedScheduling
+reportingComponent: default-scheduler
+reportingInstance: default-scheduler-nipun
+source: {}
+type: Warning

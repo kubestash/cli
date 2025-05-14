@@ -1,0 +1,49 @@
+apiVersion: core.kubestash.com/v1alpha1
+kind: BackupSession
+metadata:
+  deletionGracePeriodSeconds: 0
+  deletionTimestamp: "2025-04-24T05:57:13Z"
+  finalizers:
+  - kubestash.com/cleanup
+  labels:
+    kubestash.com/invoker-name: my-app-backupconfiguration
+  name: my-app-backupconfiguration-workload-backup-1745474233
+  namespace: demo
+  ownerReferences:
+  - apiVersion: core.kubestash.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: BackupConfiguration
+    name: my-app-backupconfiguration
+    uid: 726eff6a-d0ad-4b58-be46-7e0da54a9ddf
+spec:
+  invoker:
+    apiGroup: core.kubestash.com
+    kind: BackupConfiguration
+    name: my-app-backupconfiguration
+  session: workload-backup
+status:
+  conditions:
+  - lastTransitionTime: "2025-04-24T05:57:13Z"
+    message: Snapshots have been ensured successfully.
+    reason: SuccessfullyEnsuredSnapshots
+    status: "True"
+    type: SnapshotsEnsured
+  - lastTransitionTime: "2025-04-24T05:57:13Z"
+    message: 'Failed to ensure Backup Executor. Reason: "failed to ensure backup job:
+      failed to get BackupConfiguration demo/my-app-backupconfiguration: BackupConfiguration.core.kubestash.com
+      \"my-app-backupconfiguration\" not found"'
+    reason: FailedToEnsureBackupExecutor
+    status: "False"
+    type: BackupExecutorEnsured
+  phase: Pending
+  snapshots:
+  - appRef:
+      apiGroup: apps
+      kind: StatefulSet
+      name: my-app
+      namespace: demo
+    name: gcs-repo-for-app-my-app-backupcotion-workload-backup-1745474233
+    phase: Pending
+    repository: gcs-repo-for-app
+  totalSnapshots: 1

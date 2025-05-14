@@ -1,0 +1,180 @@
+apiVersion: apps/v1
+data:
+  spec:
+    template:
+      $patch: replace
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: longhorn-csi-plugin
+      spec:
+        containers:
+        - args:
+          - --v=2
+          - --csi-address=$(ADDRESS)
+          - --kubelet-registration-path=/var/lib/kubelet/plugins/driver.longhorn.io/csi.sock
+          env:
+          - name: ADDRESS
+            value: /csi/csi.sock
+          image: longhornio/csi-node-driver-registrar:v2.7.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - /bin/sh
+                - -c
+                - rm -rf /registration/driver.longhorn.io /registration/driver.longhorn.io-reg.sock
+                  /csi//*
+          name: node-driver-registrar
+          resources: {}
+          securityContext:
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi/
+            name: socket-dir
+          - mountPath: /registration
+            name: registration-dir
+        - args:
+          - --v=4
+          - --csi-address=/csi/csi.sock
+          image: longhornio/livenessprobe:v2.9.0
+          imagePullPolicy: IfNotPresent
+          name: longhorn-liveness-probe
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi/
+            name: socket-dir
+        - args:
+          - longhorn-manager
+          - -d
+          - csi
+          - --nodeid=$(NODE_ID)
+          - --endpoint=$(CSI_ENDPOINT)
+          - --drivername=driver.longhorn.io
+          - --manager-url=http://longhorn-backend:9500/v1
+          env:
+          - name: NODE_ID
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
+          - name: CSI_ENDPOINT
+            value: unix:///csi/csi.sock
+          image: longhornio/longhorn-manager:v1.5.1
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - /bin/sh
+                - -c
+                - rm -f /csi//*
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 9808
+              scheme: HTTP
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 4
+          name: longhorn-csi-plugin
+          ports:
+          - containerPort: 9808
+            protocol: TCP
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: true
+            capabilities:
+              add:
+              - SYS_ADMIN
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi/
+            name: socket-dir
+          - mountPath: /var/lib/kubelet/plugins/kubernetes.io/csi
+            mountPropagation: Bidirectional
+            name: kubernetes-csi-dir
+          - mountPath: /var/lib/kubelet/pods
+            mountPropagation: Bidirectional
+            name: pods-mount-dir
+          - mountPath: /dev
+            name: host-dev
+          - mountPath: /sys
+            name: host-sys
+          - mountPath: /rootfs
+            mountPropagation: Bidirectional
+            name: host
+          - mountPath: /lib/modules
+            name: lib-modules
+            readOnly: true
+        dnsPolicy: ClusterFirst
+        hostPID: true
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: longhorn-service-account
+        serviceAccountName: longhorn-service-account
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - hostPath:
+            path: /var/lib/kubelet/plugins/kubernetes.io/csi
+            type: DirectoryOrCreate
+          name: kubernetes-csi-dir
+        - hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: DirectoryOrCreate
+          name: registration-dir
+        - hostPath:
+            path: /var/lib/kubelet/plugins/driver.longhorn.io
+            type: DirectoryOrCreate
+          name: socket-dir
+        - hostPath:
+            path: /var/lib/kubelet/pods
+            type: DirectoryOrCreate
+          name: pods-mount-dir
+        - hostPath:
+            path: /dev
+            type: ""
+          name: host-dev
+        - hostPath:
+            path: /sys
+            type: ""
+          name: host-sys
+        - hostPath:
+            path: /
+            type: ""
+          name: host
+        - hostPath:
+            path: /lib/modules
+            type: ""
+          name: lib-modules
+kind: ControllerRevision
+metadata:
+  annotations:
+    deprecated.daemonset.template.generation: "1"
+    driver.longhorn.io/git-commit: 8ce69c8f280a5a2715c528034e0274391ad761c0
+    driver.longhorn.io/kubernetes-version: v1.32.3+k3s1
+    driver.longhorn.io/version: v1.5.1
+    longhorn.io/last-applied-tolerations: '[]'
+  labels:
+    app: longhorn-csi-plugin
+    controller-revision-hash: 6f685d98f5
+  name: longhorn-csi-plugin-6f685d98f5
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DaemonSet
+    name: longhorn-csi-plugin
+    uid: 6fb0d256-b539-4ac3-a31d-548c75203f90
+revision: 1

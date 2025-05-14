@@ -1,0 +1,24 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 2
+deprecatedFirstTimestamp: "2025-05-05T13:07:48Z"
+deprecatedLastTimestamp: "2025-05-05T13:07:48Z"
+deprecatedSource:
+  component: persistentvolume-controller
+eventTime: null
+kind: Event
+metadata:
+  name: storage-volume-my-sts-0.183ca372bb8a0d54
+  namespace: restore-test
+note: Waiting for a volume to be created either by the external provisioner 'driver.longhorn.io'
+  or manually by the system administrator. If volume creation is delayed, please verify
+  that the provisioner is running and correctly registered.
+reason: ExternalProvisioning
+regarding:
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: storage-volume-my-sts-0
+  namespace: restore-test
+  resourceVersion: "1712174"
+  uid: cf75d66b-7a67-42e0-9284-94ec6950a72c
+reportingController: persistentvolume-controller
+type: Normal

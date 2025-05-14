@@ -1,0 +1,23 @@
+action: Scheduling
+apiVersion: events.k8s.io/v1
+deprecatedFirstTimestamp: null
+deprecatedLastTimestamp: null
+deprecatedSource: {}
+eventTime: "2025-05-05T12:26:16.367404Z"
+kind: Event
+metadata:
+  name: my-deployment-5686b8d7f5-sz6v2.183ca12e72143d76
+  namespace: demo
+note: '0/1 nodes are available: pod has unbound immediate PersistentVolumeClaims.
+  preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling.'
+reason: FailedScheduling
+regarding:
+  apiVersion: v1
+  kind: Pod
+  name: my-deployment-5686b8d7f5-sz6v2
+  namespace: demo
+  resourceVersion: "1706432"
+  uid: c4b1327e-d023-43f0-8232-fd6960389e88
+reportingController: default-scheduler
+reportingInstance: default-scheduler-nipun
+type: Warning

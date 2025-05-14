@@ -1,0 +1,22 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T13:08:27Z"
+deprecatedLastTimestamp: "2025-05-05T13:08:27Z"
+deprecatedSource:
+  component: attachdetach-controller
+eventTime: null
+kind: Event
+metadata:
+  name: my-sts-1.183ca37baed39e11
+  namespace: restore-test
+note: 'AttachVolume.Attach succeeded for volume "pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68" '
+reason: SuccessfulAttachVolume
+regarding:
+  apiVersion: v1
+  kind: Pod
+  name: my-sts-1
+  namespace: restore-test
+  resourceVersion: "1712387"
+  uid: 9078152d-30ac-4c94-ab93-67a36337eab3
+reportingController: attachdetach-controller
+type: Normal

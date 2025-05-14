@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-04-28T05:55:36Z"
+  labels:
+    app.kubernetes.io/instance: kubestash
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubestash-operator
+    app.kubernetes.io/version: v0.17.0
+    helm.sh/chart: kubestash-operator-v0.17.0
+  name: kubestash-kubestash-operator-webhook
+  namespace: stash
+subsets:
+- addresses:
+  - ip: 10.42.0.3
+    nodeName: nipun
+    targetRef:
+      kind: Pod
+      name: kubestash-kubestash-operator-webhook-server-7998fcfd5-wb6cf
+      namespace: stash
+      uid: c0d61d39-a285-4588-a62b-bbd6f34095fe
+  ports:
+  - name: https
+    port: 9443
+    protocol: TCP
+  - name: metrics
+    port: 8443
+    protocol: TCP

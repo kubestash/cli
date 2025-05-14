@@ -1,0 +1,23 @@
+apiVersion: addons.kubestash.com/v1alpha1
+kind: Function
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubedb
+    meta.helm.sh/release-namespace: kubedb
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubedb-kubestash-catalog
+    app.kubernetes.io/version: v2025.3.24
+    helm.sh/chart: kubedb-kubestash-catalog-v2025.3.24
+  name: elasticsearch-dashboard-restore
+spec:
+  args:
+  - restore
+  - --namespace=${namespace:=default}
+  - --restoresession=${restoreSession:=}
+  - --snapshot=${snapshot:=}
+  - --enable-cache=${enableCache:=}
+  - --scratch-dir=${scratchDir:=}
+  - --interim-data-dir=${interimDataDir:=}
+  image: ghcr.io/kubedb/dashboard-restic-plugin:v0.11.0

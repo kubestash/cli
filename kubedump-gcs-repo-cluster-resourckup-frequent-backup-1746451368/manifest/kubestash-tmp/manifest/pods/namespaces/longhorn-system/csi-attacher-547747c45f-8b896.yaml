@@ -1,0 +1,269 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2025-04-22T05:49:25Z"
+  generateName: csi-attacher-547747c45f-
+  labels:
+    app: csi-attacher
+    pod-template-hash: 547747c45f
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:generateName: {}
+        f:labels:
+          .: {}
+          f:app: {}
+          f:pod-template-hash: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"e156a1de-521c-4b17-a621-ee4219c182a9"}: {}
+      f:spec:
+        f:affinity:
+          .: {}
+          f:podAntiAffinity:
+            .: {}
+            f:preferredDuringSchedulingIgnoredDuringExecution: {}
+        f:containers:
+          k:{"name":"csi-attacher"}:
+            .: {}
+            f:args: {}
+            f:env:
+              .: {}
+              k:{"name":"ADDRESS"}:
+                .: {}
+                f:name: {}
+                f:value: {}
+              k:{"name":"POD_NAMESPACE"}:
+                .: {}
+                f:name: {}
+                f:valueFrom:
+                  .: {}
+                  f:fieldRef: {}
+            f:image: {}
+            f:imagePullPolicy: {}
+            f:name: {}
+            f:resources: {}
+            f:terminationMessagePath: {}
+            f:terminationMessagePolicy: {}
+            f:volumeMounts:
+              .: {}
+              k:{"mountPath":"/csi/"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+        f:dnsPolicy: {}
+        f:enableServiceLinks: {}
+        f:restartPolicy: {}
+        f:schedulerName: {}
+        f:securityContext: {}
+        f:serviceAccount: {}
+        f:serviceAccountName: {}
+        f:terminationGracePeriodSeconds: {}
+        f:volumes:
+          .: {}
+          k:{"name":"socket-dir"}:
+            .: {}
+            f:hostPath:
+              .: {}
+              f:path: {}
+              f:type: {}
+            f:name: {}
+    manager: k3s
+    operation: Update
+    time: "2025-04-22T05:49:25Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions:
+          k:{"type":"ContainersReady"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Initialized"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"PodReadyToStartContainers"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Ready"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+        f:containerStatuses: {}
+        f:hostIP: {}
+        f:hostIPs: {}
+        f:phase: {}
+        f:podIP: {}
+        f:podIPs:
+          .: {}
+          k:{"ip":"10.42.0.7"}:
+            .: {}
+            f:ip: {}
+        f:startTime: {}
+    manager: k3s
+    operation: Update
+    subresource: status
+    time: "2025-04-28T05:55:35Z"
+  name: csi-attacher-547747c45f-8b896
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: csi-attacher-547747c45f
+    uid: e156a1de-521c-4b17-a621-ee4219c182a9
+  resourceVersion: "690590"
+  uid: 51f5ff91-c178-4aef-84e2-330caebe97d2
+spec:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - csi-attacher
+          topologyKey: kubernetes.io/hostname
+        weight: 1
+  containers:
+  - args:
+    - --v=2
+    - --csi-address=$(ADDRESS)
+    - --timeout=1m50s
+    - --leader-election
+    - --leader-election-namespace=$(POD_NAMESPACE)
+    env:
+    - name: ADDRESS
+      value: /csi/csi.sock
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.namespace
+    image: longhornio/csi-attacher:v4.2.0
+    imagePullPolicy: IfNotPresent
+    name: csi-attacher
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /csi/
+      name: socket-dir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-qg92w
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: nipun
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: longhorn-service-account
+  serviceAccountName: longhorn-service-account
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - hostPath:
+      path: /var/lib/kubelet/plugins/driver.longhorn.io
+      type: DirectoryOrCreate
+    name: socket-dir
+  - name: kube-api-access-qg92w
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:55:35Z"
+    status: "True"
+    type: PodReadyToStartContainers
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:49:25Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:55:35Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:55:35Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:49:25Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: containerd://d8fd6fb54d41bb35bd1c3f00eb31f62587f6e983eb1c1708a84c6d724a159c19
+    image: docker.io/longhornio/csi-attacher:v4.2.0
+    imageID: docker.io/longhornio/csi-attacher@sha256:39b52d8c2a665c743e15cfe019116339a8f21786bf254610e6077d5a29319afd
+    lastState:
+      terminated:
+        containerID: containerd://6e23ec48cfc14a8adf03340f5f6721ea88c7b2832ffe7db0a5ce90efa6e2bd90
+        exitCode: 255
+        finishedAt: "2025-04-28T05:53:29Z"
+        reason: Unknown
+        startedAt: "2025-04-27T01:02:09Z"
+    name: csi-attacher
+    ready: true
+    restartCount: 2
+    started: true
+    state:
+      running:
+        startedAt: "2025-04-28T05:55:33Z"
+    volumeMounts:
+    - mountPath: /csi/
+      name: socket-dir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-qg92w
+      readOnly: true
+      recursiveReadOnly: Disabled
+  hostIP: 10.2.0.141
+  hostIPs:
+  - ip: 10.2.0.141
+  phase: Running
+  podIP: 10.42.0.7
+  podIPs:
+  - ip: 10.42.0.7
+  qosClass: BestEffort
+  startTime: "2025-04-22T05:49:25Z"

@@ -1,0 +1,617 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2025-04-22T05:49:26Z"
+  generateName: longhorn-csi-plugin-
+  labels:
+    app: longhorn-csi-plugin
+    controller-revision-hash: 6f685d98f5
+    pod-template-generation: "1"
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:generateName: {}
+        f:labels:
+          .: {}
+          f:app: {}
+          f:controller-revision-hash: {}
+          f:pod-template-generation: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"6fb0d256-b539-4ac3-a31d-548c75203f90"}: {}
+      f:spec:
+        f:affinity:
+          .: {}
+          f:nodeAffinity:
+            .: {}
+            f:requiredDuringSchedulingIgnoredDuringExecution: {}
+        f:containers:
+          k:{"name":"longhorn-csi-plugin"}:
+            .: {}
+            f:args: {}
+            f:env:
+              .: {}
+              k:{"name":"CSI_ENDPOINT"}:
+                .: {}
+                f:name: {}
+                f:value: {}
+              k:{"name":"NODE_ID"}:
+                .: {}
+                f:name: {}
+                f:valueFrom:
+                  .: {}
+                  f:fieldRef: {}
+            f:image: {}
+            f:imagePullPolicy: {}
+            f:lifecycle:
+              .: {}
+              f:preStop:
+                .: {}
+                f:exec:
+                  .: {}
+                  f:command: {}
+            f:livenessProbe:
+              .: {}
+              f:failureThreshold: {}
+              f:httpGet:
+                .: {}
+                f:path: {}
+                f:port: {}
+                f:scheme: {}
+              f:initialDelaySeconds: {}
+              f:periodSeconds: {}
+              f:successThreshold: {}
+              f:timeoutSeconds: {}
+            f:name: {}
+            f:ports:
+              .: {}
+              k:{"containerPort":9808,"protocol":"TCP"}:
+                .: {}
+                f:containerPort: {}
+                f:protocol: {}
+            f:resources: {}
+            f:securityContext:
+              .: {}
+              f:allowPrivilegeEscalation: {}
+              f:capabilities:
+                .: {}
+                f:add: {}
+              f:privileged: {}
+            f:terminationMessagePath: {}
+            f:terminationMessagePolicy: {}
+            f:volumeMounts:
+              .: {}
+              k:{"mountPath":"/csi/"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+              k:{"mountPath":"/dev"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+              k:{"mountPath":"/lib/modules"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+                f:readOnly: {}
+              k:{"mountPath":"/rootfs"}:
+                .: {}
+                f:mountPath: {}
+                f:mountPropagation: {}
+                f:name: {}
+              k:{"mountPath":"/sys"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+              k:{"mountPath":"/var/lib/kubelet/plugins/kubernetes.io/csi"}:
+                .: {}
+                f:mountPath: {}
+                f:mountPropagation: {}
+                f:name: {}
+              k:{"mountPath":"/var/lib/kubelet/pods"}:
+                .: {}
+                f:mountPath: {}
+                f:mountPropagation: {}
+                f:name: {}
+          k:{"name":"longhorn-liveness-probe"}:
+            .: {}
+            f:args: {}
+            f:image: {}
+            f:imagePullPolicy: {}
+            f:name: {}
+            f:resources: {}
+            f:terminationMessagePath: {}
+            f:terminationMessagePolicy: {}
+            f:volumeMounts:
+              .: {}
+              k:{"mountPath":"/csi/"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+          k:{"name":"node-driver-registrar"}:
+            .: {}
+            f:args: {}
+            f:env:
+              .: {}
+              k:{"name":"ADDRESS"}:
+                .: {}
+                f:name: {}
+                f:value: {}
+            f:image: {}
+            f:imagePullPolicy: {}
+            f:lifecycle:
+              .: {}
+              f:preStop:
+                .: {}
+                f:exec:
+                  .: {}
+                  f:command: {}
+            f:name: {}
+            f:resources: {}
+            f:securityContext:
+              .: {}
+              f:privileged: {}
+            f:terminationMessagePath: {}
+            f:terminationMessagePolicy: {}
+            f:volumeMounts:
+              .: {}
+              k:{"mountPath":"/csi/"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+              k:{"mountPath":"/registration"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+        f:dnsPolicy: {}
+        f:enableServiceLinks: {}
+        f:hostPID: {}
+        f:restartPolicy: {}
+        f:schedulerName: {}
+        f:securityContext: {}
+        f:serviceAccount: {}
+        f:serviceAccountName: {}
+        f:terminationGracePeriodSeconds: {}
+        f:tolerations: {}
+        f:volumes:
+          .: {}
+          k:{"name":"host"}:
+            .: {}
+            f:hostPath:
+              .: {}
+              f:path: {}
+              f:type: {}
+            f:name: {}
+          k:{"name":"host-dev"}:
+            .: {}
+            f:hostPath:
+              .: {}
+              f:path: {}
+              f:type: {}
+            f:name: {}
+          k:{"name":"host-sys"}:
+            .: {}
+            f:hostPath:
+              .: {}
+              f:path: {}
+              f:type: {}
+            f:name: {}
+          k:{"name":"kubernetes-csi-dir"}:
+            .: {}
+            f:hostPath:
+              .: {}
+              f:path: {}
+              f:type: {}
+            f:name: {}
+          k:{"name":"lib-modules"}:
+            .: {}
+            f:hostPath:
+              .: {}
+              f:path: {}
+              f:type: {}
+            f:name: {}
+          k:{"name":"pods-mount-dir"}:
+            .: {}
+            f:hostPath:
+              .: {}
+              f:path: {}
+              f:type: {}
+            f:name: {}
+          k:{"name":"registration-dir"}:
+            .: {}
+            f:hostPath:
+              .: {}
+              f:path: {}
+              f:type: {}
+            f:name: {}
+          k:{"name":"socket-dir"}:
+            .: {}
+            f:hostPath:
+              .: {}
+              f:path: {}
+              f:type: {}
+            f:name: {}
+    manager: k3s
+    operation: Update
+    time: "2025-04-22T05:49:26Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions:
+          k:{"type":"ContainersReady"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Initialized"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"PodReadyToStartContainers"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Ready"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+        f:containerStatuses: {}
+        f:hostIP: {}
+        f:hostIPs: {}
+        f:phase: {}
+        f:podIP: {}
+        f:podIPs:
+          .: {}
+          k:{"ip":"10.42.0.4"}:
+            .: {}
+            f:ip: {}
+        f:startTime: {}
+    manager: k3s
+    operation: Update
+    subresource: status
+    time: "2025-04-28T05:58:15Z"
+  name: longhorn-csi-plugin-skpmb
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DaemonSet
+    name: longhorn-csi-plugin
+    uid: 6fb0d256-b539-4ac3-a31d-548c75203f90
+  resourceVersion: "690947"
+  uid: 113865f7-e804-4435-9112-9633e88ce12e
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchFields:
+          - key: metadata.name
+            operator: In
+            values:
+            - nipun
+  containers:
+  - args:
+    - --v=2
+    - --csi-address=$(ADDRESS)
+    - --kubelet-registration-path=/var/lib/kubelet/plugins/driver.longhorn.io/csi.sock
+    env:
+    - name: ADDRESS
+      value: /csi/csi.sock
+    image: longhornio/csi-node-driver-registrar:v2.7.0
+    imagePullPolicy: IfNotPresent
+    lifecycle:
+      preStop:
+        exec:
+          command:
+          - /bin/sh
+          - -c
+          - rm -rf /registration/driver.longhorn.io /registration/driver.longhorn.io-reg.sock
+            /csi//*
+    name: node-driver-registrar
+    resources: {}
+    securityContext:
+      privileged: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /csi/
+      name: socket-dir
+    - mountPath: /registration
+      name: registration-dir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-756kl
+      readOnly: true
+  - args:
+    - --v=4
+    - --csi-address=/csi/csi.sock
+    image: longhornio/livenessprobe:v2.9.0
+    imagePullPolicy: IfNotPresent
+    name: longhorn-liveness-probe
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /csi/
+      name: socket-dir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-756kl
+      readOnly: true
+  - args:
+    - longhorn-manager
+    - -d
+    - csi
+    - --nodeid=$(NODE_ID)
+    - --endpoint=$(CSI_ENDPOINT)
+    - --drivername=driver.longhorn.io
+    - --manager-url=http://longhorn-backend:9500/v1
+    env:
+    - name: NODE_ID
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: CSI_ENDPOINT
+      value: unix:///csi/csi.sock
+    image: longhornio/longhorn-manager:v1.5.1
+    imagePullPolicy: IfNotPresent
+    lifecycle:
+      preStop:
+        exec:
+          command:
+          - /bin/sh
+          - -c
+          - rm -f /csi//*
+    livenessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /healthz
+        port: 9808
+        scheme: HTTP
+      initialDelaySeconds: 3
+      periodSeconds: 5
+      successThreshold: 1
+      timeoutSeconds: 4
+    name: longhorn-csi-plugin
+    ports:
+    - containerPort: 9808
+      protocol: TCP
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities:
+        add:
+        - SYS_ADMIN
+      privileged: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /csi/
+      name: socket-dir
+    - mountPath: /var/lib/kubelet/plugins/kubernetes.io/csi
+      mountPropagation: Bidirectional
+      name: kubernetes-csi-dir
+    - mountPath: /var/lib/kubelet/pods
+      mountPropagation: Bidirectional
+      name: pods-mount-dir
+    - mountPath: /dev
+      name: host-dev
+    - mountPath: /sys
+      name: host-sys
+    - mountPath: /rootfs
+      mountPropagation: Bidirectional
+      name: host
+    - mountPath: /lib/modules
+      name: lib-modules
+      readOnly: true
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-756kl
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  hostPID: true
+  nodeName: nipun
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: longhorn-service-account
+  serviceAccountName: longhorn-service-account
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/disk-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/pid-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/unschedulable
+    operator: Exists
+  volumes:
+  - hostPath:
+      path: /var/lib/kubelet/plugins/kubernetes.io/csi
+      type: DirectoryOrCreate
+    name: kubernetes-csi-dir
+  - hostPath:
+      path: /var/lib/kubelet/plugins_registry
+      type: DirectoryOrCreate
+    name: registration-dir
+  - hostPath:
+      path: /var/lib/kubelet/plugins/driver.longhorn.io
+      type: DirectoryOrCreate
+    name: socket-dir
+  - hostPath:
+      path: /var/lib/kubelet/pods
+      type: DirectoryOrCreate
+    name: pods-mount-dir
+  - hostPath:
+      path: /dev
+      type: ""
+    name: host-dev
+  - hostPath:
+      path: /sys
+      type: ""
+    name: host-sys
+  - hostPath:
+      path: /
+      type: ""
+    name: host
+  - hostPath:
+      path: /lib/modules
+      type: ""
+    name: lib-modules
+  - name: kube-api-access-756kl
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:57:36Z"
+    status: "True"
+    type: PodReadyToStartContainers
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:49:27Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:57:39Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:57:39Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:49:27Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: containerd://8eff0d4d3c56b40caa7e321be99872c990a064514d071ccb56fedc8d9eafe40a
+    image: docker.io/longhornio/longhorn-manager:v1.5.1
+    imageID: docker.io/longhornio/longhorn-manager@sha256:f29f6b568bbb76a73569b73e00ff3ed4b42fc500a2863e0523aeb8313bf9495f
+    lastState:
+      terminated:
+        containerID: containerd://ccdc13ac7bd8dd7aa8c25b75520cc229f0f125d6d0971f2599d580365c8e0bd3
+        exitCode: 1
+        finishedAt: "2025-04-28T05:57:40Z"
+        reason: Error
+        startedAt: "2025-04-28T05:57:35Z"
+    name: longhorn-csi-plugin
+    ready: true
+    restartCount: 4
+    started: true
+    state:
+      running:
+        startedAt: "2025-04-28T05:58:14Z"
+    volumeMounts:
+    - mountPath: /csi/
+      name: socket-dir
+    - mountPath: /var/lib/kubelet/plugins/kubernetes.io/csi
+      name: kubernetes-csi-dir
+    - mountPath: /var/lib/kubelet/pods
+      name: pods-mount-dir
+    - mountPath: /dev
+      name: host-dev
+    - mountPath: /sys
+      name: host-sys
+    - mountPath: /rootfs
+      name: host
+    - mountPath: /lib/modules
+      name: lib-modules
+      readOnly: true
+      recursiveReadOnly: Disabled
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-756kl
+      readOnly: true
+      recursiveReadOnly: Disabled
+  - containerID: containerd://c1823acf6e47bbfcc0d0fc644e4c8220cf746c702a58eab37e8c69ba72192fb6
+    image: docker.io/longhornio/livenessprobe:v2.9.0
+    imageID: docker.io/longhornio/livenessprobe@sha256:555e27888f3692ab4130616ce4de62f950bdac16da3af4c432e13a71604e0261
+    lastState:
+      waiting: {}
+    name: longhorn-liveness-probe
+    ready: true
+    restartCount: 3
+    started: true
+    state:
+      running:
+        startedAt: "2025-04-28T05:57:38Z"
+    volumeMounts:
+    - mountPath: /csi/
+      name: socket-dir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-756kl
+      readOnly: true
+      recursiveReadOnly: Disabled
+  - containerID: containerd://d86bfbf1b785a149b78f824692d59d796ed4af919c4dbfb6a3821e79563aae4c
+    image: docker.io/longhornio/csi-node-driver-registrar:v2.7.0
+    imageID: docker.io/longhornio/csi-node-driver-registrar@sha256:4ffdfca7630c81006c9dad7ce2407df238516522fce6e37864cfc5c3f781bed9
+    lastState:
+      terminated:
+        containerID: containerd://2e7685b5dc9a0d6c01ae6f088cdd69343697aac98d8861bacacfa804f8c61436
+        exitCode: 255
+        finishedAt: "2025-04-28T05:53:29Z"
+        reason: Unknown
+        startedAt: "2025-04-27T01:02:10Z"
+    name: node-driver-registrar
+    ready: true
+    restartCount: 2
+    started: true
+    state:
+      running:
+        startedAt: "2025-04-28T05:55:18Z"
+    volumeMounts:
+    - mountPath: /csi/
+      name: socket-dir
+    - mountPath: /registration
+      name: registration-dir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-756kl
+      readOnly: true
+      recursiveReadOnly: Disabled
+  hostIP: 10.2.0.141
+  hostIPs:
+  - ip: 10.2.0.141
+  phase: Running
+  podIP: 10.42.0.4
+  podIPs:
+  - ip: 10.42.0.4
+  qosClass: BestEffort
+  startTime: "2025-04-22T05:49:27Z"

@@ -1,0 +1,25 @@
+apiVersion: v1
+count: 1
+eventTime: null
+firstTimestamp: "2025-05-05T12:23:34Z"
+involvedObject:
+  apiVersion: v1
+  fieldPath: spec.containers{manifest-restore-0}
+  kind: Pod
+  name: cluster-restore-58txw
+  namespace: demo
+  resourceVersion: "1706049"
+  uid: 8d9415fd-662f-4595-a4e5-f679b64e8b41
+kind: Event
+lastTimestamp: "2025-05-05T12:23:34Z"
+message: Started container manifest-restore-0
+metadata:
+  name: cluster-restore-58txw.183ca108d1042cf1
+  namespace: demo
+reason: Started
+reportingComponent: kubelet
+reportingInstance: nipun
+source:
+  component: kubelet
+  host: nipun
+type: Normal

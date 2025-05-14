@@ -1,0 +1,161 @@
+apiVersion: longhorn.io/v1beta2
+kind: InstanceManager
+metadata:
+  labels:
+    longhorn.io/component: instance-manager
+    longhorn.io/instance-manager-image: imi-a21ea71c
+    longhorn.io/instance-manager-type: aio
+    longhorn.io/managed-by: longhorn-manager
+    longhorn.io/node: nipun
+  name: instance-manager-ef1115894363ba2a8eb6fe29edee468c
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: longhorn.io/v1beta2
+    blockOwnerDeletion: true
+    kind: Node
+    name: nipun
+    uid: a0c1a98c-6b14-4805-b9f1-69f0662d2c6f
+spec:
+  image: longhornio/longhorn-instance-manager:v1.5.1
+  nodeID: nipun
+  type: aio
+status:
+  apiMinVersion: 1
+  apiVersion: 4
+  currentState: running
+  instanceEngines:
+    pvc-181f795c-35fd-490c-a1d2-b901133ce7c3-e-fe97bc80:
+      spec:
+        backendStoreDriver: v1
+        name: pvc-181f795c-35fd-490c-a1d2-b901133ce7c3-e-fe97bc80
+      status:
+        endpoint: ""
+        errorMsg: ""
+        listen: ""
+        portEnd: 10021
+        portStart: 10021
+        resourceVersion: 0
+        state: running
+        type: engine
+    pvc-9134954b-1ae3-425b-bd5c-9319525004f8-e-ae6a5479:
+      spec:
+        backendStoreDriver: v1
+        name: pvc-9134954b-1ae3-425b-bd5c-9319525004f8-e-ae6a5479
+      status:
+        endpoint: ""
+        errorMsg: ""
+        listen: ""
+        portEnd: 10054
+        portStart: 10054
+        resourceVersion: 0
+        state: running
+        type: engine
+    pvc-abb96a16-374a-4041-b6db-54436cbf906a-e-95188713:
+      spec:
+        backendStoreDriver: v1
+        name: pvc-abb96a16-374a-4041-b6db-54436cbf906a-e-95188713
+      status:
+        endpoint: ""
+        errorMsg: ""
+        listen: ""
+        portEnd: 10010
+        portStart: 10010
+        resourceVersion: 0
+        state: running
+        type: engine
+    pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68-e-ba00c18b:
+      spec:
+        backendStoreDriver: v1
+        name: pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68-e-ba00c18b
+      status:
+        endpoint: ""
+        errorMsg: ""
+        listen: ""
+        portEnd: 10043
+        portStart: 10043
+        resourceVersion: 0
+        state: running
+        type: engine
+    pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c-e-a39a21f8:
+      spec:
+        backendStoreDriver: v1
+        name: pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c-e-a39a21f8
+      status:
+        endpoint: ""
+        errorMsg: ""
+        listen: ""
+        portEnd: 10032
+        portStart: 10032
+        resourceVersion: 0
+        state: running
+        type: engine
+  instanceReplicas:
+    pvc-181f795c-35fd-490c-a1d2-b901133ce7c3-r-c385b3f4:
+      spec:
+        backendStoreDriver: v1
+        name: pvc-181f795c-35fd-490c-a1d2-b901133ce7c3-r-c385b3f4
+      status:
+        endpoint: ""
+        errorMsg: ""
+        listen: ""
+        portEnd: 10020
+        portStart: 10011
+        resourceVersion: 0
+        state: running
+        type: replica
+    pvc-9134954b-1ae3-425b-bd5c-9319525004f8-r-fe502fd7:
+      spec:
+        backendStoreDriver: v1
+        name: pvc-9134954b-1ae3-425b-bd5c-9319525004f8-r-fe502fd7
+      status:
+        endpoint: ""
+        errorMsg: ""
+        listen: ""
+        portEnd: 10053
+        portStart: 10044
+        resourceVersion: 0
+        state: running
+        type: replica
+    pvc-abb96a16-374a-4041-b6db-54436cbf906a-r-e93f6f65:
+      spec:
+        backendStoreDriver: v1
+        name: pvc-abb96a16-374a-4041-b6db-54436cbf906a-r-e93f6f65
+      status:
+        endpoint: ""
+        errorMsg: ""
+        listen: ""
+        portEnd: 10009
+        portStart: 10000
+        resourceVersion: 0
+        state: running
+        type: replica
+    pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68-r-7895e703:
+      spec:
+        backendStoreDriver: v1
+        name: pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68-r-7895e703
+      status:
+        endpoint: ""
+        errorMsg: ""
+        listen: ""
+        portEnd: 10042
+        portStart: 10033
+        resourceVersion: 0
+        state: running
+        type: replica
+    pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c-r-b6d16451:
+      spec:
+        backendStoreDriver: v1
+        name: pvc-cf75d66b-7a67-42e0-9284-94ec6950a72c-r-b6d16451
+      status:
+        endpoint: ""
+        errorMsg: ""
+        listen: ""
+        portEnd: 10031
+        portStart: 10022
+        resourceVersion: 0
+        state: running
+        type: replica
+  ip: 10.42.0.30
+  ownerID: nipun
+  proxyApiMinVersion: 1
+  proxyApiVersion: 4

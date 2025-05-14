@@ -1,0 +1,25 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:35:22Z"
+deprecatedLastTimestamp: "2025-05-05T12:35:22Z"
+deprecatedSource:
+  component: kubelet
+  host: nipun
+eventTime: null
+kind: Event
+metadata:
+  name: retention-policy-cluster-resources-backup-frequent-b-17464t9wmn.183ca1ad9173a80f
+  namespace: demo
+note: Started container builtin-cleaner
+reason: Started
+regarding:
+  apiVersion: v1
+  fieldPath: spec.initContainers{builtin-cleaner}
+  kind: Pod
+  name: retention-policy-cluster-resources-backup-frequent-b-17464t9wmn
+  namespace: demo
+  resourceVersion: "1707575"
+  uid: 0a60e1c3-3e56-4e3f-b6e3-bdad923c9371
+reportingController: kubelet
+reportingInstance: nipun
+type: Normal

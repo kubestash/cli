@@ -1,0 +1,6 @@
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: current-longhorn-version
+  namespace: longhorn-system
+value: v1.5.1

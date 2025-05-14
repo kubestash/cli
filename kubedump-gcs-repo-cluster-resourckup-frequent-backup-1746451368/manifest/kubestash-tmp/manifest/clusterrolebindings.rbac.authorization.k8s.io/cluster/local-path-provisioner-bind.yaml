@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    objectset.rio.cattle.io/applied: H4sIAAAAAAAA/4yRQWvjMBCF/8oyZ9sbrxNjDHvI7qGH3lLopfQwksaxakVjpLFLG/LfixIKDaRJj2LmfU/z3h5wtI8UomUPLQSFusBJeg72HcWyL4YmFpZ/zyVkMFhvoIX/bopCYcOO/llvrN9CBjsSNCgI7R7Qe5ajPKYnqxfSEkmKYLnQKOIoMW2CQfbtnF89hXw7D9DCUMUvk7nMft1bb/6ujWF/E+FxR9CCY40uj8IBt/QjURxRJ+UwKcrjWxTawSEDh4rc1dN6jD20UDZVV610veo6patFvawXVbesunLVLEyj6wb/GFRmmaBnnxxR+nwMPNvUDIVcpegPGQR2tKHumPJo7wJP47XeLpYGt8ySSTKL0+k8aJ/2n5wHCrPVtNaaJy83UfG0nuPZ/sVcnw8fAQAA//9f/s3AjgIAAA
+    objectset.rio.cattle.io/id: ""
+    objectset.rio.cattle.io/owner-gvk: k3s.cattle.io/v1, Kind=Addon
+    objectset.rio.cattle.io/owner-name: local-storage
+    objectset.rio.cattle.io/owner-namespace: kube-system
+  labels:
+    objectset.rio.cattle.io/hash: 183f35c65ffbc3064603f43f1580d8c68a2dabd4
+  name: local-path-provisioner-bind
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: local-path-provisioner-role
+subjects:
+- kind: ServiceAccount
+  name: local-path-provisioner-service-account
+  namespace: kube-system

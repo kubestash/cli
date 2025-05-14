@@ -1,0 +1,22 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:45:49Z"
+deprecatedLastTimestamp: "2025-05-05T12:45:49Z"
+deprecatedSource:
+  component: deployment-controller
+eventTime: null
+kind: Event
+metadata:
+  name: my-deployment.183ca23f7dd9e2d4
+  namespace: demo
+note: Scaled up replica set my-deployment-5686b8d7f5 from 0 to 1
+reason: ScalingReplicaSet
+regarding:
+  apiVersion: apps/v1
+  kind: Deployment
+  name: my-deployment
+  namespace: demo
+  resourceVersion: "1709158"
+  uid: e5c0a082-1887-4a45-a63b-be108fc3c070
+reportingController: deployment-controller
+type: Normal

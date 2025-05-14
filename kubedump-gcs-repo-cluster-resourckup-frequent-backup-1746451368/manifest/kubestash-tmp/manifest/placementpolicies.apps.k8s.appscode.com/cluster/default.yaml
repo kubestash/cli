@@ -1,0 +1,16 @@
+apiVersion: apps.k8s.appscode.com/v1
+kind: PlacementPolicy
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubedb
+    meta.helm.sh/release-namespace: kubedb
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: default
+spec:
+  nodeSpreadConstraint:
+    maxSkew: 1
+    whenUnsatisfiable: ScheduleAnyway
+  zoneSpreadConstraint:
+    maxSkew: 1
+    whenUnsatisfiable: ScheduleAnyway

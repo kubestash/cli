@@ -1,0 +1,25 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:52:36Z"
+deprecatedLastTimestamp: "2025-05-05T12:52:36Z"
+deprecatedSource:
+  component: kubelet
+  host: nipun
+eventTime: null
+kind: Event
+metadata:
+  name: my-deployment-5686b8d7f5-m9mdj.183ca29e52e5b879
+  namespace: demo
+note: 'Created container: my-container'
+reason: Created
+regarding:
+  apiVersion: v1
+  fieldPath: spec.containers{my-container}
+  kind: Pod
+  name: my-deployment-5686b8d7f5-m9mdj
+  namespace: demo
+  resourceVersion: "1710268"
+  uid: df6890ee-bcb6-4d23-b4b7-01c52fadab47
+reportingController: kubelet
+reportingInstance: nipun
+type: Normal

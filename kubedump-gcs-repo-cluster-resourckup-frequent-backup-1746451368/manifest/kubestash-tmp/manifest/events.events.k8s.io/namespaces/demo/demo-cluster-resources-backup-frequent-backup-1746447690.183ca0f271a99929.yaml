@@ -1,0 +1,22 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T12:21:58Z"
+deprecatedLastTimestamp: "2025-05-05T12:21:58Z"
+deprecatedSource:
+  component: job-controller
+eventTime: null
+kind: Event
+metadata:
+  name: demo-cluster-resources-backup-frequent-backup-1746447690.183ca0f271a99929
+  namespace: demo
+note: Job completed
+reason: Completed
+regarding:
+  apiVersion: batch/v1
+  kind: Job
+  name: demo-cluster-resources-backup-frequent-backup-1746447690
+  namespace: demo
+  resourceVersion: "1705798"
+  uid: 8215c7da-b21c-42d0-96ed-e93adc3068c3
+reportingController: job-controller
+type: Normal

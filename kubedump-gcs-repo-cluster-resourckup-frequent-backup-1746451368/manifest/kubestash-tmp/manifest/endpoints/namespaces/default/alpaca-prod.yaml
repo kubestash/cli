@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-05-04T11:59:10Z"
+  labels:
+    app: alpaca-prod
+  name: alpaca-prod
+  namespace: default
+subsets:
+- addresses:
+  - ip: 10.42.0.53
+    nodeName: nipun
+    targetRef:
+      kind: Pod
+      name: alpaca-prod-5bc45ff5-wxznd
+      namespace: default
+      uid: fdf5e0a9-8143-40c8-b599-6016178ae19a
+  - ip: 10.42.0.54
+    nodeName: nipun
+    targetRef:
+      kind: Pod
+      name: alpaca-prod-5bc45ff5-g8gpn
+      namespace: default
+      uid: 8fa15cae-ea64-4b67-8ed1-1ab3a37bd716
+  - ip: 10.42.0.55
+    nodeName: nipun
+    targetRef:
+      kind: Pod
+      name: alpaca-prod-5bc45ff5-74x5d
+      namespace: default
+      uid: c47b2df8-e8a4-4642-b72b-3dd837137fdc
+  ports:
+  - port: 8080
+    protocol: TCP

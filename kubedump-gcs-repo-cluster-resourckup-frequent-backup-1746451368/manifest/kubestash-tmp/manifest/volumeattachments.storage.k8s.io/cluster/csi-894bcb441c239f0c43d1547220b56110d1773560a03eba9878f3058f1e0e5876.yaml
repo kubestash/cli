@@ -1,0 +1,20 @@
+apiVersion: storage.k8s.io/v1
+kind: VolumeAttachment
+metadata:
+  annotations:
+    csi.alpha.kubernetes.io/node-id: nipun
+  deletionGracePeriodSeconds: 0
+  deletionTimestamp: "2025-05-05T13:14:09Z"
+  finalizers:
+  - external-attacher/driver-longhorn-io
+  name: csi-894bcb441c239f0c43d1547220b56110d1773560a03eba9878f3058f1e0e5876
+spec:
+  attacher: driver.longhorn.io
+  nodeName: nipun
+  source:
+    persistentVolumeName: pvc-181f795c-35fd-490c-a1d2-b901133ce7c3
+status:
+  attached: true
+  detachError:
+    message: persistentvolume "pvc-181f795c-35fd-490c-a1d2-b901133ce7c3" not found
+    time: "2025-05-05T13:22:40Z"

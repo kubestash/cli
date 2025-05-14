@@ -1,0 +1,23 @@
+apiVersion: addons.kubestash.com/v1alpha1
+kind: Function
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubestash
+    meta.helm.sh/release-namespace: stash
+  labels:
+    app.kubernetes.io/instance: kubestash
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubestash-catalog
+    app.kubernetes.io/version: v2025.3.24
+    helm.sh/chart: kubestash-catalog-v2025.3.24
+  name: pvc-backup
+spec:
+  args:
+  - backup
+  - --namespace=${namespace:=default}
+  - --backupsession=${backupSession:=}
+  - --enable-cache=${enableCache:=}
+  - --scratch-dir=${scratchDir:=}
+  - --exclude=${exclude:=}
+  - --paths=${paths:=}
+  image: ghcr.io/kubestash/pvc:v0.16.0

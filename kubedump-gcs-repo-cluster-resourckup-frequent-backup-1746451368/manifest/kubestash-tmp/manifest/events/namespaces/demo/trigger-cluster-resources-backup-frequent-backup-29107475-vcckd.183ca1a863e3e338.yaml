@@ -1,0 +1,23 @@
+action: Binding
+apiVersion: v1
+eventTime: "2025-05-05T12:35:00.115363Z"
+firstTimestamp: null
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: trigger-cluster-resources-backup-frequent-backup-29107475-vcckd
+  namespace: demo
+  resourceVersion: "1707497"
+  uid: 8b12db74-0250-4b59-a46e-d00a2a19c705
+kind: Event
+lastTimestamp: null
+message: Successfully assigned demo/trigger-cluster-resources-backup-frequent-backup-29107475-vcckd
+  to nipun
+metadata:
+  name: trigger-cluster-resources-backup-frequent-backup-29107475-vcckd.183ca1a863e3e338
+  namespace: demo
+reason: Scheduled
+reportingComponent: default-scheduler
+reportingInstance: default-scheduler-nipun
+source: {}
+type: Normal

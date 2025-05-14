@@ -1,0 +1,61 @@
+addressType: IPv4
+apiVersion: discovery.k8s.io/v1
+endpoints:
+- addresses:
+  - 10.42.0.20
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  nodeName: nipun
+  targetRef:
+    kind: Pod
+    name: csi-provisioner-8649bdf768-lbvzz
+    namespace: longhorn-system
+    uid: f91e9a70-9570-48a3-b9af-f5578c9f6738
+- addresses:
+  - 10.42.0.22
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  nodeName: nipun
+  targetRef:
+    kind: Pod
+    name: csi-provisioner-8649bdf768-wmv44
+    namespace: longhorn-system
+    uid: 33ac77fa-0d6f-40f2-b5c1-a53ea4570b52
+- addresses:
+  - 10.42.0.23
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  nodeName: nipun
+  targetRef:
+    kind: Pod
+    name: csi-provisioner-8649bdf768-5r7wh
+    namespace: longhorn-system
+    uid: c8ea0871-f84f-4b58-80d0-611b84ce90d1
+kind: EndpointSlice
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2025-04-28T05:56:11Z"
+  labels:
+    app: csi-provisioner
+    endpointslice.kubernetes.io/managed-by: endpointslice-controller.k8s.io
+    kubernetes.io/service-name: csi-provisioner
+    longhorn.io/managed-by: longhorn-manager
+  name: csi-provisioner-mgl9g
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Service
+    name: csi-provisioner
+    uid: 977c9a81-5623-4d14-890e-b0c43a0a8215
+ports:
+- name: dummy
+  port: 12345
+  protocol: TCP

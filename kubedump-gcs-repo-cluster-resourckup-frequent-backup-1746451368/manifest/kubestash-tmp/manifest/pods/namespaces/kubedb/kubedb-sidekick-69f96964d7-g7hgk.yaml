@@ -1,0 +1,318 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    reload: 365270fbe3c0b8a40d5d2f6fcd661e10312109d6e03e57a783c2cc6683b61e7c
+  creationTimestamp: "2025-04-22T05:39:51Z"
+  generateName: kubedb-sidekick-69f96964d7-
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/name: sidekick
+    pod-template-hash: 69f96964d7
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:reload: {}
+        f:generateName: {}
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/instance: {}
+          f:app.kubernetes.io/name: {}
+          f:pod-template-hash: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"29b6ff5c-1b0c-4063-9bda-018ed28f1220"}: {}
+      f:spec:
+        f:containers:
+          k:{"name":"operator"}:
+            .: {}
+            f:args: {}
+            f:env:
+              .: {}
+              k:{"name":"POD_NAME"}:
+                .: {}
+                f:name: {}
+                f:valueFrom:
+                  .: {}
+                  f:fieldRef: {}
+              k:{"name":"POD_NAMESPACE"}:
+                .: {}
+                f:name: {}
+                f:valueFrom:
+                  .: {}
+                  f:fieldRef: {}
+            f:image: {}
+            f:imagePullPolicy: {}
+            f:name: {}
+            f:ports:
+              .: {}
+              k:{"containerPort":8081,"protocol":"TCP"}:
+                .: {}
+                f:containerPort: {}
+                f:name: {}
+                f:protocol: {}
+              k:{"containerPort":8443,"protocol":"TCP"}:
+                .: {}
+                f:containerPort: {}
+                f:name: {}
+                f:protocol: {}
+              k:{"containerPort":9443,"protocol":"TCP"}:
+                .: {}
+                f:containerPort: {}
+                f:name: {}
+                f:protocol: {}
+            f:resources: {}
+            f:securityContext:
+              .: {}
+              f:allowPrivilegeEscalation: {}
+              f:capabilities:
+                .: {}
+                f:drop: {}
+              f:readOnlyRootFilesystem: {}
+              f:runAsNonRoot: {}
+              f:runAsUser: {}
+              f:seccompProfile:
+                .: {}
+                f:type: {}
+            f:terminationMessagePath: {}
+            f:terminationMessagePolicy: {}
+            f:volumeMounts:
+              .: {}
+              k:{"mountPath":"/var/serving-cert"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+        f:dnsPolicy: {}
+        f:enableServiceLinks: {}
+        f:nodeSelector: {}
+        f:restartPolicy: {}
+        f:schedulerName: {}
+        f:securityContext: {}
+        f:serviceAccount: {}
+        f:serviceAccountName: {}
+        f:terminationGracePeriodSeconds: {}
+        f:volumes:
+          .: {}
+          k:{"name":"serving-cert"}:
+            .: {}
+            f:name: {}
+            f:secret:
+              .: {}
+              f:defaultMode: {}
+              f:secretName: {}
+    manager: k3s
+    operation: Update
+    time: "2025-04-22T05:39:51Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions:
+          k:{"type":"ContainersReady"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Initialized"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"PodReadyToStartContainers"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Ready"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+        f:containerStatuses: {}
+        f:hostIP: {}
+        f:hostIPs: {}
+        f:phase: {}
+        f:podIP: {}
+        f:podIPs:
+          .: {}
+          k:{"ip":"10.42.0.21"}:
+            .: {}
+            f:ip: {}
+        f:startTime: {}
+    manager: k3s
+    operation: Update
+    subresource: status
+    time: "2025-04-28T05:57:39Z"
+  name: kubedb-sidekick-69f96964d7-g7hgk
+  namespace: kubedb
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: kubedb-sidekick-69f96964d7
+    uid: 29b6ff5c-1b0c-4063-9bda-018ed28f1220
+  resourceVersion: "690871"
+  uid: 533a8007-7289-4243-9486-bcb92187ce1b
+spec:
+  containers:
+  - args:
+    - run
+    - --v=3
+    - --leader-elect=false
+    - --metrics-secure=true
+    - --metrics-bind-address=:8443
+    - --health-probe-bind-address=:8081
+    - --cert-dir=/var/serving-cert
+    env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.namespace
+    image: ghcr.io/appscode/sidekick:v0.0.11
+    imagePullPolicy: Always
+    name: operator
+    ports:
+    - containerPort: 8081
+      name: probes
+      protocol: TCP
+    - containerPort: 8443
+      name: metrics
+      protocol: TCP
+    - containerPort: 9443
+      name: https
+      protocol: TCP
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 65534
+      seccompProfile:
+        type: RuntimeDefault
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/serving-cert
+      name: serving-cert
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-nxfgv
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: nipun
+  nodeSelector:
+    kubernetes.io/os: linux
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: kubedb-sidekick
+  serviceAccountName: kubedb-sidekick
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: serving-cert
+    secret:
+      defaultMode: 420
+      secretName: kubedb-sidekick-cert
+  - name: kube-api-access-nxfgv
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:57:39Z"
+    status: "True"
+    type: PodReadyToStartContainers
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:39:51Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:57:39Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-28T05:57:39Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2025-04-22T05:39:51Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: containerd://f89079e6d5ab433417ba600b1d31e157940736a97cfa4d8426369f4d55eb32f5
+    image: ghcr.io/appscode/sidekick:v0.0.11
+    imageID: ghcr.io/appscode/sidekick@sha256:4501fa583ff7cf1e150535e7f7671c087a724e526093a7f03379fa47f7c8efd0
+    lastState:
+      terminated:
+        containerID: containerd://8d70070d665f594c8fc2eee0953b17cb77bba41fd4ea798b6c856f77720bb624
+        exitCode: 255
+        finishedAt: "2025-04-28T05:53:29Z"
+        reason: Unknown
+        startedAt: "2025-04-27T01:02:18Z"
+    name: operator
+    ready: true
+    restartCount: 2
+    started: true
+    state:
+      running:
+        startedAt: "2025-04-28T05:57:38Z"
+    volumeMounts:
+    - mountPath: /var/serving-cert
+      name: serving-cert
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-nxfgv
+      readOnly: true
+      recursiveReadOnly: Disabled
+  hostIP: 10.2.0.141
+  hostIPs:
+  - ip: 10.2.0.141
+  phase: Running
+  podIP: 10.42.0.21
+  podIPs:
+  - ip: 10.42.0.21
+  qosClass: BestEffort
+  startTime: "2025-04-22T05:39:51Z"

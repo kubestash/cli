@@ -1,0 +1,165 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  creationTimestamp: "2025-04-22T12:30:00Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/component: kubestash-backup
+    app.kubernetes.io/managed-by: kubestash.com
+    kubestash.com/invoker-name: my-app-backupconfiguration-workload-backup-1745325000
+    kubestash.com/invoker-namespace: demo
+    kubestash.com/session-name: workload-backup
+  managedFields:
+  - apiVersion: batch/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/component: {}
+          f:app.kubernetes.io/managed-by: {}
+          f:kubestash.com/invoker-name: {}
+          f:kubestash.com/invoker-namespace: {}
+          f:kubestash.com/session-name: {}
+      f:spec:
+        f:backoffLimit: {}
+        f:completionMode: {}
+        f:completions: {}
+        f:manualSelector: {}
+        f:parallelism: {}
+        f:podReplacementPolicy: {}
+        f:suspend: {}
+        f:template:
+          f:metadata:
+            f:labels:
+              .: {}
+              f:app.kubernetes.io/component: {}
+              f:app.kubernetes.io/managed-by: {}
+              f:kubestash.com/invoker-name: {}
+              f:kubestash.com/invoker-namespace: {}
+              f:kubestash.com/session-name: {}
+          f:spec:
+            f:containers:
+              k:{"name":"manifest-backup-0"}:
+                .: {}
+                f:args: {}
+                f:image: {}
+                f:imagePullPolicy: {}
+                f:name: {}
+                f:resources: {}
+                f:terminationMessagePath: {}
+                f:terminationMessagePolicy: {}
+                f:volumeMounts:
+                  .: {}
+                  k:{"mountPath":"/kubestash-tmp"}:
+                    .: {}
+                    f:mountPath: {}
+                    f:name: {}
+            f:dnsPolicy: {}
+            f:restartPolicy: {}
+            f:schedulerName: {}
+            f:securityContext:
+              .: {}
+              f:runAsUser: {}
+            f:serviceAccount: {}
+            f:serviceAccountName: {}
+            f:terminationGracePeriodSeconds: {}
+            f:volumes:
+              .: {}
+              k:{"name":"kubestash-tmp-volume"}:
+                .: {}
+                f:emptyDir: {}
+                f:name: {}
+    manager: kubestash
+    operation: Update
+    time: "2025-04-22T12:30:00Z"
+  - apiVersion: batch/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions: {}
+        f:failed: {}
+        f:ready: {}
+        f:startTime: {}
+        f:terminating: {}
+        f:uncountedTerminatedPods: {}
+    manager: k3s
+    operation: Update
+    subresource: status
+    time: "2025-04-23T09:32:14Z"
+  name: my-app-backupconfiguration-workload-backup-1745325000
+  namespace: demo
+  resourceVersion: "168322"
+  uid: b3f8601e-047a-4a09-ae29-3941ca3c3e2d
+spec:
+  backoffLimit: 0
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podReplacementPolicy: TerminatingOrFailed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: b3f8601e-047a-4a09-ae29-3941ca3c3e2d
+  suspend: false
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: kubestash-backup
+        app.kubernetes.io/managed-by: kubestash.com
+        batch.kubernetes.io/controller-uid: b3f8601e-047a-4a09-ae29-3941ca3c3e2d
+        batch.kubernetes.io/job-name: my-app-backupconfiguration-workload-backup-1745325000
+        controller-uid: b3f8601e-047a-4a09-ae29-3941ca3c3e2d
+        job-name: my-app-backupconfiguration-workload-backup-1745325000
+        kubestash.com/invoker-name: my-app-backupconfiguration-workload-backup-1745325000
+        kubestash.com/invoker-namespace: demo
+        kubestash.com/session-name: workload-backup
+    spec:
+      containers:
+      - args:
+        - backup
+        - --namespace=demo
+        - --backupsession=my-app-backupconfiguration-workload-backup-1745325000
+        - --enable-cache=true
+        - --scratch-dir=/kubestash-tmp
+        - --include-cluster-resources=true
+        image: arnabbaishnab7620/manifest:v0.9.0-1-g1625f005d-dirty_linux_amd64102
+        imagePullPolicy: IfNotPresent
+        name: manifest-backup-0
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /kubestash-tmp
+          name: kubestash-tmp-volume
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 65534
+      serviceAccount: my-serviceaccount
+      serviceAccountName: my-serviceaccount
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: kubestash-tmp-volume
+status:
+  conditions:
+  - lastProbeTime: "2025-04-23T09:32:14Z"
+    lastTransitionTime: "2025-04-23T09:32:14Z"
+    message: Job has reached the specified backoff limit
+    reason: BackoffLimitExceeded
+    status: "True"
+    type: FailureTarget
+  - lastProbeTime: "2025-04-23T09:32:14Z"
+    lastTransitionTime: "2025-04-23T09:32:14Z"
+    message: Job has reached the specified backoff limit
+    reason: BackoffLimitExceeded
+    status: "True"
+    type: Failed
+  failed: 1
+  ready: 0
+  startTime: "2025-04-22T12:30:00Z"
+  terminating: 0
+  uncountedTerminatedPods: {}

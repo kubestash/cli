@@ -1,0 +1,86 @@
+apiVersion: longhorn.io/v1beta2
+kind: Engine
+metadata:
+  finalizers:
+  - longhorn.io
+  labels:
+    longhornnode: ""
+    longhornvolume: pvc-a3246a01-bd7a-4d87-8cdd-c4034d2a492c
+  name: pvc-a3246a01-bd7a-4d87-8cdd-c4034d2a492c-e-292d44f8
+  namespace: longhorn-system
+  ownerReferences:
+  - apiVersion: longhorn.io/v1beta2
+    kind: Volume
+    name: pvc-a3246a01-bd7a-4d87-8cdd-c4034d2a492c
+    uid: 5c9d7495-9b81-49b6-869b-8ebcef3eda7e
+spec:
+  active: true
+  backendStoreDriver: v1
+  backupVolume: ""
+  desireState: stopped
+  disableFrontend: false
+  engineImage: longhornio/longhorn-engine:v1.5.1
+  frontend: blockdev
+  logRequested: false
+  nodeID: ""
+  replicaAddressMap:
+    pvc-a3246a01-bd7a-4d87-8cdd-c4034d2a492c-r-6c54db9d: 10.42.0.30:10033
+  requestedBackupRestore: ""
+  requestedDataSource: ""
+  revisionCounterDisabled: false
+  salvageRequested: false
+  unmapMarkSnapChainRemovedEnabled: false
+  upgradedReplicaAddressMap: {}
+  volumeName: pvc-a3246a01-bd7a-4d87-8cdd-c4034d2a492c
+  volumeSize: "5368709120"
+status:
+  backupStatus: null
+  cloneStatus:
+    tcp://10.42.0.30:10033:
+      error: ""
+      fromReplicaAddress: ""
+      isCloning: false
+      progress: 0
+      snapshotName: ""
+      state: ""
+  conditions:
+  - lastProbeTime: ""
+    lastTransitionTime: "2025-04-29T07:16:04Z"
+    message: ""
+    reason: ""
+    status: "True"
+    type: InstanceCreation
+  currentImage: ""
+  currentReplicaAddressMap:
+    pvc-a3246a01-bd7a-4d87-8cdd-c4034d2a492c-r-6c54db9d: 10.42.0.30:10033
+  currentSize: "5368709120"
+  currentState: stopped
+  endpoint: ""
+  instanceManagerName: ""
+  ip: ""
+  isExpanding: false
+  lastExpansionError: ""
+  lastExpansionFailedAt: ""
+  lastRestoredBackup: ""
+  logFetched: false
+  ownerID: nipun
+  port: 0
+  purgeStatus: null
+  rebuildStatus: null
+  replicaModeMap: null
+  restoreStatus: null
+  salvageExecuted: false
+  snapshots:
+    volume-head:
+      children: {}
+      created: "2025-04-29T07:16:07Z"
+      labels: {}
+      name: volume-head
+      parent: ""
+      removed: false
+      size: "153841664"
+      usercreated: false
+  snapshotsError: ""
+  started: false
+  storageIP: ""
+  unmapMarkSnapChainRemovedEnabled: false

@@ -1,0 +1,25 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T13:15:00Z"
+deprecatedLastTimestamp: "2025-05-05T13:15:00Z"
+deprecatedSource:
+  component: kubelet
+  host: nipun
+eventTime: null
+kind: Event
+metadata:
+  name: trigger-cluster-resources-backup-frequent-backup-29107515-d88gb.183ca3d7547e0b21
+  namespace: demo
+note: Started container trigger
+reason: Started
+regarding:
+  apiVersion: v1
+  fieldPath: spec.containers{trigger}
+  kind: Pod
+  name: trigger-cluster-resources-backup-frequent-backup-29107515-d88gb
+  namespace: demo
+  resourceVersion: "1713481"
+  uid: 5a77864a-6a8f-4684-83dd-6a8d65fe833d
+reportingController: kubelet
+reportingInstance: nipun
+type: Normal

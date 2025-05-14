@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubestash
+    meta.helm.sh/release-namespace: stash
+  labels:
+    app.kubernetes.io/instance: kubestash
+    app.kubernetes.io/name: kubestash-operator
+    component: operator
+    pod-template-hash: 55cd4ccb8d
+  name: kubestash-kubestash-operator-operator-55cd4ccb8d
+  namespace: stash
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: kubestash-kubestash-operator-operator
+    uid: 648b482b-f7e2-4fcf-bfcb-443250a36504
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: kubestash
+      app.kubernetes.io/name: kubestash-operator
+      component: operator
+      pod-template-hash: 55cd4ccb8d
+  template:
+    metadata:
+      annotations:
+        reload: 39d57a590810dfac40a119e8042bbf0751fe385cbefedb2e2e70d31c3a6b554c
+      labels:
+        app.kubernetes.io/instance: kubestash
+        app.kubernetes.io/name: kubestash-operator
+        component: operator
+        pod-template-hash: 55cd4ccb8d
+    spec:
+      containers:
+      - args:
+        - operator
+        - --config=/var/config/config.yaml
+        - --license-file=/var/run/secrets/appscode/license/key.txt
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: POD_SERVICE_ACCOUNT
+          value: kubestash-kubestash-operator
+        image: ghcr.io/kubestash/kubestash:v0.17.0
+        imagePullPolicy: IfNotPresent
+        name: operator
+        ports:
+        - containerPort: 8081
+          name: probes
+          protocol: TCP
+        - containerPort: 8443
+          name: metrics
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmpdir
+        - mountPath: /kubestash-tmp
+          name: kubestash-tmp-volume
+        - mountPath: /var/serving-cert
+          name: serving-cert
+          readOnly: true
+        - mountPath: /var/config
+          name: config
+        - mountPath: /var/run/secrets/appscode/license
+          name: license
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 65535
+      serviceAccount: kubestash-kubestash-operator
+      serviceAccountName: kubestash-kubestash-operator
+      volumes:
+      - emptyDir: {}
+        name: tmpdir
+      - emptyDir: {}
+        name: kubestash-tmp-volume
+      - name: serving-cert
+        secret:
+          defaultMode: 420
+          secretName: kubestash-kubestash-operator-cert
+      - configMap:
+          defaultMode: 420
+          name: kubestash-kubestash-operator-config
+        name: config
+      - name: license
+        secret:
+          defaultMode: 420
+          secretName: kubestash-kubestash-operator-license
+status:
+  observedGeneration: 2
+  replicas: 0

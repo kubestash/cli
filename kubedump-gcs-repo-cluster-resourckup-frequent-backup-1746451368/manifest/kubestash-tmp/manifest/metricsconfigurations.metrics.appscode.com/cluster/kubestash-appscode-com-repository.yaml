@@ -1,0 +1,85 @@
+apiVersion: metrics.appscode.com/v1alpha1
+kind: MetricsConfiguration
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubestash
+    meta.helm.sh/release-namespace: stash
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: kubestash-appscode-com-repository
+spec:
+  commonLabels:
+  - key: invoker_kind
+    value: Repository
+  - key: invoker_name
+    valuePath: .metadata.name
+  - key: target_kind
+    valuePath: .spec.appRef.kind
+  - key: target_name
+    valuePath: .spec.appRef.name
+  - key: target_namespace
+    valuePath: .spec.appRef.namespace
+  metrics:
+  - field:
+      path: .metadata.creationTimestamp
+      type: DateTime
+    help: Unix creation timestamp of this Repository object
+    metricValue:
+      valueFromPath: .metadata.creationTimestamp
+    name: created
+    type: gauge
+  - help: General information about this Repository
+    labels:
+    - key: path
+      valuePath: .spec.path
+    - key: phase
+      valuePath: .status.phase
+    - key: integrity
+      valuePath: .status.integrity
+    metricValue:
+      value: 1
+    name: info
+    type: gauge
+  - field:
+      path: .status.lastBackupTime
+      type: DateTime
+    help: Last successful backup stored in this Repository
+    metricValue:
+      valueFromPath: .status.lastBackupTime
+    name: last_successful_backup
+    type: gauge
+  - field:
+      path: .status.size
+      type: String
+    help: Total backed up data stored in this Repository
+    metricValue:
+      valueFromExpression: bytes(size)
+    name: size_bytes
+    params:
+    - key: size
+      valuePath: .status.size
+    type: gauge
+  - field:
+      path: .status.snapshotCount
+      type: Integer
+    help: Number of current snapshots stored in this Repository
+    metricValue:
+      valueFromPath: .status.snapshotCount
+    name: snapshot_count_total
+    type: gauge
+  - field:
+      path: .status.conditions
+      type: Array
+    help: Current conditions of this Repository
+    labels:
+    - key: condition
+      valuePath: .status.conditions[*].type
+    - key: status
+      valuePath: .status.conditions[*].status
+    metricValue:
+      value: 1
+    name: conditions
+    type: gauge
+  targetRef:
+    apiVersion: storage.kubestash.com/v1alpha1
+    kind: Repository

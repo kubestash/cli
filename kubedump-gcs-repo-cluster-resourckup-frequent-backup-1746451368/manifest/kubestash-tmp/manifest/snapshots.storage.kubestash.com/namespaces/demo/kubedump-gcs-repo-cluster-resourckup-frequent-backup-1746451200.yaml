@@ -1,0 +1,61 @@
+apiVersion: storage.kubestash.com/v1alpha1
+kind: Snapshot
+metadata:
+  finalizers:
+  - kubestash.com/cleanup
+  labels:
+    kubestash.com/app-ref-kind: ""
+    kubestash.com/app-ref-name: na
+    kubestash.com/app-ref-namespace: ""
+    kubestash.com/repo-name: kubedump-gcs-repo
+  name: kubedump-gcs-repo-cluster-resourckup-frequent-backup-1746451200
+  namespace: demo
+  ownerReferences:
+  - apiVersion: storage.kubestash.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Repository
+    name: kubedump-gcs-repo
+    uid: a3ef1184-20a4-4451-b608-9f1f3d9c9d05
+spec:
+  appRef:
+    apiGroup: na
+    name: na
+  backupSession: cluster-resources-backup-frequent-backup-1746451200
+  deletionPolicy: Delete
+  repository: kubedump-gcs-repo
+  session: frequent-backup
+  snapshotID: 01JTG9MYVMPWS1SE0VXTZSJ0WM
+  type: FullBackup
+  version: v1
+status:
+  components:
+    manifest:
+      driver: Restic
+      duration: 12.357572101s
+      integrity: true
+      path: repository/v1/frequent-backup/manifest
+      phase: Succeeded
+      resticStats:
+      - hostPath: /kubestash-tmp/manifest
+        id: 202e57e90ee02a4c956a462f899dbfaf956481fcb2f58ee0e8873ed08768a786
+        size: 25.795 MiB
+        uploaded: 1.086 MiB
+      size: 3.152 MiB
+  conditions:
+  - lastTransitionTime: "2025-05-05T13:20:00Z"
+    message: Recent snapshot list updated successfully
+    reason: SuccessfullyUpdatedRecentSnapshotList
+    status: "True"
+    type: RecentSnapshotListUpdated
+  - lastTransitionTime: "2025-05-05T13:20:38Z"
+    message: Metadata uploaded to backend successfully
+    reason: SuccessfullyUploadedSnapshotMetadata
+    status: "True"
+    type: SnapshotMetadataUploaded
+  integrity: true
+  phase: Succeeded
+  size: 3.152 MiB
+  snapshotTime: "2025-05-05T13:20:00Z"
+  totalComponents: 1
+  verificationStatus: NotVerified

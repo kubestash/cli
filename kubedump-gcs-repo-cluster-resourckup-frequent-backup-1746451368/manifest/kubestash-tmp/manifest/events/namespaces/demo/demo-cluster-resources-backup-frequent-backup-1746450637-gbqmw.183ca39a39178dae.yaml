@@ -1,0 +1,23 @@
+action: Binding
+apiVersion: v1
+eventTime: "2025-05-05T13:10:38.291042Z"
+firstTimestamp: null
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: demo-cluster-resources-backup-frequent-backup-1746450637-gbqmw
+  namespace: demo
+  resourceVersion: "1712805"
+  uid: 56ba9538-4113-4eb8-a8ac-c0d067ed59bb
+kind: Event
+lastTimestamp: null
+message: Successfully assigned demo/demo-cluster-resources-backup-frequent-backup-1746450637-gbqmw
+  to nipun
+metadata:
+  name: demo-cluster-resources-backup-frequent-backup-1746450637-gbqmw.183ca39a39178dae
+  namespace: demo
+reason: Scheduled
+reportingComponent: default-scheduler
+reportingInstance: default-scheduler-nipun
+source: {}
+type: Normal

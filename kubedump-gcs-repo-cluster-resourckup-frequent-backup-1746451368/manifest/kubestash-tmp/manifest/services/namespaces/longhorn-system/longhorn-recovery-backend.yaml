@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: longhorn
+    meta.helm.sh/release-namespace: longhorn-system
+  labels:
+    app: longhorn-recovery-backend
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/version: v1.5.1
+    helm.sh/chart: longhorn-1.5.1
+  name: longhorn-recovery-backend
+  namespace: longhorn-system
+spec:
+  clusterIP: 10.43.81.213
+  clusterIPs:
+  - 10.43.81.213
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: recovery-backend
+    port: 9503
+    protocol: TCP
+    targetPort: recov-backend
+  selector:
+    app: longhorn-manager
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  type: ClusterIP
+status:
+  loadBalancer: {}

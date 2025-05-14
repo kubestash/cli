@@ -1,0 +1,22 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T13:08:12Z"
+deprecatedLastTimestamp: "2025-05-05T13:08:12Z"
+deprecatedSource:
+  component: statefulset-controller
+eventTime: null
+kind: Event
+metadata:
+  name: my-sts.183ca37861988674
+  namespace: restore-test
+note: create Claim storage-volume-my-sts-1 Pod my-sts-1 in StatefulSet my-sts success
+reason: SuccessfulCreate
+regarding:
+  apiVersion: apps/v1
+  kind: StatefulSet
+  name: my-sts
+  namespace: restore-test
+  resourceVersion: "1712185"
+  uid: 2e2a6c60-08de-43da-90a0-57f4c064b591
+reportingController: statefulset-controller
+type: Normal

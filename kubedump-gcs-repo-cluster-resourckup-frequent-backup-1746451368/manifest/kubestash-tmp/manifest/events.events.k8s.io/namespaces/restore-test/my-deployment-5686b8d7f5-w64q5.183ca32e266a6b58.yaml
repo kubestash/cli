@@ -1,0 +1,24 @@
+action: Scheduling
+apiVersion: events.k8s.io/v1
+deprecatedFirstTimestamp: null
+deprecatedLastTimestamp: null
+deprecatedSource: {}
+eventTime: "2025-05-05T13:02:54.121238Z"
+kind: Event
+metadata:
+  name: my-deployment-5686b8d7f5-w64q5.183ca32e266a6b58
+  namespace: restore-test
+note: '0/1 nodes are available: persistentvolumeclaim "my-pvc" bound to non-existent
+  persistentvolume "pvc-cf2a787a-732b-459c-90d8-b93026353ef9". preemption: 0/1 nodes
+  are available: 1 Preemption is not helpful for scheduling.'
+reason: FailedScheduling
+regarding:
+  apiVersion: v1
+  kind: Pod
+  name: my-deployment-5686b8d7f5-w64q5
+  namespace: restore-test
+  resourceVersion: "1711665"
+  uid: 14064cb2-5c3b-4b1e-af36-437e09e5bd97
+reportingController: default-scheduler
+reportingInstance: default-scheduler-nipun
+type: Warning

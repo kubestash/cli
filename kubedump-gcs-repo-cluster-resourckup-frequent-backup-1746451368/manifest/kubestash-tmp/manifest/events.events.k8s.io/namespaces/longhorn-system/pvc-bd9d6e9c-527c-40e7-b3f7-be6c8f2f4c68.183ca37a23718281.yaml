@@ -1,0 +1,21 @@
+apiVersion: events.k8s.io/v1
+deprecatedCount: 1
+deprecatedFirstTimestamp: "2025-05-05T13:08:20Z"
+deprecatedLastTimestamp: "2025-05-05T13:08:20Z"
+deprecatedSource:
+  component: longhorn-volume-controller
+eventTime: null
+kind: Event
+metadata:
+  name: pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68.183ca37a23718281
+  namespace: longhorn-system
+note: volume pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68 has been attached to nipun
+reason: Attached
+regarding:
+  apiVersion: longhorn.io/v1beta2
+  kind: Volume
+  name: pvc-bd9d6e9c-527c-40e7-b3f7-be6c8f2f4c68
+  namespace: longhorn-system
+  resourceVersion: "1712398"
+  uid: f0e24587-50b2-4443-b520-ba7863779548
+type: Normal

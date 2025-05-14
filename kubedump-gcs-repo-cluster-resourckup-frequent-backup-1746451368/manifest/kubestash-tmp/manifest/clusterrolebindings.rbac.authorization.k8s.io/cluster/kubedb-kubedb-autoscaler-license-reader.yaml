@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubedb
+    meta.helm.sh/release-namespace: kubedb
+  labels:
+    app.kubernetes.io/instance: kubedb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubedb-autoscaler
+    app.kubernetes.io/version: v0.38.0
+    helm.sh/chart: kubedb-autoscaler-v0.38.0
+  name: kubedb-kubedb-autoscaler-license-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: appscode:license-reader
+subjects:
+- kind: ServiceAccount
+  name: kubedb-kubedb-autoscaler
+  namespace: kubedb

@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+  name: kubedb:core:edit
+rules:
+- apiGroups:
+  - kubedb.com
+  - archiver.kubedb.com
+  - elasticsearch.kubedb.com
+  - kafka.kubedb.com
+  resources:
+  - '*'
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - patch
+  - update
