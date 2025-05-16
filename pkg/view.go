@@ -18,16 +18,23 @@ package pkg
 
 import (
 	_ "bufio"
+	"encoding/json"
 	"fmt"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	_ "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"log"
 	_ "log"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"sigs.k8s.io/yaml"
 	"slices"
 	"strings"
+
+	_ "encoding/json"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	_ "k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 
 	"github.com/jedib0t/go-pretty/v6/list"
 	"github.com/spf13/cobra"
@@ -376,15 +383,20 @@ func getResourceFromGroupResource(gv string) string {
 	return parts[0]
 }
 
-func parseYAMLToUnstructured(content []byte) (*unstructured.Unstructured, error) {
-	fmt.Println("### Raw YAML content ###")
-	fmt.Println(string(content)) // 👈 show actual file contents for debugging
-
-	var obj map[string]interface{}
-	if err := yaml.Unmarshal(content, &obj); err != nil {
+func parseBytesToUnstructured(byteData []byte) (*unstructured.Unstructured, error) {
+	// Convert YAML to JSON (works even if input is JSON)
+	jsonData, err := yaml.YAMLToJSON(byteData)
+	if err != nil {
 		return nil, err
 	}
-	return &unstructured.Unstructured{Object: obj}, nil
+
+	var obj unstructured.Unstructured
+	err = json.Unmarshal(jsonData, &obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return &obj, nil
 }
 
 func (opt *viewOptions) getFileContentViaDocker(snapshotID, filePath string) (*unstructured.Unstructured, error) {
@@ -400,16 +412,26 @@ func (opt *viewOptions) getFileContentViaDocker(snapshotID, filePath string) (*u
 		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
 		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
 		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
+		"--env", "RESTIC_CACHE_DIR=" + ScratchDir,
 		imgRestic.ToContainerImage(),
 		"dump", // dump command to show content of a file
 		snapshotID,
 		filePath, // file path within the snapshot
 	}
-	klog.Infoln("###Inside the file read from container function\n")
-	klog.Infoln("Running docker with args:", args)
+	//klog.Infoln("###Inside the file read from container function\n")
+	//klog.Infoln("Running docker with args:", args)
 	cmd := exec.Command(CmdDocker, args...)
-	output, _ := cmd.CombinedOutput()
-	return parseYAMLToUnstructured(output)
+	dumpOutput, _ := cmd.CombinedOutput()
+	clean := strings.TrimSpace(string(dumpOutput))
+	if clean == "" || !strings.Contains(clean, "apiVersion:") {
+		log.Fatalf("dumped content is not valid YAML:\n%s", clean)
+	}
+	jsonBytes, err := yaml.YAMLToJSON([]byte(clean))
+	if err != nil {
+		log.Fatalf("YAMLToJSON failed: %v", err)
+	}
+	//klog.Infoln("####Output\n", clean)
+	return parseBytesToUnstructured(jsonBytes)
 }
 
 func (viewOpt *viewOptions) extractLabels(snapshotID, fileName string) []string {
@@ -417,7 +439,7 @@ func (viewOpt *viewOptions) extractLabels(snapshotID, fileName string) []string 
 	if err != nil {
 		fmt.Printf("Error reading file %s: %s\n", fileName, err)
 	}
-	klog.Infoln("###Unstructered Object string view", unstructuredObject)
+	//klog.Infoln("###Unstructered Object string view", unstructuredObject)
 	return labelsToStrings(unstructuredObject.GetLabels())
 }
 
@@ -443,32 +465,24 @@ func (opt viewOptions) shouldShow(snapshotID, file string) bool {
 	} else {
 		namespace = parts[2]
 	}
-	klog.Infoln("FileName:", file, "Namespace:", namespace, "Resource:", resource)
 	passed := false
 	if namespace == "" && globalIncludeExclude.ShouldIncludeResource(resource, false) {
 		passed = true
 	} else if globalIncludeExclude.ShouldIncludeResource(resource, true) && globalIncludeExclude.ShouldIncludeNamespace(namespace) {
 		passed = true
 	}
-	opt.extractLabels(snapshotID, "/kubestash-tmp/manifest"+file)
-
-	return passed
-	/*
-		if passed {
-			labels := opt.extractLabels(snapshotID, "/kubestash-tmp/manifest"+file)
-			return opt.matchLabels(labels)
-		}
+	if passed == false {
 		return false
-		/**/
+	}
+	labels := opt.extractLabels(snapshotID, "/kubestash-tmp/manifest/"+file)
+	return opt.matchLabels(labels)
 }
 
 func (opt *viewOptions) showInTreeFormat(files []string) {
 	l := list.NewWriter()
 	l.SetStyle(list.StyleConnectedLight) // This gives the ├─ └─ style
 	l.AppendItem(".")                    // Root node
-
 	seen := make(map[string]bool)
-
 	for _, file := range files {
 		extension := filepath.Ext(file)
 		if extension != ".yaml" && extension != ".json" {
@@ -498,19 +512,14 @@ func (opt *viewOptions) showInTreeFormat(files []string) {
 
 func (opt *viewOptions) filterFiles(snapshotID string, files []string) []string {
 	filteredFiles := []string{}
-	counter := 10
 	for _, file := range files {
 		extension := filepath.Ext(file)
 		if extension != ".yaml" && extension != ".json" {
 			continue
 		}
-		file := strings.TrimPrefix(file, "/kubestash-tmp/manifest")
-		if opt.shouldShow(snapshotID, file) {
-			filteredFiles = append(filteredFiles, file)
-		}
-		counter--
-		if counter == 0 {
-			break
+		prefixTrimmedFile := strings.TrimPrefix(file, "/kubestash-tmp/manifest/")
+		if opt.shouldShow(snapshotID, prefixTrimmedFile) {
+			filteredFiles = append(filteredFiles, prefixTrimmedFile)
 		}
 	}
 	return filteredFiles
