@@ -418,14 +418,23 @@ func (opt *viewOptions) getFileContentViaDocker(snapshotID, filePath string) (*u
 		snapshotID,
 		filePath, // file path within the snapshot
 	}
-	//klog.Infoln("###Inside the file read from container function\n")
+	klog.Infoln("###Inside the file read from container function\n")
 	//klog.Infoln("Running docker with args:", args)
 	cmd := exec.Command(CmdDocker, args...)
 	dumpOutput, _ := cmd.CombinedOutput()
-	clean := strings.TrimSpace(string(dumpOutput))
-	if clean == "" || !strings.Contains(clean, "apiVersion:") {
-		log.Fatalf("dumped content is not valid YAML:\n%s", clean)
+	klog.Infoln("Output:", string(dumpOutput))
+	lines := strings.Split(string(dumpOutput), "\n")
+	yamlStart := -1
+	for i, line := range lines {
+		if strings.HasPrefix(line, "apiVersion:") {
+			yamlStart = i
+			break
+		}
 	}
+	if yamlStart == -1 {
+		log.Fatalf("Could not find start of YAML content in output:\n%s", string(dumpOutput))
+	}
+	clean := strings.Join(lines[yamlStart:], "\n")
 	jsonBytes, err := yaml.YAMLToJSON([]byte(clean))
 	if err != nil {
 		log.Fatalf("YAMLToJSON failed: %v", err)
@@ -518,6 +527,9 @@ func (opt *viewOptions) filterFiles(snapshotID string, files []string) []string 
 			continue
 		}
 		prefixTrimmedFile := strings.TrimPrefix(file, "/kubestash-tmp/manifest/")
+		if prefixTrimmedFile == snapshotID {
+			break
+		}
 		if opt.shouldShow(snapshotID, prefixTrimmedFile) {
 			filteredFiles = append(filteredFiles, prefixTrimmedFile)
 		}
@@ -554,21 +566,8 @@ func (opt *viewOptions) listFilesViaDocker(snapshotID string) error {
 		return err
 	}
 	klog.Infoln("###Docker command output:", string(output))
-
 	files := strings.Split(string(output), "\n")
 	filteredFiles := opt.filterFiles(snapshotID, files)
 	opt.showInTreeFormat(filteredFiles)
-
 	return nil
 }
-
-/*
-// Force command registration at init time
-func init() {
-	// This will print during binary execution if the package loads
-	println("DEBUG: view command package initialized")
-
-	// Register a dummy command to ensure compilation
-	cobra.AddTemplateFunc("viewCommandDummy", func() string { return "" })
-}
-/**/
