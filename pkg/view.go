@@ -49,6 +49,7 @@ import (
 	"kubestash.dev/apimachinery/pkg/restic"
 	"kubestash.dev/cli/pkg/filter"
 	_ "kubestash.dev/cli/pkg/tree"
+	_ "kubestash.dev/kubedump/pkg"
 )
 
 type viewOptions struct {
