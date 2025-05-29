@@ -66,7 +66,7 @@ func NewResourceManager(opts *common.Options) (*ResourceManager, error) {
 	}
 	if opts.RestoreSession != nil {
 		opts.StorageClassMappings = parseSCMappings(opts.StorageClassMappingsStr)
-		opts.ExcludeResources = append(opts.ExcludeResources, common.DefaultNonRestorableResources...)
+		opts.ExcludeNamespaces = append(opts.ExcludeNamespaces, common.DefaultNonRestorableResources...)
 	}
 
 	dyn, err := dynamic.NewForConfig(opts.Config)

@@ -39,6 +39,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/list"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -47,9 +48,9 @@ import (
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg"
 	"kubestash.dev/apimachinery/pkg/restic"
-	"kubestash.dev/cli/pkg/filter"
 	_ "kubestash.dev/cli/pkg/tree"
 	_ "kubestash.dev/kubedump/pkg"
+	"kubestash.dev/kubedump/pkg/filter"
 )
 
 type viewOptions struct {
@@ -256,6 +257,9 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 
 	cmd.MarkFlagsMutuallyExclusive("exclude", "include")
 
+	cmd.Flags().StringVar(&opt.SetupOptions.ScratchDir, "scratch-dir", opt.SetupOptions.ScratchDir, "Temporary directory")
+	cmd.Flags().BoolVar(&opt.SetupOptions.EnableCache, "enable-cache", opt.SetupOptions.EnableCache, "Specify whether to enable caching for restic")
+
 	cmd.Flags().StringSliceVar(&viewOpt.ANDedLabelSelector, "and-label-selectors", viewOpt.ANDedLabelSelector, "A set of labels, all of which need to be matched to filter the resources.")
 	cmd.Flags().StringSliceVar(&viewOpt.ORedLabelSelector, "or-label-selectors", viewOpt.ORedLabelSelector, "A set of labels, a subset of which need to be matched to filter the resources.")
 
@@ -454,7 +458,33 @@ func (viewOpt *viewOptions) extractLabels(snapshotID, fileName string) []string 
 }
 
 func (viewOpt *viewOptions) matchLabels(labels []string) bool {
-	return filter.MatchesAll(labels, viewOpt.ANDedLabelSelector) && filter.MatchesAny(labels, viewOpt.ORedLabelSelector)
+	return matchesAll(labels, viewOpt.ANDedLabelSelector) && matchesAny(labels, viewOpt.ORedLabelSelector)
+}
+
+func matchesAny(labels, selectors []string) bool {
+	if len(selectors) == 0 {
+		return true
+	}
+	set := sets.NewString(labels...)
+	for _, sel := range selectors {
+		if set.Has(sel) {
+			return true
+		}
+	}
+	return false
+}
+
+func matchesAll(labels, selectors []string) bool {
+	if len(selectors) == 0 {
+		return true
+	}
+	set := sets.NewString(labels...)
+	for _, sel := range selectors {
+		if !set.Has(sel) {
+			return false
+		}
+	}
+	return true
 }
 
 func labelsToStrings(labels map[string]string) []string {
@@ -489,9 +519,9 @@ func (opt viewOptions) shouldShow(snapshotID, file string) bool {
 }
 
 func (opt *viewOptions) showInTreeFormat(files []string) {
-	l := list.NewWriter()
-	l.SetStyle(list.StyleConnectedLight) // This gives the ├─ └─ style
-	l.AppendItem(".")                    // Root node
+	List := list.NewWriter()
+	List.SetStyle(list.StyleConnectedLight) // This gives the ├─ └─ style
+	List.AppendItem(".")                    // Root node
 	seen := make(map[string]bool)
 	for _, file := range files {
 		extension := filepath.Ext(file)
@@ -505,19 +535,19 @@ func (opt *viewOptions) showInTreeFormat(files []string) {
 			if !seen[currentPath] {
 				// Set indentation level
 				for lvl := 0; lvl < i; lvl++ {
-					l.Indent()
+					List.Indent()
 				}
-				l.AppendItem(part)
+				List.AppendItem(part)
 				seen[currentPath] = true
 				// Reset indentation
 				for lvl := 0; lvl < i; lvl++ {
-					l.UnIndent()
+					List.UnIndent()
 				}
 			}
 			currentPath += "/"
 		}
 	}
-	fmt.Println(l.Render())
+	fmt.Println(List.Render())
 }
 
 func (opt *viewOptions) filterFiles(snapshotID string, files []string) []string {

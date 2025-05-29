@@ -61,7 +61,6 @@ func (m *ResourceManager) RestoreManifests(ctx context.Context) error {
 }
 
 func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes string) error {
-	fmt.Printf("#####Called restoreResourceType() function\n")
 	rItems, ok := m.backupResources[groupRes]
 	if !ok {
 		klog.V(2).Infof("no backups for %s", groupRes)
@@ -89,14 +88,10 @@ func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes stri
 			}
 		}
 	}
-
-	fmt.Printf("####Called restoreResourceType() function\n")
-
 	return nil
 }
 
 func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm common.RestoreableItem) error {
-	fmt.Printf("####Called restoreResourceType() function\n")
 	obj, err := m.unmarshal(itm.Path)
 	if err != nil {
 		klog.Errorf("unmarshal %s: %v", itm.Path, err)
@@ -127,44 +122,12 @@ func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm co
 	if err != nil {
 		return fmt.Errorf("sanitize %s: %w", key, err)
 	}
-	if m.StorageClassMappingsStr != "" {
-		spec := sObj["spec"].(map[string]interface{})
-		if spec["storageClassName"] == nil {
-			oldStorageClassName := spec["storageClassName"].(string)
-			spec["storageClassName"] = m.StorageClassMappings[oldStorageClassName]
-		}
-		sObj["spec"] = spec
-	}
-	updateNamespaceFields(sObj, m.Namespace)
 	obj.Object = sObj
-	fmt.Printf("######Object before manual update %v\n", obj.Object)
-	// to implement a function for all target variables while restoring ... it should be generic...
+
 	if err := m.createIfMissing(ctx, gvr, obj); err != nil {
 		return err
 	}
-	fmt.Printf("###Just checking done\n")
 	return nil
-}
-
-func updateNamespaceFields(obj interface{}, targetNamespace string) interface{} {
-	switch val := obj.(type) {
-	case map[string]interface{}:
-		for key, value := range val {
-			if key == "namespace" {
-				if _, ok := value.(string); ok {
-					val[key] = targetNamespace
-					fmt.Printf("###Namespace updated for %s\n", targetNamespace)
-				}
-			} else {
-				val[key] = updateNamespaceFields(value, targetNamespace)
-			}
-		}
-	case []interface{}:
-		for i, item := range val {
-			val[i] = updateNamespaceFields(item, targetNamespace)
-		}
-	}
-	return obj
 }
 
 func (m *ResourceManager) ensureNamespace(ctx context.Context, ns string) error {
@@ -220,7 +183,7 @@ func (m *ResourceManager) shouldRestore(obj *unstructured.Unstructured) bool {
 	if ns := obj.GetNamespace(); ns != "" && !m.filter.ShouldIncludeNamespace(ns) {
 		return false
 	}
-	labels := toStrings(obj.GetName(), obj.GetLabels())
+	labels := toStrings(obj.GetLabels())
 	return matchesAny(labels, m.Options.ORedLabelSelector) && matchesAll(labels, m.Options.ANDedLabelSelector)
 }
 
