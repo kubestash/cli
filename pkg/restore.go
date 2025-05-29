@@ -110,6 +110,7 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 
 	cmd.Flags().StringVar(&opt.RestoreSessionName, "restoresession", opt.RestoreSessionName, "Name of the RestoreSession")
 	cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of the RestoreSession")
+	//	cmd.Flags().StringVar(&opt.TargetNamespace, "target-namespace", "default", "Namespace where the resources will be restored")
 	cmd.Flags().StringVar(&opt.SnapshotName, "snapshot", "", "Name of the snapshot")
 
 	cmd.Flags().StringVar(&opt.SetupOptions.ScratchDir, "scratch-dir", opt.SetupOptions.ScratchDir, "Temporary directory")

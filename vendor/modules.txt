@@ -1628,7 +1628,7 @@ kubestash.dev/apimachinery/crds
 kubestash.dev/apimachinery/pkg
 kubestash.dev/apimachinery/pkg/blob
 kubestash.dev/apimachinery/pkg/restic
-# kubestash.dev/kubedump v0.16.1-0.20250520131207-48e24dd13df9
+# kubestash.dev/kubedump v0.16.1-0.20250502114858-6cf40b84a40b
 ## explicit; go 1.23.0
 kubestash.dev/kubedump/pkg
 kubestash.dev/kubedump/pkg/common

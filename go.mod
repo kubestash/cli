@@ -27,7 +27,7 @@ require (
 	kmodules.xyz/offshoot-api v0.32.0
 	kmodules.xyz/prober v0.32.0
 	kubestash.dev/apimachinery v0.18.1
-	kubestash.dev/kubedump v0.16.1-0.20250520131207-48e24dd13df9
+	kubestash.dev/kubedump v0.16.1-0.20250502114858-6cf40b84a40b
 	sigs.k8s.io/controller-runtime v0.20.3
 	sigs.k8s.io/yaml v1.4.0
 	stash.appscode.dev/apimachinery v0.39.0

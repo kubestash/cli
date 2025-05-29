@@ -172,7 +172,6 @@ func (opt *Options) setSetupOptionsForSnapshots(snapshots ...storageapi.Snapshot
 	opt.SetupOptions.Backends = make([]*restic.Backend, 0, len(snapshots))
 
 	var err error
-
 	opt.SetupOptions.Timeout, err = opt.getTimeout()
 	if err != nil {
 		return fmt.Errorf("failed to get timeout: %w", err)
