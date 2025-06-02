@@ -22,9 +22,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"kubestash.dev/kubedump/pkg/common"
-	"kubestash.dev/kubedump/pkg/filter"
-	"kubestash.dev/kubedump/pkg/sanitizers"
+	"kubestash.dev/cli/pkg/common"
+	"kubestash.dev/cli/pkg/filter"
+	"kubestash.dev/cli/pkg/sanitizers"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -66,7 +66,7 @@ func NewResourceManager(opts *common.Options) (*ResourceManager, error) {
 	}
 	if opts.RestoreSession != nil {
 		opts.StorageClassMappings = parseSCMappings(opts.StorageClassMappingsStr)
-		opts.ExcludeNamespaces = append(opts.ExcludeNamespaces, common.DefaultNonRestorableResources...)
+		opts.ExcludeResources = append(opts.ExcludeResources, common.DefaultNonRestorableResources...)
 	}
 
 	dyn, err := dynamic.NewForConfig(opts.Config)

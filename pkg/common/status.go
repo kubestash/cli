@@ -62,35 +62,6 @@ func (opt *Options) UpdateSnapshotStatus(snap *storageapi.Snapshot) error {
 	return err
 }
 
-func (opt *Options) InitRestoreComponentStatus() error {
-	if opt.RestoreSession.Status.Components == nil {
-		opt.RestoreSession.Status.Components = make(map[string]coreapi.ComponentRestoreStatus)
-	}
-
-	opt.RestoreSession.Status.Components[apis.ComponentManifest] = coreapi.ComponentRestoreStatus{
-		Phase: coreapi.RestoreRunning,
-	}
-
-	return opt.UpdateRestoreSessionStatus()
-}
-
-func (opt *Options) UpdateRestoreSessionStatus() error {
-	_, err := kmc.PatchStatus(
-		context.Background(),
-		opt.Client,
-		opt.RestoreSession,
-		func(obj client.Object) client.Object {
-			in := obj.(*coreapi.RestoreSession)
-			if in.Status.Components == nil {
-				in.Status.Components = make(map[string]coreapi.ComponentRestoreStatus)
-			}
-			in.Status.Components[apis.ComponentManifest] = opt.RestoreSession.Status.Components[apis.ComponentManifest]
-			return in
-		},
-	)
-	return err
-}
-
 func (opt *Options) UpsertRestoreComponentStatus(restoreOutput *restic.RestoreOutput, err error) {
 	newComp := coreapi.ComponentRestoreStatus{}
 

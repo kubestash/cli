@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"kubestash.dev/kubedump/pkg/common"
+	"kubestash.dev/cli/pkg/common"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -142,11 +142,12 @@ func resourceKey(obj runtime.Object) string {
 	return fmt.Sprintf("%s/%s", gvk.GroupVersion().String(), gvk.Kind)
 }
 
-func toStrings(labels map[string]string) []string {
+func toStrings(resourceName string, labels map[string]string) []string {
 	out := make([]string, 0, len(labels))
 	for key, val := range labels {
 		out = append(out, fmt.Sprintf("%s:%s", key, val))
 	}
+	fmt.Printf("### Resource Name: %s, Labels %v\n", resourceName, out)
 	return out
 }
 

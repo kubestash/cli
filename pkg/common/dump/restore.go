@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"kubestash.dev/kubedump/pkg/common"
+	"kubestash.dev/cli/pkg/common"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,6 +61,7 @@ func (m *ResourceManager) RestoreManifests(ctx context.Context) error {
 }
 
 func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes string) error {
+	fmt.Printf("#####Called restoreResourceType() function\n")
 	rItems, ok := m.backupResources[groupRes]
 	if !ok {
 		klog.V(2).Infof("no backups for %s", groupRes)
@@ -88,10 +89,14 @@ func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes stri
 			}
 		}
 	}
+
+	fmt.Printf("####Called restoreResourceType() function\n")
+
 	return nil
 }
 
 func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm common.RestoreableItem) error {
+	fmt.Printf("####Called applyItem() function\n")
 	obj, err := m.unmarshal(itm.Path)
 	if err != nil {
 		klog.Errorf("unmarshal %s: %v", itm.Path, err)
@@ -122,12 +127,45 @@ func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm co
 	if err != nil {
 		return fmt.Errorf("sanitize %s: %w", key, err)
 	}
-	obj.Object = sObj
 
+	if gvr.Group == "apps" {
+		fmt.Printf("####Deployment detected %v\n", sObj)
+	}
+	/*
+		if m.StorageClassMappingsStr != "" {
+			spec := sObj["spec"].(map[string]interface{})
+			if spec["storageClassName"] == nil {
+				oldStorageClassName := spec["storageClassName"].(string)
+				spec["storageClassName"] = m.StorageClassMappings[oldStorageClassName]
+			}
+			sObj["spec"] = spec
+		}
+	*/
+	//updateNamespaceFields(sObj, m.TargetNamespace)
+	obj.Object = sObj
+	fmt.Printf("######Object after namespace field updated %v\n", obj.Object)
 	if err := m.createIfMissing(ctx, gvr, obj); err != nil {
 		return err
 	}
 	return nil
+}
+
+func updateNamespaceFields(obj interface{}, targetNamespace string) {
+	switch val := obj.(type) {
+	case map[string]interface{}:
+		for key, value := range val {
+			if key == "namespace" {
+				val[key] = targetNamespace // modifies original map
+				fmt.Printf("Namespace field updated %v\n", val)
+			} else {
+				updateNamespaceFields(value, targetNamespace)
+			}
+		}
+	case []interface{}:
+		for _, item := range val {
+			updateNamespaceFields(item, targetNamespace)
+		}
+	}
 }
 
 func (m *ResourceManager) ensureNamespace(ctx context.Context, ns string) error {
@@ -180,10 +218,13 @@ func (m *ResourceManager) exists(ctx context.Context, ri dynamic.ResourceInterfa
 }
 
 func (m *ResourceManager) shouldRestore(obj *unstructured.Unstructured) bool {
+	fmt.Printf("####Inside filter function Resource Name: %s, Namespace: %s\n", obj.GetName(), obj.GetNamespace())
 	if ns := obj.GetNamespace(); ns != "" && !m.filter.ShouldIncludeNamespace(ns) {
+		fmt.Printf("skipping %s by filter\n", obj.GetName())
 		return false
 	}
-	labels := toStrings(obj.GetLabels())
+	labels := toStrings(obj.GetName(), obj.GetLabels())
+	fmt.Printf("####Check ResourceName: %s, Namespace: %s\n", obj.GetName(), obj.GetNamespace())
 	return matchesAny(labels, m.Options.ORedLabelSelector) && matchesAll(labels, m.Options.ANDedLabelSelector)
 }
 

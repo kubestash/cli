@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	_ "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"kubestash.dev/cli/pkg/filter"
 	"log"
 	_ "log"
 	"os"
@@ -49,8 +50,6 @@ import (
 	"kubestash.dev/apimachinery/pkg"
 	"kubestash.dev/apimachinery/pkg/restic"
 	_ "kubestash.dev/cli/pkg/tree"
-	_ "kubestash.dev/kubedump/pkg"
-	"kubestash.dev/kubedump/pkg/filter"
 )
 
 type viewOptions struct {
