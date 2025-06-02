@@ -19,24 +19,14 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"gomodules.xyz/flags"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	_ "k8s.io/client-go/rest"
-	_ "kubestash.dev/apimachinery/apis/core/v1alpha1"
-	_ "kubestash.dev/apimachinery/apis/storage/v1alpha1"
-	_ "kubestash.dev/apimachinery/pkg/restic"
-	"kubestash.dev/kubedump/pkg/common/dump"
+	kmapi "kmodules.xyz/client-go/api/v1"
+	"kubestash.dev/apimachinery/apis"
+	"kubestash.dev/cli/pkg/common"
+	"kubestash.dev/cli/pkg/common/dump"
 	"path/filepath"
 
-	"kubestash.dev/apimachinery/apis"
-	common "kubestash.dev/kubedump/pkg/common"
-
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/tools/clientcmd"
-	kmapi "kmodules.xyz/client-go/api/v1"
-	_ "sigs.k8s.io/controller-runtime/pkg/client"
-
-	_ "k8s.io/api/core/v1"
 )
 
 type options struct {
@@ -58,38 +48,42 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 		Short:             "Restore Kubernetes resources",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			flags.EnsureRequiredFlags(cmd, "restoresession")
+			//flags.EnsureRequiredFlags(cmd, "restoresession")
 			var err error
-			opt.Config, err = clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
+			opt.Config, err = clientGetter.ToRESTConfig()
 			if err != nil {
 				return err
 			}
+
 			opt.Client, err = common.NewRuntimeClient(opt.Config)
 			if err != nil {
 				return fmt.Errorf("failed to get kubernetes client: %w", err)
 			}
 
-			opt.RestoreSession, err = opt.GetRestoreSession()
-			if err != nil {
-				return fmt.Errorf("failed to get restoresession %s/%s: %w", opt.Namespace, opt.RestoreSessionName, err)
-			}
+			/*
+				opt.RestoreSession, err = opt.GetRestoreSession()
+				if err != nil {
+					return fmt.Errorf("failed to get restoresession %s/%s: %w", opt.Namespace, opt.RestoreSessionName, err)
+				}
+			*/
 
 			opt.Snapshot, err = opt.GetSnapshot(kmapi.ObjectReference{
 				Name:      opt.SnapshotName,
-				Namespace: opt.RestoreSession.GetDataSourceNamespace(),
+				Namespace: "demo",
 			})
 			if err != nil {
-				return fmt.Errorf("failed to get snapshot %s/%s: %w", opt.RestoreSession.GetDataSourceNamespace(), opt.SnapshotName, err)
+				return fmt.Errorf("failed to get snapshot %s/%s: %w", "demo", opt.SnapshotName, err)
 			}
 
 			opt.DataDir = filepath.Join(opt.SetupOptions.ScratchDir, apis.ComponentManifest)
 			if err = common.ClearDir(opt.DataDir); err != nil {
 				return fmt.Errorf("failed to cleanup data dir %s: %w", opt.DataDir, err)
 			}
-
-			if err := opt.InitRestoreComponentStatus(); err != nil {
-				return fmt.Errorf("failed to update restoresession status :%w", err)
-			}
+			/*
+				if err := opt.InitRestoreComponentStatus(); err != nil {
+					return fmt.Errorf("failed to update restoresession status :%w", err)
+				}
+			*/
 			if err := opt.setupDumpImplementer(); err != nil {
 				return fmt.Errorf("failed to setup dump implementer: %w", err)
 			}
@@ -97,10 +91,11 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 			if err = opt.performRestore(); err != nil {
 				opt.UpsertRestoreComponentStatus(nil, err)
 			}
-
-			if err := opt.UpdateRestoreSessionStatus(); err != nil {
-				return fmt.Errorf("failed to update restoresession status: %w", err)
-			}
+			/*
+				if err := opt.UpdateRestoreSessionStatus(); err != nil {
+					return fmt.Errorf("failed to update restoresession status: %w", err)
+				}
+			*/
 			return nil
 		},
 	}
@@ -110,7 +105,7 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 
 	cmd.Flags().StringVar(&opt.RestoreSessionName, "restoresession", opt.RestoreSessionName, "Name of the RestoreSession")
 	cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of the RestoreSession")
-	//	cmd.Flags().StringVar(&opt.TargetNamespace, "target-namespace", "default", "Namespace where the resources will be restored")
+	cmd.Flags().StringVar(&opt.TargetNamespace, "target-namespace", "default", "Namespace where the resources will be restored")
 	cmd.Flags().StringVar(&opt.SnapshotName, "snapshot", "", "Name of the snapshot")
 
 	cmd.Flags().StringVar(&opt.SetupOptions.ScratchDir, "scratch-dir", opt.SetupOptions.ScratchDir, "Temporary directory")
@@ -141,14 +136,14 @@ func (opt *options) performRestore() error {
 	if err != nil {
 		return err
 	}
-	restoreOutput, err := w.RunRestore(opt.Snapshot.Spec.Repository, opt.RestoreOptions)
-	if err != nil {
-		return err
+	_, Err := w.RunRestore(opt.Snapshot.Spec.Repository, opt.RestoreOptions)
+	if Err != nil {
+		return Err
 	}
 	if err = dumpImplementer.RestoreManifests(context.Background()); err != nil {
 		return err
 	}
-	opt.UpsertRestoreComponentStatus(restoreOutput, err)
+	//opt.UpsertRestoreComponentStatus(restoreOutput, err)
 	return nil
 }
 

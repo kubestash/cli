@@ -1628,13 +1628,6 @@ kubestash.dev/apimachinery/crds
 kubestash.dev/apimachinery/pkg
 kubestash.dev/apimachinery/pkg/blob
 kubestash.dev/apimachinery/pkg/restic
-# kubestash.dev/kubedump v0.16.1-0.20250502114858-6cf40b84a40b
-## explicit; go 1.23.0
-kubestash.dev/kubedump/pkg
-kubestash.dev/kubedump/pkg/common
-kubestash.dev/kubedump/pkg/common/dump
-kubestash.dev/kubedump/pkg/filter
-kubestash.dev/kubedump/pkg/sanitizers
 # sigs.k8s.io/controller-runtime v0.20.3 => github.com/kmodules/controller-runtime v0.20.3-0.20250221050548-8eabe54e7dda
 ## explicit; go 1.23.0
 sigs.k8s.io/controller-runtime

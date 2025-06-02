@@ -19,7 +19,7 @@ package dump
 import (
 	"sort"
 
-	"kubestash.dev/kubedump/pkg/common"
+	"kubestash.dev/cli/pkg/common"
 )
 
 type Priorities struct {

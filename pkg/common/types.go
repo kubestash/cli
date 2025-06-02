@@ -56,11 +56,12 @@ type RestoredItemStatus struct {
 }
 
 type Options struct {
-	Config      *rest.Config
-	Client      client.Client
-	DataDir     string
-	WaitTimeout int32
-	Namespace   string
+	Config          *rest.Config
+	Client          client.Client
+	DataDir         string
+	WaitTimeout     int32
+	Namespace       string
+	TargetNamespace string
 
 	SnapshotName       string
 	BackupSessionName  string

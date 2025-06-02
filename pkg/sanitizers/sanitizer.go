@@ -17,7 +17,7 @@ limitations under the License.
 package sanitizers
 
 import (
-	"kubestash.dev/kubedump/pkg/common"
+	"kubestash.dev/cli/pkg/common"
 )
 
 type Sanitizer interface {
