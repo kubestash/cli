@@ -19,9 +19,9 @@ package common
 import (
 	"context"
 	"fmt"
+	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 
 	"kubestash.dev/apimachinery/apis"
-	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg/restic"
 
@@ -63,6 +63,11 @@ func (opt *Options) UpdateSnapshotStatus(snap *storageapi.Snapshot) error {
 }
 
 func (opt *Options) UpsertRestoreComponentStatus(restoreOutput *restic.RestoreOutput, err error) {
+	// If RestoreSession or its Status or Components map is nil, skip updating status safely
+	if opt.RestoreSession == nil || opt.RestoreSession.Status.Components == nil {
+		return
+	}
+
 	newComp := coreapi.ComponentRestoreStatus{}
 
 	if err == nil {
@@ -72,7 +77,7 @@ func (opt *Options) UpsertRestoreComponentStatus(restoreOutput *restic.RestoreOu
 		newComp.Error = err.Error()
 	}
 
-	if restoreOutput != nil {
+	if restoreOutput != nil && len(restoreOutput.Stats) > 0 {
 		newComp.Duration = restoreOutput.Stats[0].Duration
 	}
 

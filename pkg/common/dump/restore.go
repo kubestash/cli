@@ -40,6 +40,8 @@ func (m *ResourceManager) RestoreManifests(ctx context.Context) error {
 		return fmt.Errorf("failed to parse items: %w", err)
 	}
 
+	fmt.Println("Restoring Manifests...")
+
 	// 1. Restore CRD First
 	if err := m.restoreResourceType(ctx, common.CustomResourceDefinitions.String()); err != nil {
 		return err

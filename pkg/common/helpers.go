@@ -206,11 +206,11 @@ func (opt *Options) setSetupOptionsForSnapshots(snapshots ...storageapi.Snapshot
 		backend.Repository = repo.Name
 		backend.BackupStorage = &repo.Spec.StorageRef
 		backend.Directory = filepath.Join(repo.Spec.Path, snap.GetComponentPath(apis.ComponentManifest))
-		if opt.BackupSession != nil {
-			backend.EncryptionSecret = repo.Spec.EncryptionSecret
-		} else {
-			backend.EncryptionSecret = opt.RestoreSession.Spec.DataSource.EncryptionSecret
-		}
+		//if opt.BackupSession != nil {
+		backend.EncryptionSecret = repo.Spec.EncryptionSecret
+		//} else {
+		//	backend.EncryptionSecret = opt.RestoreSession.Spec.DataSource.EncryptionSecret
+		//}
 		opt.SetupOptions.Backends = append(opt.SetupOptions.Backends, backend)
 	}
 
