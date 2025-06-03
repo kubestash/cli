@@ -78,6 +78,8 @@ func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes stri
 		return nil
 	}
 
+	fmt.Println("Check group resources...%s...", groupRes)
+
 	restorable := m.getRestoreableItems(rItems)
 	for namespace, items := range restorable.SelectedItemsByNamespace {
 		if namespace != "" {
