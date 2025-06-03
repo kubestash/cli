@@ -136,14 +136,24 @@ func (opt *options) performRestore() error {
 	if err != nil {
 		return err
 	}
-	_, Err := w.RunRestore(opt.Snapshot.Spec.Repository, opt.RestoreOptions)
-	if Err != nil {
-		return Err
-	}
-	if err = dumpImplementer.RestoreManifests(context.Background()); err != nil {
+
+	fmt.Println("Running restic restore...")
+	_, err = w.RunRestore(opt.Snapshot.Spec.Repository, opt.RestoreOptions)
+	if err != nil {
 		return err
 	}
-	//opt.UpsertRestoreComponentStatus(restoreOutput, err)
+	fmt.Println("Restic restore completed.")
+
+	if dumpImplementer == nil {
+		return fmt.Errorf("dumpImplementer is nil")
+	}
+
+	fmt.Println("Calling RestoreManifests...")
+	if err = dumpImplementer.RestoreManifests(context.Background()); err != nil {
+		return fmt.Errorf("failed to restore manifests: %w", err)
+	}
+	fmt.Println("RestoreManifests completed.")
+
 	return nil
 }
 
