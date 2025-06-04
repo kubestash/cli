@@ -63,9 +63,10 @@ func (m *ResourceManager) RestoreManifests(ctx context.Context) error {
 }
 
 func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes string) error {
-	fmt.Printf("#####Called restoreResourceType() function\n")
+	fmt.Printf("#####Called restoreResourceType() function for resource %s...\n", groupRes)
 	rItems, ok := m.backupResources[groupRes]
 	if !ok {
+		fmt.Println("#####No backups found....")
 		klog.V(2).Infof("no backups for %s", groupRes)
 		return nil
 	}
@@ -77,9 +78,7 @@ func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes stri
 		klog.V(2).Infof("skipping %s by filter", groupRes)
 		return nil
 	}
-
 	fmt.Println("Check group resources...%s...", groupRes)
-
 	restorable := m.getRestoreableItems(rItems)
 	for namespace, items := range restorable.SelectedItemsByNamespace {
 		if namespace != "" {
@@ -93,9 +92,7 @@ func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes stri
 			}
 		}
 	}
-
 	fmt.Printf("####Called restoreResourceType() function\n")
-
 	return nil
 }
 
@@ -252,9 +249,15 @@ func (m *ResourceManager) isNamespaced(groupRes string) (bool, error) {
 
 func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error) {
 	entries, err := m.reader.ReadDir(m.Options.DataDir)
+
+	fmt.Println("####Check DataDir inside parseItems function %s...\n", m.Options.DataDir)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to read backup directory: %w", err)
 	}
+
+	fmt.Println("####Check entries in parseItems() function....")
+	fmt.Println("####Entries %v", entries)
 
 	resources := make(map[string]*common.ResourceItems)
 	baseDir := m.Options.DataDir
