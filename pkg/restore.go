@@ -79,6 +79,9 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 			if err = common.ClearDir(opt.DataDir); err != nil {
 				return fmt.Errorf("failed to cleanup data dir %s: %w", opt.DataDir, err)
 			}
+
+			fmt.Println("####Checking the directory %s...\n", opt.DataDir)
+
 			/*
 				if err := opt.InitRestoreComponentStatus(); err != nil {
 					return fmt.Errorf("failed to update restoresession status :%w", err)
