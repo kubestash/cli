@@ -60,13 +60,6 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 				return fmt.Errorf("failed to get kubernetes client: %w", err)
 			}
 
-			/*
-				opt.RestoreSession, err = opt.GetRestoreSession()
-				if err != nil {
-					return fmt.Errorf("failed to get restoresession %s/%s: %w", opt.Namespace, opt.RestoreSessionName, err)
-				}
-			*/
-
 			opt.Snapshot, err = opt.GetSnapshot(kmapi.ObjectReference{
 				Name:      opt.SnapshotName,
 				Namespace: "demo",
@@ -82,11 +75,6 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 
 			fmt.Println("####Checking the directory %s...\n", opt.DataDir)
 
-			/*
-				if err := opt.InitRestoreComponentStatus(); err != nil {
-					return fmt.Errorf("failed to update restoresession status :%w", err)
-				}
-			*/
 			if err := opt.setupDumpImplementer(); err != nil {
 				return fmt.Errorf("failed to setup dump implementer: %w", err)
 			}
@@ -94,11 +82,7 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 			if err = opt.performRestore(); err != nil {
 				opt.UpsertRestoreComponentStatus(nil, err)
 			}
-			/*
-				if err := opt.UpdateRestoreSessionStatus(); err != nil {
-					return fmt.Errorf("failed to update restoresession status: %w", err)
-				}
-			*/
+			
 			return nil
 		},
 	}

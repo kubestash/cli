@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	_ "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"kubestash.dev/apimachinery/apis"
 	"kubestash.dev/cli/pkg/filter"
 	"log"
 	_ "log"
@@ -55,12 +56,14 @@ import (
 type viewOptions struct {
 	restConfig     *rest.Config
 	destinationDir string // user provided or, current working dir
+	dataDir        string
 
-	resticStats []storageapi.ResticStats
-	components  []string
-	exclude     []string
-	include     []string
-	paths       []string
+	SetupOptions restic.SetupOptions
+	resticStats  []storageapi.ResticStats
+	components   []string
+	exclude      []string
+	include      []string
+	paths        []string
 
 	IncludeNamespaces       []string
 	IncludeResources        []string
@@ -121,46 +124,48 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 			if err != nil {
 				return err
 			}
+			/*
+							backupStorage, err := getBackupStorage(kmapi.ObjectReference{
+								Name:      repository.Spec.StorageRef.Name,
+								Namespace: repository.Spec.StorageRef.Namespace,
+							})
+							if err != nil {
+								return err
+							}
 
-			backupStorage, err := getBackupStorage(kmapi.ObjectReference{
-				Name:      repository.Spec.StorageRef.Name,
-				Namespace: repository.Spec.StorageRef.Namespace,
-			})
-			if err != nil {
-				return err
-			}
+							/*
 
-			if err = viewOpt.prepareDestinationDir(); err != nil {
-				return err
-			}
+							if err = viewOpt.prepareDestinationDir(); err != nil {
+								return err
+							}
+				            /*
+							if backupStorage.Spec.Storage.Local != nil {
+								if !backupStorage.LocalNetworkVolume() {
+									return fmt.Errorf("unsupported type of local backend provided")
+								}
 
-			if backupStorage.Spec.Storage.Local != nil {
-				if !backupStorage.LocalNetworkVolume() {
-					return fmt.Errorf("unsupported type of local backend provided")
-				}
+								accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
+								if err != nil {
+									return err
+								}
 
-				accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
-				if err != nil {
-					return err
-				}
+								return viewOpt.runRestoreViaPod(accessorPod, snapshotName)
+							}
 
-				return viewOpt.runRestoreViaPod(accessorPod, snapshotName)
-			}
+							operatorPod, err := getOperatorPod()
+							if err != nil {
+								return err
+							}
 
-			operatorPod, err := getOperatorPod()
-			if err != nil {
-				return err
-			}
+							yes, err := isWorkloadIdentity(operatorPod)
+							if err != nil {
+								return err
+							}
 
-			yes, err := isWorkloadIdentity(operatorPod)
-			if err != nil {
-				return err
-			}
-
-			if yes {
-				return viewOpt.runRestoreViaPod(&operatorPod, snapshotName)
-			}
-
+							if yes {
+								return viewOpt.runRestoreViaPod(&operatorPod, snapshotName)
+							}
+				            /**/
 			if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
 				return err
 			}
@@ -182,6 +187,12 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 					},
 				},
 			}
+
+			viewOpt.dataDir = filepath.Join(viewOpt.SetupOptions.ScratchDir, apis.ComponentManifest)
+
+			fmt.Println("###Check dataDir %s", viewOpt.dataDir)
+
+			fmt.Println("#####Changes applied0...")
 
 			// apply nice, ionice settings from env
 			setupOptions.Nice, err = v1.NiceSettingsFromEnv()
@@ -227,18 +238,33 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 
 				viewOpt.resticStats = comp.ResticStats
 
-				// run restore inside docker
-				if err = viewOpt.runRestoreViaDocker(filepath.Join(DestinationDir, snapshotName, compName), restoreArgs); err != nil {
-					return err
-				}
-				klog.Infof("Component: %v of Snapshot %s/%s restored in path %s", compName, srcNamespace, snapshotName, viewOpt.destinationDir)
-
+				/*
+								// run restore inside docker
+								if err = viewOpt.runRestoreViaDocker(filepath.Join(DestinationDir, snapshotName, compName), restoreArgs); err != nil {
+									return err
+								}
+								klog.Infof("Component: %v of Snapshot %s/%s restored in path %s", compName, srcNamespace, snapshotName, viewOpt.destinationDir)
+				                /**/
 				for _, resticStat := range viewOpt.resticStats {
-					err := viewOpt.listFilesViaDocker(resticStat.Id) // Using .Id as seen in runRestoreViaDocker
-					if err != nil {
-						klog.Errorf("Failed to list files: %v", err)
-						continue
+					restoreOpts := restic.RestoreOptions{
+						Snapshots: []string{resticStat.Id},
+						// directory to restore into
 					}
+					fmt.Println("Running restic restore...")
+					_, err = w.RunRestore(snapshot.Spec.Repository, restoreOpts)
+					if err != nil {
+						return err
+					}
+					fmt.Println("Restic restore completed.")
+					/*
+						files, err := viewOpt.listFilesViaDocker(resticStat.Id) // Using .Id as seen in runRestoreViaDocker
+						if err != nil {
+							klog.Errorf("Failed to list files: %v", err)
+							continue
+						}
+						filteredFiles := viewOpt.filterFiles(resticStat.Id, files)
+						viewOpt.showInTreeFormat(filteredFiles)
+					    /**/
 				}
 			}
 
@@ -256,8 +282,8 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 
 	cmd.MarkFlagsMutuallyExclusive("exclude", "include")
 
-	cmd.Flags().StringVar(&opt.SetupOptions.ScratchDir, "scratch-dir", opt.SetupOptions.ScratchDir, "Temporary directory")
-	cmd.Flags().BoolVar(&opt.SetupOptions.EnableCache, "enable-cache", opt.SetupOptions.EnableCache, "Specify whether to enable caching for restic")
+	cmd.Flags().StringVar(&viewOpt.SetupOptions.ScratchDir, "scratch-dir", viewOpt.SetupOptions.ScratchDir, "Temporary directory")
+	cmd.Flags().BoolVar(&viewOpt.SetupOptions.EnableCache, "enable-cache", viewOpt.SetupOptions.EnableCache, "Specify whether to enable caching for restic")
 
 	cmd.Flags().StringSliceVar(&viewOpt.ANDedLabelSelector, "and-label-selectors", viewOpt.ANDedLabelSelector, "A set of labels, all of which need to be matched to filter the resources.")
 	cmd.Flags().StringSliceVar(&viewOpt.ORedLabelSelector, "or-label-selectors", viewOpt.ORedLabelSelector, "A set of labels, a subset of which need to be matched to filter the resources.")
@@ -513,7 +539,7 @@ func (opt viewOptions) shouldShow(snapshotID, file string) bool {
 	if passed == false {
 		return false
 	}
-	labels := opt.extractLabels(snapshotID, "/kubestash-tmp/manifest/"+file)
+	labels := opt.extractLabels(snapshotID, "/"+opt.dataDir+"/"+file)
 	return opt.matchLabels(labels)
 }
 
@@ -556,7 +582,7 @@ func (opt *viewOptions) filterFiles(snapshotID string, files []string) []string 
 		if extension != ".yaml" && extension != ".json" {
 			continue
 		}
-		prefixTrimmedFile := strings.TrimPrefix(file, "/kubestash-tmp/manifest/")
+		prefixTrimmedFile := strings.TrimPrefix(file, "/"+opt.dataDir+"/")
 		if prefixTrimmedFile == snapshotID {
 			break
 		}
@@ -567,14 +593,14 @@ func (opt *viewOptions) filterFiles(snapshotID string, files []string) []string 
 	return filteredFiles
 }
 
-func (opt *viewOptions) listFilesViaDocker(snapshotID string) error {
+func (opt *viewOptions) listFilesViaDocker(snapshotID string) ([]string, error) {
 	resourceFilter := filter.NewIncludeExclude().Includes(opt.IncludeResources...).Excludes(opt.ExcludeResources...)
 	namespaceFilter := filter.NewIncludeExclude().Includes(opt.IncludeNamespaces...).Excludes(opt.ExcludeNamespaces...)
 	globalIncludeExclude = filter.NewGlobalIncludeExclude(resourceFilter, namespaceFilter, opt.IncludeClusterResources)
 
 	currentUser, err := user.Current()
 	if err != nil {
-		return fmt.Errorf("failed to get current user: %v", err)
+		return nil, fmt.Errorf("failed to get current user: %v", err)
 	}
 	args := []string{
 		"run",
@@ -593,11 +619,9 @@ func (opt *viewOptions) listFilesViaDocker(snapshotID string) error {
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		klog.Errorf("docker command failed: %v\nOutput: %s", err, string(output))
-		return err
+		return nil, err
 	}
 	klog.Infoln("###Docker command output:", string(output))
 	files := strings.Split(string(output), "\n")
-	filteredFiles := opt.filterFiles(snapshotID, files)
-	opt.showInTreeFormat(filteredFiles)
-	return nil
+	return files, nil
 }

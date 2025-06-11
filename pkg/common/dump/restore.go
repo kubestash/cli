@@ -76,6 +76,7 @@ func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes stri
 	}
 	if !m.filter.ShouldIncludeResource(groupRes, ns) {
 		klog.V(2).Infof("skipping %s by filter", groupRes)
+		fmt.Println("#####Skipping resource by filter...")
 		return nil
 	}
 	fmt.Println("Check group resources...%s...", groupRes)

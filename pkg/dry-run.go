@@ -38,7 +38,6 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/list"
 	"github.com/spf13/cobra"
-	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -92,6 +91,8 @@ func NewCmdDryRun(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 				return err
 			}
 
+			fmt.Println("Check source namespace: %s", srcNamespace)
+
 			klient, err = pkg.NewUncachedClient()
 			if err != nil {
 				return err
@@ -112,46 +113,47 @@ func NewCmdDryRun(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 			if err != nil {
 				return err
 			}
-
-			backupStorage, err := getBackupStorage(kmapi.ObjectReference{
-				Name:      repository.Spec.StorageRef.Name,
-				Namespace: repository.Spec.StorageRef.Namespace,
-			})
-			if err != nil {
-				return err
-			}
+			/*
+				backupStorage, err := getBackupStorage(kmapi.ObjectReference{
+					Name:      repository.Spec.StorageRef.Name,
+					Namespace: repository.Spec.StorageRef.Namespace,
+				})
+				if err != nil {
+					return err
+				}
+			*/
 
 			if err = dryRunOpt.prepareDestinationDir(); err != nil {
 				return err
 			}
+			/*
+						if backupStorage.Spec.Storage.Local != nil {
+							if !backupStorage.LocalNetworkVolume() {
+								return fmt.Errorf("unsupported type of local backend provided")
+							}
 
-			if backupStorage.Spec.Storage.Local != nil {
-				if !backupStorage.LocalNetworkVolume() {
-					return fmt.Errorf("unsupported type of local backend provided")
-				}
+							accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
+							if err != nil {
+								return err
+							}
 
-				accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
-				if err != nil {
-					return err
-				}
+							return dryRunOpt.runRestoreViaPod(accessorPod, snapshotName)
+						}
 
-				return dryRunOpt.runRestoreViaPod(accessorPod, snapshotName)
-			}
+						operatorPod, err := getOperatorPod()
+						if err != nil {
+							return err
+						}
 
-			operatorPod, err := getOperatorPod()
-			if err != nil {
-				return err
-			}
+						yes, err := isWorkloadIdentity(operatorPod)
+						if err != nil {
+							return err
+						}
 
-			yes, err := isWorkloadIdentity(operatorPod)
-			if err != nil {
-				return err
-			}
-
-			if yes {
-				return dryRunOpt.runRestoreViaPod(&operatorPod, snapshotName)
-			}
-
+						if yes {
+							return dryRunOpt.runRestoreViaPod(&operatorPod, snapshotName)
+						}
+			            /**/
 			if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
 				return err
 			}
@@ -219,11 +221,12 @@ func NewCmdDryRun(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 				dryRunOpt.resticStats = comp.ResticStats
 
 				// run restore inside docker
-				if err = dryRunOpt.runRestoreViaDocker(filepath.Join(DestinationDir, snapshotName, compName), restoreArgs); err != nil {
-					return err
-				}
-				klog.Infof("Component: %v of Snapshot %s/%s restored in path %s", compName, srcNamespace, snapshotName, dryRunOpt.destinationDir)
-
+				/*
+								if err = dryRunOpt.runRestoreViaDocker(filepath.Join(DestinationDir, snapshotName, compName), restoreArgs); err != nil {
+									return err
+								}
+								klog.Infof("Component: %v of Snapshot %s/%s restored in path %s", compName, srcNamespace, snapshotName, dryRunOpt.destinationDir)
+				                /**/
 				for _, resticStat := range dryRunOpt.resticStats {
 					err := dryRunOpt.listFilesViaDocker(resticStat.Id) // Using .Id as seen in runRestoreViaDocker
 					if err != nil {
@@ -262,65 +265,6 @@ func NewCmdDryRun(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 	return cmd
 }
 
-func (opt *dryRunOptions) runRestoreViaPod(pod *core.Pod, snapshotName string) error {
-	if err := opt.runCmdViaPod(pod, snapshotName); err != nil {
-		return err
-	}
-
-	if err := opt.copyDownloadedDataToDestination(pod); err != nil {
-		return err
-	}
-
-	if err := opt.clearDataFromPod(pod); err != nil {
-		return err
-	}
-
-	klog.Infof("Snapshot %s/%s restored in path %s", srcNamespace, snapshotName, opt.destinationDir)
-	return nil
-}
-
-func (opt *dryRunOptions) runCmdViaPod(pod *core.Pod, snapshotName string) error {
-	command := []string{
-		"/kubestash",
-		"download", snapshotName,
-		"--namespace", srcNamespace,
-		"--destination", SnapshotDownloadDir,
-	}
-
-	if len(opt.components) != 0 {
-		command = append(command, []string{"--components", strings.Join(opt.components, ",")}...)
-	}
-
-	if len(opt.exclude) != 0 {
-		command = append(command, []string{"--exclude", strings.Join(opt.exclude, ",")}...)
-	}
-
-	if len(opt.include) != 0 {
-		command = append(command, []string{"--include", strings.Join(opt.include, ",")}...)
-	}
-
-	out, err := execOnPod(opt.restConfig, pod, command)
-	if err != nil {
-		return err
-	}
-	klog.Infoln("Output:", out)
-	return nil
-}
-
-func (opt *dryRunOptions) copyDownloadedDataToDestination(pod *core.Pod) error {
-	_, err := exec.Command(CmdKubectl, "cp", fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, SnapshotDownloadDir), opt.destinationDir).CombinedOutput()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (opt *dryRunOptions) clearDataFromPod(pod *core.Pod) error {
-	cmd := []string{"rm", "-rf", SnapshotDownloadDir}
-	_, err := execOnPod(opt.restConfig, pod, cmd)
-	return err
-}
-
 func (opt *dryRunOptions) prepareDestinationDir() (err error) {
 	// if destination flag is not specified, restore in current directory
 	if opt.destinationDir == "" {
@@ -329,48 +273,6 @@ func (opt *dryRunOptions) prepareDestinationDir() (err error) {
 		}
 	}
 	return os.MkdirAll(opt.destinationDir, 0o755)
-}
-
-func (opt *dryRunOptions) runRestoreViaDocker(destination string, args []string) error {
-	// get current user
-	currentUser, err := user.Current()
-	if err != nil {
-		return err
-	}
-	restoreArgs := []string{
-		"run",
-		"--rm",
-		"-u", currentUser.Uid,
-		"-v", ScratchDir + ":" + ScratchDir,
-		"-v", opt.destinationDir + ":" + DestinationDir,
-		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
-		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
-		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
-		imgRestic.ToContainerImage(),
-	}
-
-	restoreArgs = append(restoreArgs, args...)
-
-	for _, include := range opt.include {
-		restoreArgs = append(restoreArgs, "--include")
-		restoreArgs = append(restoreArgs, include)
-	}
-
-	for _, exclude := range opt.exclude {
-		restoreArgs = append(restoreArgs, "--exclude")
-		restoreArgs = append(restoreArgs, exclude)
-	}
-
-	for _, resticStat := range opt.resticStats {
-		rargs := append(restoreArgs, resticStat.Id, "--target", destination)
-		klog.Infoln("Running docker with args:", rargs)
-		out, err := exec.Command(CmdDocker, rargs...).CombinedOutput()
-		klog.Infoln("Output:", string(out))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (opt *dryRunOptions) getFileContentViaDocker(snapshotID, filePath string) (*unstructured.Unstructured, error) {
@@ -565,7 +467,7 @@ func (opt *dryRunOptions) dumpFilteredFilesToLocal(snapshotID string, files []st
 		}
 
 		// Write to destination directory, preserving directory structure
-		targetPath := filepath.Join(opt.destinationDir, file)
+		targetPath := filepath.Join(opt.destinationDir, snapshotID, file)
 		if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
 			klog.Errorf("failed to create directory for %s: %v", targetPath, err)
 			continue
@@ -576,7 +478,7 @@ func (opt *dryRunOptions) dumpFilteredFilesToLocal(snapshotID string, files []st
 			continue
 		}
 
-		klog.Infof("Downloaded: %s", targetPath)
+		klog.Infof("Dump Directory: %s", targetPath)
 	}
 	return nil
 }
