@@ -23,7 +23,6 @@ import (
 	_ "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"kubestash.dev/apimachinery/apis"
 	"kubestash.dev/cli/pkg/filter"
-	"log"
 	_ "log"
 	"os"
 	"os/exec"
@@ -246,25 +245,12 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 								klog.Infof("Component: %v of Snapshot %s/%s restored in path %s", compName, srcNamespace, snapshotName, viewOpt.destinationDir)
 				                /**/
 				for _, resticStat := range viewOpt.resticStats {
-					restoreOpts := restic.RestoreOptions{
-						Snapshots: []string{resticStat.Id},
-						// directory to restore into
-					}
-					fmt.Println("Running restic restore...")
-					_, err = w.RunRestore(snapshot.Spec.Repository, restoreOpts)
+					files, err := viewOpt.listFilesViaDockerThenFilter(resticStat.Id) // Using .Id as seen in runRestoreViaDocker
 					if err != nil {
-						return err
+						klog.Errorf("Failed to list files: %v", err)
+						continue
 					}
-					fmt.Println("Restic restore completed.")
-					/*
-						files, err := viewOpt.listFilesViaDocker(resticStat.Id) // Using .Id as seen in runRestoreViaDocker
-						if err != nil {
-							klog.Errorf("Failed to list files: %v", err)
-							continue
-						}
-						filteredFiles := viewOpt.filterFiles(resticStat.Id, files)
-						viewOpt.showInTreeFormat(filteredFiles)
-					    /**/
+					viewOpt.showInTreeFormat(files)
 				}
 			}
 
@@ -429,54 +415,27 @@ func parseBytesToUnstructured(byteData []byte) (*unstructured.Unstructured, erro
 	return &obj, nil
 }
 
-func (opt *viewOptions) getFileContentViaDocker(snapshotID, filePath string) (*unstructured.Unstructured, error) {
-	currentUser, err := user.Current()
+func yamlToUnstructured(yamlStr string) (*unstructured.Unstructured, error) {
+	// Step 1: Convert YAML to JSON (since unstructured needs JSON format)
+	jsonData, err := yaml.YAMLToJSON([]byte(yamlStr))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current user: %v", err)
+		return nil, fmt.Errorf("failed to convert YAML to JSON: %w", err)
 	}
-	args := []string{
-		"run",
-		"--rm",
-		"-u", currentUser.Uid,
-		"-v", ScratchDir + ":" + ScratchDir,
-		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
-		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
-		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
-		"--env", "RESTIC_CACHE_DIR=" + ScratchDir,
-		imgRestic.ToContainerImage(),
-		"dump", // dump command to show content of a file
-		snapshotID,
-		filePath, // file path within the snapshot
-	}
-	klog.Infoln("###Inside the file read from container function\n")
-	//klog.Infoln("Running docker with args:", args)
-	cmd := exec.Command(CmdDocker, args...)
-	dumpOutput, _ := cmd.CombinedOutput()
-	klog.Infoln("Output:", string(dumpOutput))
-	lines := strings.Split(string(dumpOutput), "\n")
-	yamlStart := -1
-	for i, line := range lines {
-		if strings.HasPrefix(line, "apiVersion:") {
-			yamlStart = i
-			break
-		}
-	}
-	if yamlStart == -1 {
-		log.Fatalf("Could not find start of YAML content in output:\n%s", string(dumpOutput))
-	}
-	clean := strings.Join(lines[yamlStart:], "\n")
-	jsonBytes, err := yaml.YAMLToJSON([]byte(clean))
+
+	// Step 2: Convert JSON to Unstructured
+	obj := &unstructured.Unstructured{}
+	err = obj.UnmarshalJSON(jsonData)
 	if err != nil {
-		log.Fatalf("YAMLToJSON failed: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal JSON into unstructured: %w", err)
 	}
-	//klog.Infoln("####Output\n", clean)
-	return parseBytesToUnstructured(jsonBytes)
+
+	return obj, nil
 }
 
-func (viewOpt *viewOptions) extractLabels(snapshotID, fileName string) []string {
-	unstructuredObject, err := viewOpt.getFileContentViaDocker(snapshotID, fileName)
+func (viewOpt *viewOptions) extractLabels(yamlStr string) []string {
+	unstructuredObject, err := yamlToUnstructured(yamlStr)
 	if err != nil {
-		fmt.Printf("Error reading file %s: %s\n", fileName, err)
+		fmt.Printf("Error getting unstructured file: %s\n", err)
 	}
 	//klog.Infoln("###Unstructered Object string view", unstructuredObject)
 	return labelsToStrings(unstructuredObject.GetLabels())
@@ -520,7 +479,7 @@ func labelsToStrings(labels map[string]string) []string {
 	return out
 }
 
-func (opt viewOptions) shouldShow(snapshotID, file string) bool {
+func (opt viewOptions) shouldShow(file string) bool {
 	parts := strings.Split(file, "/")
 	parts[len(parts)-1] = strings.TrimSuffix(parts[len(parts)-1], filepath.Ext(parts[len(parts)-1]))
 	resource := getResourceFromGroupResource(parts[0])
@@ -533,14 +492,10 @@ func (opt viewOptions) shouldShow(snapshotID, file string) bool {
 	passed := false
 	if namespace == "" && globalIncludeExclude.ShouldIncludeResource(resource, false) {
 		passed = true
-	} else if globalIncludeExclude.ShouldIncludeResource(resource, true) && globalIncludeExclude.ShouldIncludeNamespace(namespace) {
+	} else if namespace != "" && globalIncludeExclude.ShouldIncludeResource(resource, true) && globalIncludeExclude.ShouldIncludeNamespace(namespace) {
 		passed = true
 	}
-	if passed == false {
-		return false
-	}
-	labels := opt.extractLabels(snapshotID, "/"+opt.dataDir+"/"+file)
-	return opt.matchLabels(labels)
+	return passed
 }
 
 func (opt *viewOptions) showInTreeFormat(files []string) {
@@ -575,25 +530,28 @@ func (opt *viewOptions) showInTreeFormat(files []string) {
 	fmt.Println(List.Render())
 }
 
-func (opt *viewOptions) filterFiles(snapshotID string, files []string) []string {
-	filteredFiles := []string{}
-	for _, file := range files {
-		extension := filepath.Ext(file)
-		if extension != ".yaml" && extension != ".json" {
-			continue
+/*
+	func (opt *viewOptions) filterFiles(snapshotID string, files []string) []string {
+		filteredFiles := []string{}
+		for _, file := range files {
+			extension := filepath.Ext(file)
+			if extension != ".yaml" && extension != ".json" {
+				continue
+			}
+			prefixTrimmedFile := strings.TrimPrefix(file, "/"+opt.dataDir+"/")
+			if prefixTrimmedFile == snapshotID {
+				break
+			}
+			if opt.shouldShow(prefixTrimmedFile) {
+				filteredFiles = append(filteredFiles, "/"+opt.dataDir+"/"+prefixTrimmedFile)
+			}
 		}
-		prefixTrimmedFile := strings.TrimPrefix(file, "/"+opt.dataDir+"/")
-		if prefixTrimmedFile == snapshotID {
-			break
-		}
-		if opt.shouldShow(snapshotID, prefixTrimmedFile) {
-			filteredFiles = append(filteredFiles, prefixTrimmedFile)
-		}
+		return filteredFiles
 	}
-	return filteredFiles
-}
 
-func (opt *viewOptions) listFilesViaDocker(snapshotID string) ([]string, error) {
+/*
+*/
+func (opt *viewOptions) listFilesViaDockerThenFilter(snapshotID string) ([]string, error) {
 	resourceFilter := filter.NewIncludeExclude().Includes(opt.IncludeResources...).Excludes(opt.ExcludeResources...)
 	namespaceFilter := filter.NewIncludeExclude().Includes(opt.IncludeNamespaces...).Excludes(opt.ExcludeNamespaces...)
 	globalIncludeExclude = filter.NewGlobalIncludeExclude(resourceFilter, namespaceFilter, opt.IncludeClusterResources)
@@ -602,26 +560,87 @@ func (opt *viewOptions) listFilesViaDocker(snapshotID string) ([]string, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current user: %v", err)
 	}
-	args := []string{
-		"run",
-		"--rm",
-		"-u", currentUser.Uid,
-		"-v", ScratchDir + ":" + ScratchDir,
-		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
-		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
-		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
-		imgRestic.ToContainerImage(),
-		"ls",
-		snapshotID,
-	}
-	klog.Infoln("Running docker with args:", args)
-	cmd := exec.Command(CmdDocker, args...)
-	output, err := cmd.CombinedOutput()
+	containerName := "snapshot-container"
+	restoreDir := "/tmp/restore"
+	// Check if container exists
+	checkCmd := exec.Command(CmdDocker, "ps", "-a", "-f", "name="+containerName, "--format", "{{.Names}}")
+	out, err := checkCmd.CombinedOutput()
 	if err != nil {
-		klog.Errorf("docker command failed: %v\nOutput: %s", err, string(output))
-		return nil, err
+		return nil, fmt.Errorf("failed to check existing containers: %v", err)
 	}
-	klog.Infoln("###Docker command output:", string(output))
-	files := strings.Split(string(output), "\n")
-	return files, nil
+	containerExists := strings.Contains(string(out), containerName)
+	// If container doesn't exist, create it
+	if !containerExists {
+		restoreArgs := []string{
+			"run", "-d",
+			"--name", containerName,
+			"-u", currentUser.Uid,
+			"--env", fmt.Sprintf("%s=%s", EnvHttpProxy, os.Getenv(EnvHttpProxy)),
+			"--env", fmt.Sprintf("%s=%s", EnvHttpsProxy, os.Getenv(EnvHttpsProxy)),
+			"--env-file", filepath.Join(ConfigDir, ResticEnvs),
+			"--entrypoint", "sh",
+			imgRestic.ToContainerImage(),
+			"-c", "sleep infinity",
+		}
+		restoreCmd := exec.Command(CmdDocker, restoreArgs...)
+		restoreOut, err := restoreCmd.CombinedOutput()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create container: %v\nOutput: %s", err, string(restoreOut))
+		}
+	}
+	// Ensure cleanup: remove the container at the end
+	defer func() {
+		_ = exec.Command(CmdDocker, "rm", "-f", containerName).Run()
+	}()
+
+	// Step 1: Restore snapshot inside container
+	restoreSnapshotCmd := exec.Command(
+		CmdDocker, "exec", "-u", currentUser.Uid,
+		containerName,
+		"restic", "restore", snapshotID, "--target", restoreDir,
+	)
+	restoreOutput, err := restoreSnapshotCmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("failed to restore snapshot: %v\nOutput: %s", err, string(restoreOutput))
+	}
+
+	// Step 2: List files under /restore inside the container
+	findCmd := exec.Command(
+		CmdDocker, "exec", "-u", currentUser.Uid,
+		containerName,
+		"find", restoreDir, "-type", "f", "-name", "*.yaml",
+	)
+	findOutput, err := findCmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list yaml files: %v\nOutput: %s", err, string(findOutput))
+	}
+	files := strings.Split(strings.TrimSpace(string(findOutput)), "\n")
+
+	// Step 3: Print each YAML file content
+	filteredFiles := []string{}
+	for _, fullPath := range files {
+		if strings.TrimSpace(fullPath) == "" {
+			continue
+		}
+		catCmd := exec.Command(
+			CmdDocker, "exec", "-u", currentUser.Uid,
+			containerName,
+			"cat", fullPath,
+		)
+		content, err := catCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("WARN: failed to read file %s: %v\nOutput: %s\n", fullPath, err, string(content))
+			continue
+		}
+		labels := opt.extractLabels(string(content))
+		fmt.Printf("-----\n{filename: %s,\nfilecontent:\n%s \nlabels: %v \n}\n", fullPath, string(content), labels)
+		if opt.matchLabels(labels) {
+			fullPath = strings.TrimPrefix(fullPath, filepath.Join(restoreDir, opt.dataDir))
+			if opt.shouldShow(fullPath) {
+				filteredFiles = append(filteredFiles, fullPath)
+			}
+		}
+	}
+
+	return filteredFiles, nil
 }
