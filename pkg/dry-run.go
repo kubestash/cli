@@ -21,7 +21,6 @@ import (
 	"fmt"
 	_ "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"kubestash.dev/cli/pkg/filter"
-	"log"
 	_ "log"
 	"os"
 	"os/exec"
@@ -32,12 +31,8 @@ import (
 
 	_ "encoding/json"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	_ "k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/yaml"
-
-	"github.com/jedib0t/go-pretty/v6/list"
 	"github.com/spf13/cobra"
+	_ "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -53,11 +48,12 @@ type dryRunOptions struct {
 	restConfig     *rest.Config
 	destinationDir string // user provided or, current working dir
 
-	resticStats []storageapi.ResticStats
-	components  []string
-	exclude     []string
-	include     []string
-	paths       []string
+	resticStats  []storageapi.ResticStats
+	components   []string
+	exclude      []string
+	include      []string
+	paths        []string
+	SetupOptions restic.SetupOptions
 
 	IncludeNamespaces       []string
 	IncludeResources        []string
@@ -154,16 +150,17 @@ func NewCmdDryRun(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 							return dryRunOpt.runRestoreViaPod(&operatorPod, snapshotName)
 						}
 			            /**/
-			if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
-				return err
-			}
-			defer func() {
-				err := os.RemoveAll(ScratchDir)
-				if err != nil {
-					klog.Errorf("failed to remove scratch dir. Reason: %v", err)
-				}
-			}()
-
+			/*
+						if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
+							return err
+						}
+						defer func() {
+							err := os.RemoveAll(ScratchDir)
+							if err != nil {
+								klog.Errorf("failed to remove scratch dir. Reason: %v", err)
+							}
+						}()
+			            /**/
 			setupOptions := &restic.SetupOptions{
 				Client:     klient,
 				ScratchDir: ScratchDir,
@@ -228,7 +225,7 @@ func NewCmdDryRun(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 								klog.Infof("Component: %v of Snapshot %s/%s restored in path %s", compName, srcNamespace, snapshotName, dryRunOpt.destinationDir)
 				                /**/
 				for _, resticStat := range dryRunOpt.resticStats {
-					err := dryRunOpt.listFilesViaDocker(resticStat.Id) // Using .Id as seen in runRestoreViaDocker
+					err := dryRunOpt.listFilesViaDockerThenFilterThenDump(resticStat.Id) // Using .Id as seen in runRestoreViaDocker
 					if err != nil {
 						klog.Errorf("Failed to list files: %v", err)
 						continue
@@ -250,7 +247,7 @@ func NewCmdDryRun(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 
 	cmd.MarkFlagsMutuallyExclusive("exclude", "include")
 
-	cmd.Flags().StringVar(&opt.SetupOptions.ScratchDir, "scratch-dir", opt.SetupOptions.ScratchDir, "Temporary directory")
+	cmd.Flags().StringVar(&opt.SetupOptions.ScratchDir, "scratch-dir", dryRunOpt.SetupOptions.ScratchDir, "Temporary directory")
 	cmd.Flags().BoolVar(&opt.SetupOptions.EnableCache, "enable-cache", opt.SetupOptions.EnableCache, "Specify whether to enable caching for restic")
 
 	cmd.Flags().StringSliceVar(&dryRunOpt.ANDedLabelSelector, "and-label-selectors", dryRunOpt.ANDedLabelSelector, "A set of labels, all of which need to be matched to filter the resources.")
@@ -275,64 +272,20 @@ func (opt *dryRunOptions) prepareDestinationDir() (err error) {
 	return os.MkdirAll(opt.destinationDir, 0o755)
 }
 
-func (opt *dryRunOptions) getFileContentViaDocker(snapshotID, filePath string) (*unstructured.Unstructured, error) {
-	currentUser, err := user.Current()
+func (opt *dryRunOptions) extractLabels(yamlStr string) []string {
+	unstructuredObject, err := yamlToUnstructured(yamlStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current user: %v", err)
+		fmt.Printf("Error getting unstructured file: %s\n", err)
 	}
-	args := []string{
-		"run",
-		"--rm",
-		"-u", currentUser.Uid,
-		"-v", ScratchDir + ":" + ScratchDir,
-		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
-		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
-		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
-		"--env", "RESTIC_CACHE_DIR=" + ScratchDir,
-		imgRestic.ToContainerImage(),
-		"dump", // dump command to show content of a file
-		snapshotID,
-		filePath, // file path within the snapshot
-	}
-	klog.Infoln("###Inside the file read from container function\n")
-	//klog.Infoln("Running docker with args:", args)
-	cmd := exec.Command(CmdDocker, args...)
-	dumpOutput, _ := cmd.CombinedOutput()
-	klog.Infoln("Output:", string(dumpOutput))
-	lines := strings.Split(string(dumpOutput), "\n")
-	yamlStart := -1
-	for i, line := range lines {
-		if strings.HasPrefix(line, "apiVersion:") {
-			yamlStart = i
-			break
-		}
-	}
-	if yamlStart == -1 {
-		log.Fatalf("Could not find start of YAML content in output:\n%s", string(dumpOutput))
-	}
-	clean := strings.Join(lines[yamlStart:], "\n")
-	jsonBytes, err := yaml.YAMLToJSON([]byte(clean))
-	if err != nil {
-		log.Fatalf("YAMLToJSON failed: %v", err)
-	}
-	//klog.Infoln("####Output\n", clean)
-	return parseBytesToUnstructured(jsonBytes)
-}
-
-func (dryRunOpt *dryRunOptions) extractLabels(snapshotID, fileName string) []string {
-	unstructuredObject, err := dryRunOpt.getFileContentViaDocker(snapshotID, fileName)
-	if err != nil {
-		fmt.Printf("Error reading file %s: %s\n", fileName, err)
-	}
-	//klog.Infoln("###Unstructered Object string dryRun", unstructuredObject)
+	//klog.Infoln("###Unstructered Object string view", unstructuredObject)
 	return labelsToStrings(unstructuredObject.GetLabels())
 }
 
-func (dryRunOpt *dryRunOptions) matchLabels(labels []string) bool {
-	return matchesAll(labels, dryRunOpt.ANDedLabelSelector) && matchesAny(labels, dryRunOpt.ORedLabelSelector)
+func (opt *dryRunOptions) matchLabels(labels []string) bool {
+	return matchesAll(labels, opt.ANDedLabelSelector) && matchesAny(labels, opt.ORedLabelSelector)
 }
 
-func (opt dryRunOptions) shouldShow(snapshotID, file string) bool {
+func (opt *dryRunOptions) shouldShow(file string) bool {
 	parts := strings.Split(file, "/")
 	parts[len(parts)-1] = strings.TrimSuffix(parts[len(parts)-1], filepath.Ext(parts[len(parts)-1]))
 	resource := getResourceFromGroupResource(parts[0])
@@ -345,67 +298,13 @@ func (opt dryRunOptions) shouldShow(snapshotID, file string) bool {
 	passed := false
 	if namespace == "" && globalIncludeExclude.ShouldIncludeResource(resource, false) {
 		passed = true
-	} else if globalIncludeExclude.ShouldIncludeResource(resource, true) && globalIncludeExclude.ShouldIncludeNamespace(namespace) {
+	} else if namespace != "" && globalIncludeExclude.ShouldIncludeResource(resource, true) && globalIncludeExclude.ShouldIncludeNamespace(namespace) {
 		passed = true
 	}
-	if passed == false {
-		return false
-	}
-	labels := opt.extractLabels(snapshotID, "/kubestash-tmp/manifest/"+file)
-	return opt.matchLabels(labels)
+	return passed
 }
 
-func (opt *dryRunOptions) showInTreeFormat(files []string) {
-	List := list.NewWriter()
-	List.SetStyle(list.StyleConnectedLight) // This gives the ├─ └─ style
-	List.AppendItem(".")                    // Root node
-	seen := make(map[string]bool)
-	for _, file := range files {
-		extension := filepath.Ext(file)
-		if extension != ".yaml" && extension != ".json" {
-			continue
-		}
-		parts := strings.Split(file, "/")
-		currentPath := ""
-		for i, part := range parts {
-			currentPath += part
-			if !seen[currentPath] {
-				// Set indentation level
-				for lvl := 0; lvl < i; lvl++ {
-					List.Indent()
-				}
-				List.AppendItem(part)
-				seen[currentPath] = true
-				// Reset indentation
-				for lvl := 0; lvl < i; lvl++ {
-					List.UnIndent()
-				}
-			}
-			currentPath += "/"
-		}
-	}
-	fmt.Println(List.Render())
-}
-
-func (opt *dryRunOptions) filterFiles(snapshotID string, files []string) []string {
-	filteredFiles := []string{}
-	for _, file := range files {
-		extension := filepath.Ext(file)
-		if extension != ".yaml" && extension != ".json" {
-			continue
-		}
-		prefixTrimmedFile := strings.TrimPrefix(file, "/kubestash-tmp/manifest/")
-		if prefixTrimmedFile == snapshotID {
-			break
-		}
-		if opt.shouldShow(snapshotID, prefixTrimmedFile) {
-			filteredFiles = append(filteredFiles, prefixTrimmedFile)
-		}
-	}
-	return filteredFiles
-}
-
-func (opt *dryRunOptions) listFilesViaDocker(snapshotID string) error {
+func (opt *dryRunOptions) listFilesViaDockerThenFilterThenDump(snapshotID string) error {
 	resourceFilter := filter.NewIncludeExclude().Includes(opt.IncludeResources...).Excludes(opt.ExcludeResources...)
 	namespaceFilter := filter.NewIncludeExclude().Includes(opt.IncludeNamespaces...).Excludes(opt.ExcludeNamespaces...)
 	globalIncludeExclude = filter.NewGlobalIncludeExclude(resourceFilter, namespaceFilter, opt.IncludeClusterResources)
@@ -414,29 +313,96 @@ func (opt *dryRunOptions) listFilesViaDocker(snapshotID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get current user: %v", err)
 	}
-	args := []string{
-		"run",
-		"--rm",
-		"-u", currentUser.Uid,
-		"-v", ScratchDir + ":" + ScratchDir,
-		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
-		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
-		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
-		imgRestic.ToContainerImage(),
-		"ls",
-		snapshotID,
-	}
-	klog.Infoln("Running docker with args:", args)
-	cmd := exec.Command(CmdDocker, args...)
-	output, err := cmd.CombinedOutput()
+	containerName := "snapshot-container"
+	restoreDir := "/tmp/restore"
+	// Check if container exists
+	checkCmd := exec.Command(CmdDocker, "ps", "-a", "-f", "name="+containerName, "--format", "{{.Names}}")
+	out, err := checkCmd.CombinedOutput()
 	if err != nil {
-		klog.Errorf("docker command failed: %v\nOutput: %s", err, string(output))
-		return err
+		return fmt.Errorf("failed to check existing containers: %v", err)
 	}
-	klog.Infoln("###Docker command output:", string(output))
-	files := strings.Split(string(output), "\n")
-	filteredFiles := opt.filterFiles(snapshotID, files)
-	opt.dumpFilteredFilesToLocal(snapshotID, filteredFiles)
+	containerExists := strings.Contains(string(out), containerName)
+	// If container doesn't exist, create it
+	if !containerExists {
+		restoreArgs := []string{
+			"run", "-d",
+			"--name", containerName,
+			"-u", currentUser.Uid,
+			"--env", fmt.Sprintf("%s=%s", EnvHttpProxy, os.Getenv(EnvHttpProxy)),
+			"--env", fmt.Sprintf("%s=%s", EnvHttpsProxy, os.Getenv(EnvHttpsProxy)),
+			"--env-file", filepath.Join(ConfigDir, ResticEnvs),
+			"--entrypoint", "sh",
+			imgRestic.ToContainerImage(),
+			"-c", "sleep infinity",
+		}
+		restoreCmd := exec.Command(CmdDocker, restoreArgs...)
+		restoreOut, err := restoreCmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("failed to create container: %v\nOutput: %s", err, string(restoreOut))
+		}
+	}
+	// Ensure cleanup: remove the container at the end
+	defer func() {
+		_ = exec.Command(CmdDocker, "rm", "-f", containerName).Run()
+	}()
+
+	// Step 1: Restore snapshot inside container
+	restoreSnapshotCmd := exec.Command(
+		CmdDocker, "exec", "-u", currentUser.Uid,
+		containerName,
+		"restic", "restore", snapshotID, "--target", restoreDir,
+	)
+	restoreOutput, err := restoreSnapshotCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to restore snapshot: %v\nOutput: %s", err, string(restoreOutput))
+	}
+
+	// Step 2: List files under /restore inside the container
+	findCmd := exec.Command(
+		CmdDocker, "exec", "-u", currentUser.Uid,
+		containerName,
+		"find", restoreDir, "-type", "f", "-name", "*.yaml",
+	)
+	findOutput, err := findCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to list yaml files: %v\nOutput: %s", err, string(findOutput))
+	}
+	files := strings.Split(strings.TrimSpace(string(findOutput)), "\n")
+
+	// Step 3: Print each YAML file content
+	for _, fullPath := range files {
+		if strings.TrimSpace(fullPath) == "" {
+			continue
+		}
+		catCmd := exec.Command(
+			CmdDocker, "exec", "-u", currentUser.Uid,
+			containerName,
+			"cat", fullPath,
+		)
+		content, err := catCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("WARN: failed to read file %s: %v\nOutput: %s\n", fullPath, err, string(content))
+			continue
+		}
+		labels := opt.extractLabels(string(content))
+		fmt.Printf("-----\n{filename: %s,\nfilecontent:\n%s \nlabels: %v \n}\n", fullPath, string(content), labels)
+		if opt.matchLabels(labels) {
+			fullPath = strings.TrimPrefix(fullPath, filepath.Join(restoreDir, "kubestash-tmp/manifest/"))
+			if opt.shouldShow(fullPath) {
+				// Write to destination directory, preserving directory structure
+				targetPath := filepath.Join(opt.destinationDir, snapshotID, opt.destinationDir, fullPath)
+				if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
+					klog.Errorf("failed to create directory for %s: %v", targetPath, err)
+					continue
+				}
+				if err := os.WriteFile(targetPath, content, 0o644); err != nil {
+					klog.Errorf("failed to write file %s: %v", targetPath, err)
+					continue
+				}
+				klog.Infof("Dump Directory: %s", targetPath)
+			}
+		}
+	}
 	return nil
 }
 
