@@ -16,6 +16,19 @@ limitations under the License.
 
 package pkg
 
+/*
+import (
+	"fmt"
+	"k8s.io/klog/v2"
+	"kubestash.dev/cli/pkg/filter"
+	"os"
+	"os/exec"
+	"os/user"
+	"path/filepath"
+	"strings"
+)
+
+/*
 import (
 	_ "bufio"
 	"fmt"
@@ -117,7 +130,7 @@ func NewCmdDryRun(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 				if err != nil {
 					return err
 				}
-			*/
+
 
 			if err = dryRunOpt.prepareDestinationDir(); err != nil {
 				return err
@@ -150,7 +163,7 @@ func NewCmdDryRun(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 							return dryRunOpt.runRestoreViaPod(&operatorPod, snapshotName)
 						}
 			            /**/
-			/*
+/*
 						if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
 							return err
 						}
@@ -160,7 +173,7 @@ func NewCmdDryRun(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 								klog.Errorf("failed to remove scratch dir. Reason: %v", err)
 							}
 						}()
-			            /**/
+
 			setupOptions := &restic.SetupOptions{
 				Client:     klient,
 				ScratchDir: ScratchDir,
@@ -223,7 +236,7 @@ func NewCmdDryRun(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 									return err
 								}
 								klog.Infof("Component: %v of Snapshot %s/%s restored in path %s", compName, srcNamespace, snapshotName, dryRunOpt.destinationDir)
-				                /**/
+
 				for _, resticStat := range dryRunOpt.resticStats {
 					err := dryRunOpt.listFilesViaDockerThenFilterThenDump(resticStat.Id) // Using .Id as seen in runRestoreViaDocker
 					if err != nil {
@@ -439,7 +452,8 @@ func (opt *dryRunOptions) dumpFilteredFilesToLocal(snapshotID string, files []st
 			continue
 		}
 
-		if err := os.WriteFile(targetPath, output, 0o644); err != nil {
+		if err := os.WriteFile(
+			, output, 0o644); err != nil {
 			klog.Errorf("failed to write file %s: %v", targetPath, err)
 			continue
 		}
@@ -448,3 +462,6 @@ func (opt *dryRunOptions) dumpFilteredFilesToLocal(snapshotID string, files []st
 	}
 	return nil
 }
+
+
+*/

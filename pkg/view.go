@@ -123,48 +123,42 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 			if err != nil {
 				return err
 			}
-			/*
-							backupStorage, err := getBackupStorage(kmapi.ObjectReference{
-								Name:      repository.Spec.StorageRef.Name,
-								Namespace: repository.Spec.StorageRef.Namespace,
-							})
-							if err != nil {
-								return err
-							}
+			backupStorage, err := getBackupStorage(kmapi.ObjectReference{
+				Name:      repository.Spec.StorageRef.Name,
+				Namespace: repository.Spec.StorageRef.Namespace,
+			})
+			if err != nil {
+				return err
+			}
 
-							/*
+			if err = viewOpt.prepareDestinationDir(); err != nil {
+				return err
+			}
+			if backupStorage.Spec.Storage.Local != nil {
+				if !backupStorage.LocalNetworkVolume() {
+					return fmt.Errorf("unsupported type of local backend provided")
+				}
+				accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
+				if err != nil {
+					return err
+				}
+				return viewOpt.runRestoreViaPod(accessorPod, snapshotName)
+			}
 
-							if err = viewOpt.prepareDestinationDir(); err != nil {
-								return err
-							}
-				            /*
-							if backupStorage.Spec.Storage.Local != nil {
-								if !backupStorage.LocalNetworkVolume() {
-									return fmt.Errorf("unsupported type of local backend provided")
-								}
+			operatorPod, err := getOperatorPod()
+			if err != nil {
+				return err
+			}
 
-								accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
-								if err != nil {
-									return err
-								}
+			yes, err := isWorkloadIdentity(operatorPod)
+			if err != nil {
+				return err
+			}
+			if yes {
+				return viewOpt.runRestoreViaPod(&operatorPod, snapshotName)
+			}
+			/**/
 
-								return viewOpt.runRestoreViaPod(accessorPod, snapshotName)
-							}
-
-							operatorPod, err := getOperatorPod()
-							if err != nil {
-								return err
-							}
-
-							yes, err := isWorkloadIdentity(operatorPod)
-							if err != nil {
-								return err
-							}
-
-							if yes {
-								return viewOpt.runRestoreViaPod(&operatorPod, snapshotName)
-							}
-				            /**/
 			if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
 				return err
 			}
@@ -174,7 +168,6 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 					klog.Errorf("failed to remove scratch dir. Reason: %v", err)
 				}
 			}()
-
 			setupOptions := &restic.SetupOptions{
 				Client:     klient,
 				ScratchDir: ScratchDir,
@@ -191,7 +184,7 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 
 			fmt.Println("###Check dataDir %s", viewOpt.dataDir)
 
-			fmt.Println("#####Changes applied0...")
+			fmt.Println("#####Changes applied010...")
 
 			// apply nice, ionice settings from env
 			setupOptions.Nice, err = v1.NiceSettingsFromEnv()
@@ -228,6 +221,7 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 					"restore",
 					"--cache-dir",
 					ScratchDir,
+					"--target", "/tmp/restore",
 				}
 
 				// For TLS secured Minio/REST server, specify cert path
@@ -237,21 +231,9 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 
 				viewOpt.resticStats = comp.ResticStats
 
-				/*
-								// run restore inside docker
-								if err = viewOpt.runRestoreViaDocker(filepath.Join(DestinationDir, snapshotName, compName), restoreArgs); err != nil {
-									return err
-								}
-								klog.Infof("Component: %v of Snapshot %s/%s restored in path %s", compName, srcNamespace, snapshotName, viewOpt.destinationDir)
-				                /**/
-				for _, resticStat := range viewOpt.resticStats {
-					files, err := viewOpt.listFilesViaDockerThenFilter(resticStat.Id) // Using .Id as seen in runRestoreViaDocker
-					if err != nil {
-						klog.Errorf("Failed to list files: %v", err)
-						continue
-					}
-					viewOpt.showInTreeFormat(files)
-				}
+				files, err := viewOpt.listFilesViaDockerThenFilter(restoreArgs)
+
+				viewOpt.showInTreeFormat(files)
 			}
 
 			return nil
@@ -287,11 +269,11 @@ func (opt *viewOptions) runRestoreViaPod(pod *core.Pod, snapshotName string) err
 	if err := opt.runCmdViaPod(pod, snapshotName); err != nil {
 		return err
 	}
-
-	if err := opt.copyDownloadedDataToDestination(pod); err != nil {
-		return err
-	}
-
+	/*
+		if err := opt.copyDownloadedDataToDestination(pod); err != nil {
+			return err
+		}
+	/**/
 	if err := opt.clearDataFromPod(pod); err != nil {
 		return err
 	}
@@ -352,48 +334,6 @@ func (opt *viewOptions) prepareDestinationDir() (err error) {
 	return os.MkdirAll(opt.destinationDir, 0o755)
 }
 
-func (opt *viewOptions) runRestoreViaDocker(destination string, args []string) error {
-	// get current user
-	currentUser, err := user.Current()
-	if err != nil {
-		return err
-	}
-	restoreArgs := []string{
-		"run",
-		"--rm",
-		"-u", currentUser.Uid,
-		"-v", ScratchDir + ":" + ScratchDir,
-		"-v", opt.destinationDir + ":" + DestinationDir,
-		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
-		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
-		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
-		imgRestic.ToContainerImage(),
-	}
-
-	restoreArgs = append(restoreArgs, args...)
-
-	for _, include := range opt.include {
-		restoreArgs = append(restoreArgs, "--include")
-		restoreArgs = append(restoreArgs, include)
-	}
-
-	for _, exclude := range opt.exclude {
-		restoreArgs = append(restoreArgs, "--exclude")
-		restoreArgs = append(restoreArgs, exclude)
-	}
-
-	for _, resticStat := range opt.resticStats {
-		rargs := append(restoreArgs, resticStat.Id, "--target", destination)
-		klog.Infoln("Running docker with args:", rargs)
-		out, err := exec.Command(CmdDocker, rargs...).CombinedOutput()
-		klog.Infoln("Output:", string(out))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func getResourceFromGroupResource(gv string) string {
 	parts := strings.Split(gv, ".")
 	return parts[0]
@@ -416,19 +356,16 @@ func parseBytesToUnstructured(byteData []byte) (*unstructured.Unstructured, erro
 }
 
 func yamlToUnstructured(yamlStr string) (*unstructured.Unstructured, error) {
-	// Step 1: Convert YAML to JSON (since unstructured needs JSON format)
 	jsonData, err := yaml.YAMLToJSON([]byte(yamlStr))
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert YAML to JSON: %w", err)
 	}
 
-	// Step 2: Convert JSON to Unstructured
 	obj := &unstructured.Unstructured{}
 	err = obj.UnmarshalJSON(jsonData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal JSON into unstructured: %w", err)
 	}
-
 	return obj, nil
 }
 
@@ -551,7 +488,7 @@ func (opt *viewOptions) showInTreeFormat(files []string) {
 
 /*
 */
-func (opt *viewOptions) listFilesViaDockerThenFilter(snapshotID string) ([]string, error) {
+func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, error) {
 	resourceFilter := filter.NewIncludeExclude().Includes(opt.IncludeResources...).Excludes(opt.ExcludeResources...)
 	namespaceFilter := filter.NewIncludeExclude().Includes(opt.IncludeNamespaces...).Excludes(opt.ExcludeNamespaces...)
 	globalIncludeExclude = filter.NewGlobalIncludeExclude(resourceFilter, namespaceFilter, opt.IncludeClusterResources)
@@ -560,8 +497,10 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(snapshotID string) ([]strin
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current user: %v", err)
 	}
+
 	containerName := "snapshot-container"
 	restoreDir := "/tmp/restore"
+
 	// Check if container exists
 	checkCmd := exec.Command(CmdDocker, "ps", "-a", "-f", "name="+containerName, "--format", "{{.Names}}")
 	out, err := checkCmd.CombinedOutput()
@@ -569,9 +508,9 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(snapshotID string) ([]strin
 		return nil, fmt.Errorf("failed to check existing containers: %v", err)
 	}
 	containerExists := strings.Contains(string(out), containerName)
-	// If container doesn't exist, create it
+
 	if !containerExists {
-		restoreArgs := []string{
+		baseArgs := []string{
 			"run", "-d",
 			"--name", containerName,
 			"-u", currentUser.Uid,
@@ -582,29 +521,46 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(snapshotID string) ([]strin
 			imgRestic.ToContainerImage(),
 			"-c", "sleep infinity",
 		}
-		restoreCmd := exec.Command(CmdDocker, restoreArgs...)
-		restoreOut, err := restoreCmd.CombinedOutput()
+
+		klog.Infoln("Creating container:", containerName)
+		klog.Infoln("Running command:", baseArgs)
+		runOut, err := exec.Command(CmdDocker, baseArgs...).CombinedOutput()
 		if err != nil {
-			return nil, fmt.Errorf("failed to create container: %v\nOutput: %s", err, string(restoreOut))
+			return nil, fmt.Errorf("failed to create container: %v\nOutput: %s", err, string(runOut))
 		}
 	}
-	// Ensure cleanup: remove the container at the end
+
 	defer func() {
 		_ = exec.Command(CmdDocker, "rm", "-f", containerName).Run()
 	}()
 
-	// Step 1: Restore snapshot inside container
-	restoreSnapshotCmd := exec.Command(
-		CmdDocker, "exec", "-u", currentUser.Uid,
-		containerName,
-		"restic", "restore", snapshotID, "--target", restoreDir,
-	)
-	restoreOutput, err := restoreSnapshotCmd.CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf("failed to restore snapshot: %v\nOutput: %s", err, string(restoreOutput))
+	// Run restic restore for each snapshot
+	for _, resticStat := range opt.resticStats {
+		restoreCmd := []string{
+			"exec", "-u", currentUser.Uid,
+			containerName,
+			"restic",
+		}
+		restoreCmd = append(restoreCmd, args...) // args includes "restore", "--target", etc.
+		restoreCmd = append(restoreCmd, resticStat.Id)
+
+		// Include and exclude paths
+		for _, include := range opt.include {
+			restoreCmd = append(restoreCmd, "--include", include)
+		}
+		for _, exclude := range opt.exclude {
+			restoreCmd = append(restoreCmd, "--exclude", exclude)
+		}
+
+		klog.Infof("Running docker command: docker %v", restoreCmd)
+		output, err := exec.Command(CmdDocker, restoreCmd...).CombinedOutput()
+		if err != nil {
+			return nil, fmt.Errorf("failed to restore snapshot: %v\nOutput: %s", err, string(output))
+		}
+		fmt.Println("Restored:", string(output))
 	}
 
-	// Step 2: List files under /restore inside the container
+	// List YAML files
 	findCmd := exec.Command(
 		CmdDocker, "exec", "-u", currentUser.Uid,
 		containerName,
@@ -616,7 +572,7 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(snapshotID string) ([]strin
 	}
 	files := strings.Split(strings.TrimSpace(string(findOutput)), "\n")
 
-	// Step 3: Print each YAML file content
+	// Read file contents and apply filtering
 	filteredFiles := []string{}
 	for _, fullPath := range files {
 		if strings.TrimSpace(fullPath) == "" {
@@ -632,12 +588,14 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(snapshotID string) ([]strin
 			fmt.Printf("WARN: failed to read file %s: %v\nOutput: %s\n", fullPath, err, string(content))
 			continue
 		}
+
 		labels := opt.extractLabels(string(content))
 		fmt.Printf("-----\n{filename: %s,\nfilecontent:\n%s \nlabels: %v \n}\n", fullPath, string(content), labels)
+
 		if opt.matchLabels(labels) {
-			fullPath = strings.TrimPrefix(fullPath, filepath.Join(restoreDir, opt.dataDir))
-			if opt.shouldShow(fullPath) {
-				filteredFiles = append(filteredFiles, fullPath)
+			relativePath := strings.TrimPrefix(fullPath, filepath.Join(restoreDir, opt.dataDir))
+			if opt.shouldShow(relativePath) {
+				filteredFiles = append(filteredFiles, relativePath)
 			}
 		}
 	}
