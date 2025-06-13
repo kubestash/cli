@@ -48,7 +48,6 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 		Short:             "Restore Kubernetes resources",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			//flags.EnsureRequiredFlags(cmd, "restoresession")
 			var err error
 			opt.Config, err = clientGetter.ToRESTConfig()
 			if err != nil {
@@ -82,7 +81,7 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 			if err = opt.performRestore(); err != nil {
 				opt.UpsertRestoreComponentStatus(nil, err)
 			}
-			
+
 			return nil
 		},
 	}

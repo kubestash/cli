@@ -18,7 +18,6 @@ package pkg
 
 import (
 	_ "bufio"
-	"encoding/json"
 	"fmt"
 	_ "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"kubestash.dev/apimachinery/apis"
@@ -130,7 +129,6 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 			if err != nil {
 				return err
 			}
-
 			if err = viewOpt.prepareDestinationDir(); err != nil {
 				return err
 			}
@@ -142,22 +140,36 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 				if err != nil {
 					return err
 				}
-				return viewOpt.runRestoreViaPod(accessorPod, snapshotName)
+				if err := viewOpt.runCmdViaPod(accessorPod, snapshotName); err != nil {
+					return err
+				}
+				files, err := viewOpt.listFilesViaPodThenFilter(accessorPod)
+				if err != nil {
+					return err
+				}
+				viewOpt.showInTreeFormat(files)
+				return nil
 			}
 
 			operatorPod, err := getOperatorPod()
 			if err != nil {
 				return err
 			}
-
 			yes, err := isWorkloadIdentity(operatorPod)
 			if err != nil {
 				return err
 			}
 			if yes {
-				return viewOpt.runRestoreViaPod(&operatorPod, snapshotName)
+				if err := viewOpt.runCmdViaPod(&operatorPod, snapshotName); err != nil {
+					return err
+				}
+				files, err := viewOpt.listFilesViaPodThenFilter(&operatorPod)
+				if err != nil {
+					return err
+				}
+				viewOpt.showInTreeFormat(files)
+				return nil
 			}
-			/**/
 
 			if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
 				return err
@@ -182,7 +194,7 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 
 			viewOpt.dataDir = filepath.Join(viewOpt.SetupOptions.ScratchDir, apis.ComponentManifest)
 
-			fmt.Println("###Check dataDir %s", viewOpt.dataDir)
+			fmt.Println("###Check dataDir %v", viewOpt.dataDir)
 
 			fmt.Println("#####Changes applied010...")
 
@@ -265,23 +277,6 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 	return cmd
 }
 
-func (opt *viewOptions) runRestoreViaPod(pod *core.Pod, snapshotName string) error {
-	if err := opt.runCmdViaPod(pod, snapshotName); err != nil {
-		return err
-	}
-	/*
-		if err := opt.copyDownloadedDataToDestination(pod); err != nil {
-			return err
-		}
-	/**/
-	if err := opt.clearDataFromPod(pod); err != nil {
-		return err
-	}
-
-	klog.Infof("Snapshot %s/%s restored in path %s", srcNamespace, snapshotName, opt.destinationDir)
-	return nil
-}
-
 func (opt *viewOptions) runCmdViaPod(pod *core.Pod, snapshotName string) error {
 	command := []string{
 		"/kubestash",
@@ -289,19 +284,15 @@ func (opt *viewOptions) runCmdViaPod(pod *core.Pod, snapshotName string) error {
 		"--namespace", srcNamespace,
 		"--destination", SnapshotDownloadDir,
 	}
-
 	if len(opt.components) != 0 {
 		command = append(command, []string{"--components", strings.Join(opt.components, ",")}...)
 	}
-
 	if len(opt.exclude) != 0 {
 		command = append(command, []string{"--exclude", strings.Join(opt.exclude, ",")}...)
 	}
-
 	if len(opt.include) != 0 {
 		command = append(command, []string{"--include", strings.Join(opt.include, ",")}...)
 	}
-
 	out, err := execOnPod(opt.restConfig, pod, command)
 	if err != nil {
 		return err
@@ -310,18 +301,43 @@ func (opt *viewOptions) runCmdViaPod(pod *core.Pod, snapshotName string) error {
 	return nil
 }
 
-func (opt *viewOptions) copyDownloadedDataToDestination(pod *core.Pod) error {
-	_, err := exec.Command(CmdKubectl, "cp", fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, SnapshotDownloadDir), opt.destinationDir).CombinedOutput()
-	if err != nil {
-		return err
-	}
-	return nil
-}
+func (opt *viewOptions) listFilesViaPodThenFilter(pod *core.Pod) ([]string, error) {
+	resourceFilter := filter.NewIncludeExclude().Includes(opt.IncludeResources...).Excludes(opt.ExcludeResources...)
+	namespaceFilter := filter.NewIncludeExclude().Includes(opt.IncludeNamespaces...).Excludes(opt.ExcludeNamespaces...)
+	globalIncludeExclude = filter.NewGlobalIncludeExclude(resourceFilter, namespaceFilter, opt.IncludeClusterResources)
 
-func (opt *viewOptions) clearDataFromPod(pod *core.Pod) error {
-	cmd := []string{"rm", "-rf", SnapshotDownloadDir}
-	_, err := execOnPod(opt.restConfig, pod, cmd)
-	return err
+	findCmd := []string{
+		"find", SnapshotDownloadDir, "-type", "f", "-name", "*.yaml",
+	}
+	out, err := execOnPod(opt.restConfig, pod, findCmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list yaml files in pod: %v\nOutput: %s", err, out)
+	}
+	files := strings.Split(strings.TrimSpace(out), "\n")
+
+	filteredFiles := []string{}
+	for _, fullPath := range files {
+		if strings.TrimSpace(fullPath) == "" {
+			continue
+		}
+		catCmd := []string{"cat", fullPath}
+		content, err := execOnPod(opt.restConfig, pod, catCmd)
+		if err != nil {
+			fmt.Printf("WARN: failed to read file %s: %v\nOutput: %s\n", fullPath, err, content)
+			continue
+		}
+		labels := opt.extractLabels(content)
+		fmt.Printf("-----\n{filename: %s,\nfilecontent:\n%s \nlabels: %v \n}\n", fullPath, content, labels)
+		if opt.matchLabels(labels) {
+			// remove SnapshotDownloadDir and opt.dataDir prefix from path
+			relativePath := strings.TrimPrefix(fullPath, filepath.Join(SnapshotDownloadDir, opt.dataDir))
+			if opt.shouldShow(relativePath) {
+				filteredFiles = append(filteredFiles, relativePath)
+			}
+		}
+	}
+
+	return filteredFiles, nil
 }
 
 func (opt *viewOptions) prepareDestinationDir() (err error) {
@@ -337,22 +353,6 @@ func (opt *viewOptions) prepareDestinationDir() (err error) {
 func getResourceFromGroupResource(gv string) string {
 	parts := strings.Split(gv, ".")
 	return parts[0]
-}
-
-func parseBytesToUnstructured(byteData []byte) (*unstructured.Unstructured, error) {
-	// Convert YAML to JSON (works even if input is JSON)
-	jsonData, err := yaml.YAMLToJSON(byteData)
-	if err != nil {
-		return nil, err
-	}
-
-	var obj unstructured.Unstructured
-	err = json.Unmarshal(jsonData, &obj)
-	if err != nil {
-		return nil, err
-	}
-
-	return &obj, nil
 }
 
 func yamlToUnstructured(yamlStr string) (*unstructured.Unstructured, error) {
@@ -467,27 +467,6 @@ func (opt *viewOptions) showInTreeFormat(files []string) {
 	fmt.Println(List.Render())
 }
 
-/*
-	func (opt *viewOptions) filterFiles(snapshotID string, files []string) []string {
-		filteredFiles := []string{}
-		for _, file := range files {
-			extension := filepath.Ext(file)
-			if extension != ".yaml" && extension != ".json" {
-				continue
-			}
-			prefixTrimmedFile := strings.TrimPrefix(file, "/"+opt.dataDir+"/")
-			if prefixTrimmedFile == snapshotID {
-				break
-			}
-			if opt.shouldShow(prefixTrimmedFile) {
-				filteredFiles = append(filteredFiles, "/"+opt.dataDir+"/"+prefixTrimmedFile)
-			}
-		}
-		return filteredFiles
-	}
-
-/*
-*/
 func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, error) {
 	resourceFilter := filter.NewIncludeExclude().Includes(opt.IncludeResources...).Excludes(opt.ExcludeResources...)
 	namespaceFilter := filter.NewIncludeExclude().Includes(opt.IncludeNamespaces...).Excludes(opt.ExcludeNamespaces...)
@@ -544,7 +523,6 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 		restoreCmd = append(restoreCmd, args...) // args includes "restore", "--target", etc.
 		restoreCmd = append(restoreCmd, resticStat.Id)
 
-		// Include and exclude paths
 		for _, include := range opt.include {
 			restoreCmd = append(restoreCmd, "--include", include)
 		}
@@ -560,7 +538,6 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 		fmt.Println("Restored:", string(output))
 	}
 
-	// List YAML files
 	findCmd := exec.Command(
 		CmdDocker, "exec", "-u", currentUser.Uid,
 		containerName,
@@ -572,7 +549,6 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 	}
 	files := strings.Split(strings.TrimSpace(string(findOutput)), "\n")
 
-	// Read file contents and apply filtering
 	filteredFiles := []string{}
 	for _, fullPath := range files {
 		if strings.TrimSpace(fullPath) == "" {
