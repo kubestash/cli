@@ -79,7 +79,7 @@ func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes stri
 		fmt.Println("#####Skipping resource by filter...")
 		return nil
 	}
-	fmt.Println("Check group resources...%s...", groupRes)
+	fmt.Println("Passed filter now check group resources...%s...", groupRes)
 	restorable := m.getRestoreableItems(rItems)
 	for namespace, items := range restorable.SelectedItemsByNamespace {
 		if namespace != "" {
@@ -104,6 +104,7 @@ func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm co
 		klog.Errorf("unmarshal %s: %v", itm.Path, err)
 		return err
 	}
+
 	key := getItemKey(obj)
 	if _, done := m.restoredItems[key]; done {
 		klog.V(3).Infof("already restored %s", key)
@@ -123,6 +124,25 @@ func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm co
 	gvr, err := m.getGVR(groupRes)
 	if err != nil {
 		return err
+	}
+
+	// here comes the dry-run logic
+	if m.DryRunDir != "" {
+		dryRunPath := filepath.Join(m.DryRunDir, groupRes)
+		namespaceOfObject := obj.GetNamespace()
+		if namespaceOfObject == "" {
+			dryRunPath = filepath.Join(dryRunPath, common.ClusterScopedDir, obj.GetName())
+		} else {
+			dryRunPath = filepath.Join(dryRunPath, common.NamespaceScopedDir, namespaceOfObject, obj.GetName())
+		}
+		byteData, err := obj.MarshalJSON()
+		if err != nil {
+			return err
+		}
+		if err := m.writer.Write(dryRunPath, byteData); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	sObj, err := m.sanitizerFactory(gvr.Resource).Sanitize(obj.Object)
@@ -249,7 +269,8 @@ func (m *ResourceManager) isNamespaced(groupRes string) (bool, error) {
 }
 
 func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error) {
-	entries, err := m.reader.ReadDir(m.Options.DataDir)
+	baseDir := m.Options.DataDir + "/" + m.SnapshotName + "/manifest/kubestash-tmp/manifest"
+	entries, err := m.reader.ReadDir(baseDir)
 
 	fmt.Println("####Check DataDir inside parseItems function %s...\n", m.Options.DataDir)
 
@@ -261,7 +282,7 @@ func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error)
 	fmt.Println("####Entries %v", entries)
 
 	resources := make(map[string]*common.ResourceItems)
-	baseDir := m.Options.DataDir
+
 	for _, entry := range entries {
 		name := entry.Name()
 		ri := &common.ResourceItems{
@@ -278,8 +299,9 @@ func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error)
 			}
 			return nil
 		}
-
+		fmt.Println("####Check Name of the Entry: %v", name)
 		s := filepath.Join(baseDir, name)
+		fmt.Println("####Check Name of s: %v", s)
 		scopes := []struct{ dir, ns string }{
 			{dir: filepath.Join(s, common.ClusterScopedDir), ns: ""},
 			{dir: filepath.Join(s, common.NamespaceScopedDir), ns: "*"},
@@ -321,7 +343,8 @@ func (m *ResourceManager) getRestoreableItems(r *common.ResourceItems) common.Re
 		Resource:                 r.GroupResource,
 		SelectedItemsByNamespace: make(map[string][]common.RestoreableItem),
 	}
-	resourceForPath := filepath.Join(m.DataDir, r.GroupResource)
+	baseDir := filepath.Join(m.DataDir, m.SnapshotName, "manifest", "kubestash-tmp", "manifest")
+	resourceForPath := filepath.Join(baseDir, r.GroupResource)
 	for namespace, items := range r.ItemsByNamespace {
 		identifier := common.NamespaceScopedDir
 		if namespace == "" {
