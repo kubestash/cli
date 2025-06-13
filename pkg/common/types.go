@@ -21,6 +21,7 @@ import (
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg/restic"
+	"os"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
@@ -59,6 +60,7 @@ type Options struct {
 	Config          *rest.Config
 	Client          client.Client
 	DataDir         string
+	DryRunDir       string
 	WaitTimeout     int32
 	Namespace       string
 	TargetNamespace string
@@ -71,12 +73,19 @@ type Options struct {
 	BackupOptions  restic.BackupOptions
 	RestoreOptions restic.RestoreOptions
 
+	ResticStats []storageapi.ResticStats
+	Components  []string
+	Exclude     []string
+	Include     []string
+	Paths       []string
+
 	Target              *v1.TypedObjectReference
 	Snapshot            *storageapi.Snapshot
 	Snapshots           []storageapi.Snapshot
 	BackupSession       *coreapi.BackupSession
 	RestoreSession      *coreapi.RestoreSession
 	BackupConfiguration *coreapi.BackupConfiguration
+	FileInfos           []os.FileInfo
 
 	ANDedLabelSelector []string
 	ORedLabelSelector  []string
