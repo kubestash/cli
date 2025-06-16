@@ -144,7 +144,7 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 							}
 				/**/
 			if err := opt.prepareDirectories(); err != nil {
-				return fmt.Errorf("failed to prepare directories: %w", err)
+				return err
 			}
 			defer func() {
 				if err := os.RemoveAll(ScratchDir); err != nil {
@@ -211,10 +211,11 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 				}
 
 				opt.ResticStats = comp.ResticStats
-
-				if err := os.MkdirAll(filepath.Join(DestinationDir, opt.SnapshotName, compName), 0o755); err != nil {
-					return fmt.Errorf("failed to create snapshot directory: %w", err)
-				}
+				/*
+					if err := os.MkdirAll(filepath.Join(DestinationDir, opt.SnapshotName, compName), 0o755); err != nil {
+						return fmt.Errorf("failed to create snapshot directory: %w", err)
+					}
+				*/
 
 				err = opt.runRestoreViaDocker(filepath.Join(DestinationDir, opt.SnapshotName, compName), restoreArgs)
 				if err != nil {
@@ -242,8 +243,7 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 	cmd.Flags().StringSliceVar(&opt.Include, "include", opt.Include, "List of pattern for directory/file to restore")
 	cmd.Flags().StringSliceVar(&opt.Paths, "paths", opt.Paths, "Gives a random list of paths")
 
-	cmd.Flags().StringVar(&opt.RestoreSessionName, "restoresession", opt.RestoreSessionName, "Name of the RestoreSession")
-	cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of the RestoreSession")
+	//cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of the RestoreSession")
 	cmd.Flags().StringVar(&opt.TargetNamespace, "target-namespace", "default", "Namespace where the resources will be restored")
 	cmd.Flags().StringVar(&opt.SnapshotName, "snapshot", "", "Name of the snapshot")
 
@@ -311,10 +311,11 @@ func (opt *options) prepareDirectories() (err error) {
 	if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
 		return err
 	}
-	if err = os.MkdirAll(DestinationDir, 0o755); err != nil {
-		return err
-	}
-	if err := os.MkdirAll(opt.DataDir, 0755); err != nil {
+	if opt.DataDir == "" {
+		if err = os.MkdirAll(DestinationDir, 0o755); err != nil {
+			return err
+		}
+	} else if err := os.MkdirAll(opt.DataDir, 0755); err != nil {
 		return fmt.Errorf("failed to create data dir: %w", err)
 	}
 	if opt.DryRunDir != "" {

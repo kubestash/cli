@@ -269,71 +269,78 @@ func (m *ResourceManager) isNamespaced(groupRes string) (bool, error) {
 }
 
 func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error) {
-	baseDir := m.Options.DataDir + "/" + m.SnapshotName + "/manifest/kubestash-tmp/manifest"
-	entries, err := m.reader.ReadDir(baseDir)
-
-	fmt.Println("####Check DataDir inside parseItems function %s...\n", m.Options.DataDir)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to read backup directory: %w", err)
-	}
-
-	fmt.Println("####Check entries in parseItems() function....")
-	fmt.Println("####Entries %v", entries)
-
 	resources := make(map[string]*common.ResourceItems)
 
-	for _, entry := range entries {
-		name := entry.Name()
-		ri := &common.ResourceItems{
-			GroupResource:    name,
-			ItemsByNamespace: map[string][]string{},
-		}
-		addResourceItems := func(ns, nsDir string) error {
-			items, err := m.getResourceItemsForScope(nsDir)
+	for componentName, component := range m.Snapshot.Status.Components {
+		for _, resticStat := range component.ResticStats {
+			baseDir := filepath.Join(m.Options.DataDir, m.SnapshotName, componentName, resticStat.HostPath)
+			entries, err := m.reader.ReadDir(baseDir)
+
+			fmt.Println("####Check DataDir inside parseItems function %s...\n", m.Options.DataDir)
+			fmt.Println("Check baseDir inside parseItems function %s...\n", baseDir)
+
 			if err != nil {
-				return err
-			}
-			if len(items) > 0 {
-				ri.ItemsByNamespace[ns] = items
-			}
-			return nil
-		}
-		fmt.Println("####Check Name of the Entry: %v", name)
-		s := filepath.Join(baseDir, name)
-		fmt.Println("####Check Name of s: %v", s)
-		scopes := []struct{ dir, ns string }{
-			{dir: filepath.Join(s, common.ClusterScopedDir), ns: ""},
-			{dir: filepath.Join(s, common.NamespaceScopedDir), ns: "*"},
-		}
-
-		for _, scope := range scopes {
-			info, err := os.Stat(scope.dir)
-			if err != nil || !info.IsDir() {
-				continue
+				return nil, fmt.Errorf("failed to read backup directory: %w", err)
 			}
 
-			if scope.ns == "" { // cluster-scoped items
-				if err := addResourceItems("", scope.dir); err != nil {
-					return nil, err
+			fmt.Println("####Check entries in parseItems() function....")
+			fmt.Println("####Entries %v", entries)
+
+			resources := make(map[string]*common.ResourceItems)
+
+			for _, entry := range entries {
+				name := entry.Name()
+				ri := &common.ResourceItems{
+					GroupResource:    name,
+					ItemsByNamespace: map[string][]string{},
 				}
-			} else { // namespace-scoped: read each namespace subdir
-				nsDirs, err := m.reader.ReadDir(scope.dir)
-				if err != nil {
-					return nil, fmt.Errorf("read namespaces in %s: %w", scope.dir, err)
+				addResourceItems := func(ns, nsDir string) error {
+					items, err := m.getResourceItemsForScope(nsDir)
+					if err != nil {
+						return err
+					}
+					if len(items) > 0 {
+						ri.ItemsByNamespace[ns] = items
+					}
+					return nil
 				}
-				for _, nsInfo := range nsDirs {
-					if !nsInfo.IsDir() {
+				fmt.Println("####Check Name of the Entry: %v", name)
+				s := filepath.Join(baseDir, name)
+				fmt.Println("####Check Name of s: %v", s)
+				scopes := []struct{ dir, ns string }{
+					{dir: filepath.Join(s, common.ClusterScopedDir), ns: ""},
+					{dir: filepath.Join(s, common.NamespaceScopedDir), ns: "*"},
+				}
+
+				for _, scope := range scopes {
+					info, err := os.Stat(scope.dir)
+					if err != nil || !info.IsDir() {
 						continue
 					}
-					ns := nsInfo.Name()
-					if err := addResourceItems(ns, filepath.Join(scope.dir, ns)); err != nil {
-						return nil, err
+
+					if scope.ns == "" { // cluster-scoped items
+						if err := addResourceItems("", scope.dir); err != nil {
+							return nil, err
+						}
+					} else { // namespace-scoped: read each namespace subdir
+						nsDirs, err := m.reader.ReadDir(scope.dir)
+						if err != nil {
+							return nil, fmt.Errorf("read namespaces in %s: %w", scope.dir, err)
+						}
+						for _, nsInfo := range nsDirs {
+							if !nsInfo.IsDir() {
+								continue
+							}
+							ns := nsInfo.Name()
+							if err := addResourceItems(ns, filepath.Join(scope.dir, ns)); err != nil {
+								return nil, err
+							}
+						}
 					}
 				}
+				resources[name] = ri
 			}
 		}
-		resources[name] = ri
 	}
 	return resources, nil
 }
@@ -343,21 +350,25 @@ func (m *ResourceManager) getRestoreableItems(r *common.ResourceItems) common.Re
 		Resource:                 r.GroupResource,
 		SelectedItemsByNamespace: make(map[string][]common.RestoreableItem),
 	}
-	baseDir := filepath.Join(m.DataDir, m.SnapshotName, "manifest", "kubestash-tmp", "manifest")
-	resourceForPath := filepath.Join(baseDir, r.GroupResource)
-	for namespace, items := range r.ItemsByNamespace {
-		identifier := common.NamespaceScopedDir
-		if namespace == "" {
-			identifier = common.ClusterScopedDir
-		}
-		for _, item := range items {
-			itemPath := filepath.Join(resourceForPath, identifier, namespace, item)
-			selectedItem := common.RestoreableItem{
-				Path:            itemPath,
-				Name:            strings.TrimSuffix(item, ".yaml"),
-				TargetNamespace: namespace, // Currently we're considering only the backed up namespace.
+	for componentName, component := range m.Snapshot.Status.Components {
+		for _, resticStat := range component.ResticStats {
+			baseDir := filepath.Join(m.Options.DataDir, m.SnapshotName, componentName, resticStat.HostPath)
+			resourceForPath := filepath.Join(baseDir, r.GroupResource)
+			for namespace, items := range r.ItemsByNamespace {
+				identifier := common.NamespaceScopedDir
+				if namespace == "" {
+					identifier = common.ClusterScopedDir
+				}
+				for _, item := range items {
+					itemPath := filepath.Join(resourceForPath, identifier, namespace, item)
+					selectedItem := common.RestoreableItem{
+						Path:            itemPath,
+						Name:            strings.TrimSuffix(item, ".yaml"),
+						TargetNamespace: namespace, // Currently we're considering only the backed up namespace.
+					}
+					restorable.SelectedItemsByNamespace[namespace] = append(restorable.SelectedItemsByNamespace[namespace], selectedItem)
+				}
 			}
-			restorable.SelectedItemsByNamespace[namespace] = append(restorable.SelectedItemsByNamespace[namespace], selectedItem)
 		}
 	}
 	return restorable
