@@ -509,7 +509,7 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 			restoreCmd = append(restoreCmd, "--exclude", exclude)
 		}
 		restoreCmd = append(restoreCmd, "--target", restoreDir)
-		klog.Infof("Running docker command: docker %v", restoreCmd)
+		//klog.Infof("Running docker command: docker %v", restoreCmd)
 		output, err := exec.Command(CmdDocker, restoreCmd...).CombinedOutput()
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore snapshot: %v\nOutput: %s", err, string(output))
