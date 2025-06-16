@@ -76,8 +76,6 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 				return err
 			}
 
-			fmt.Println("####Check Namespace %s", srcNamespace)
-
 			opt.Snapshot, err = opt.GetSnapshot(kmapi.ObjectReference{
 				Name:      opt.SnapshotName,
 				Namespace: srcNamespace,
@@ -86,10 +84,6 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 				return fmt.Errorf("failed to get snapshot Namespace: %s SnapshotName: %s: Error: %w", opt.Snapshot.Name, err)
 			}
 
-			fmt.Println("####Check SnapshotName: %s Namespace: ", opt.Snapshot.Name, opt.Snapshot.Namespace)
-
-			fmt.Println("####Check Snapshot.Spec.Repository: %s ", opt.Snapshot.Spec.Repository)
-
 			repository, err := getRepository(kmapi.ObjectReference{
 				Name:      opt.Snapshot.Spec.Repository,
 				Namespace: srcNamespace,
@@ -97,52 +91,15 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 			if err != nil {
 				return err
 			}
-			/*
-							backupStorage, err := getBackupStorage(kmapi.ObjectReference{
-								Name:      repository.Spec.StorageRef.Name,
-								Namespace: repository.Spec.StorageRef.Namespace,
-							})
-							if err != nil {
-								return err
-							}
-				/*
-							if backupStorage.Spec.Storage.Local != nil {
-								if !backupStorage.LocalNetworkVolume() {
-									return fmt.Errorf("unsupported type of local backend provided")
-								}
-								accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
-								if err != nil {
-									return err
-								}
-								if err := opt.runCmdViaPod(accessorPod, opt.SnapshotName); err != nil {
-									return err
-								}
-								contents, err := opt.getContentsViaPod(accessorPod)
-								if err != nil {
-									return err
-								}
-								return nil
-							}
 
-							operatorPod, err := getOperatorPod()
-							if err != nil {
-								return err
-							}
-							yes, err := isWorkloadIdentity(operatorPod)
-							if err != nil {
-								return err
-							}
-							if yes {
-								if err := opt.runCmdViaPod(&operatorPod, opt.SnapshotName); err != nil {
-									return err
-								}
-								contents, err := opt.getContentsViaPod(&operatorPod)
-								if err != nil {
-									return err
-								}
-								return nil
-							}
-				/**/
+			backupStorage, err := getBackupStorage(kmapi.ObjectReference{
+				Name:      repository.Spec.StorageRef.Name,
+				Namespace: repository.Spec.StorageRef.Namespace,
+			})
+			if err != nil {
+				return err
+			}
+
 			if err := opt.prepareDirectories(); err != nil {
 				return err
 			}
@@ -155,6 +112,55 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 				}
 			}()
 
+			if backupStorage.Spec.Storage.Local != nil {
+				if !backupStorage.LocalNetworkVolume() {
+					return fmt.Errorf("unsupported type of local backend provided")
+				}
+				accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
+				if err != nil {
+					return err
+				}
+				if err := opt.runCmdViaPod(accessorPod, opt.SnapshotName); err != nil {
+					return err
+				}
+				if err := opt.runRestoreViaPod(accessorPod, opt.SnapshotName); err != nil {
+					return err
+				}
+				if err := opt.setupDumpImplementer(); err != nil {
+					return fmt.Errorf("failed to setup dump implementer: %w", err)
+				}
+
+				if err = opt.performRestore(); err != nil {
+					opt.UpsertRestoreComponentStatus(nil, err)
+				}
+				return nil
+			}
+
+			operatorPod, err := getOperatorPod()
+			if err != nil {
+				return err
+			}
+			yes, err := isWorkloadIdentity(operatorPod)
+			if err != nil {
+				return err
+			}
+			if yes {
+				if err := opt.runCmdViaPod(&operatorPod, opt.SnapshotName); err != nil {
+					return err
+				}
+				if err := opt.runRestoreViaPod(&operatorPod, opt.SnapshotName); err != nil {
+					return err
+				}
+				if err := opt.setupDumpImplementer(); err != nil {
+					return fmt.Errorf("failed to setup dump implementer: %w", err)
+				}
+
+				if err = opt.performRestore(); err != nil {
+					opt.UpsertRestoreComponentStatus(nil, err)
+				}
+				return nil
+			}
+
 			opt.SetupOptions = restic.SetupOptions{
 				Client:     opt.Client,
 				ScratchDir: ScratchDir,
@@ -166,8 +172,6 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 					},
 				},
 			}
-
-			fmt.Println("####Check DataDir: %v", opt.DataDir)
 
 			// apply nice, ionice settings from env
 			opt.SetupOptions.Nice, err = v1.NiceSettingsFromEnv()
@@ -211,11 +215,6 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 				}
 
 				opt.ResticStats = comp.ResticStats
-				/*
-					if err := os.MkdirAll(filepath.Join(DestinationDir, opt.SnapshotName, compName), 0o755); err != nil {
-						return fmt.Errorf("failed to create snapshot directory: %w", err)
-					}
-				*/
 
 				err = opt.runRestoreViaDocker(filepath.Join(DestinationDir, opt.SnapshotName, compName), restoreArgs)
 				if err != nil {
@@ -243,7 +242,7 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 	cmd.Flags().StringSliceVar(&opt.Include, "include", opt.Include, "List of pattern for directory/file to restore")
 	cmd.Flags().StringSliceVar(&opt.Paths, "paths", opt.Paths, "Gives a random list of paths")
 
-	//cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of the RestoreSession")
+	cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of the RestoreSession")
 	cmd.Flags().StringVar(&opt.TargetNamespace, "target-namespace", "default", "Namespace where the resources will be restored")
 	cmd.Flags().StringVar(&opt.SnapshotName, "snapshot", "", "Name of the snapshot")
 
@@ -280,7 +279,6 @@ func (opt *options) performRestore() error {
 			return err
 		}
 
-		fmt.Println("Running restic restore...")
 		_, err = w.RunRestore(opt.Snapshot.Spec.Repository, opt.RestoreOptions)
 		if err != nil {
 			return err
@@ -290,13 +288,9 @@ func (opt *options) performRestore() error {
 	if dumpImplementer == nil {
 		return fmt.Errorf("dumpImplementer is nil")
 	}
-
-	fmt.Println("Calling RestoreManifests...")
 	if err := dumpImplementer.RestoreManifests(context.Background()); err != nil {
 		return fmt.Errorf("failed to restore manifests: %w", err)
 	}
-	fmt.Println("RestoreManifests completed.")
-
 	return nil
 }
 
@@ -307,15 +301,13 @@ func (opt *options) setupDumpImplementer() error {
 }
 
 func (opt *options) prepareDirectories() (err error) {
-	// if destination flag is not specified, restore in current directory
 	if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
 		return err
 	}
 	if opt.DataDir == "" {
-		if err = os.MkdirAll(DestinationDir, 0o755); err != nil {
-			return err
-		}
-	} else if err := os.MkdirAll(opt.DataDir, 0755); err != nil {
+		opt.DataDir = DestinationDir
+	}
+	if err := os.MkdirAll(opt.DataDir, 0755); err != nil {
 		return fmt.Errorf("failed to create data dir: %w", err)
 	}
 	if opt.DryRunDir != "" {
@@ -326,6 +318,23 @@ func (opt *options) prepareDirectories() (err error) {
 	return nil
 }
 
+func (opt *options) runRestoreViaPod(pod *core.Pod, snapshotName string) error {
+	if err := opt.runCmdViaPod(pod, snapshotName); err != nil {
+		return err
+	}
+
+	if err := opt.copyDownloadedDataToDestination(pod); err != nil {
+		return err
+	}
+
+	if err := opt.clearDataFromPod(pod); err != nil {
+		return err
+	}
+
+	klog.Infof("Snapshot %s/%s restored in path %s", srcNamespace, snapshotName, opt.DataDir)
+	return nil
+}
+
 func (opt *options) runCmdViaPod(pod *core.Pod, snapshotName string) error {
 	command := []string{
 		"/kubestash",
@@ -333,15 +342,19 @@ func (opt *options) runCmdViaPod(pod *core.Pod, snapshotName string) error {
 		"--namespace", srcNamespace,
 		"--destination", SnapshotDownloadDir,
 	}
+
 	if len(opt.Components) != 0 {
 		command = append(command, []string{"--components", strings.Join(opt.Components, ",")}...)
 	}
+
 	if len(opt.Exclude) != 0 {
 		command = append(command, []string{"--exclude", strings.Join(opt.Exclude, ",")}...)
 	}
+
 	if len(opt.Include) != 0 {
 		command = append(command, []string{"--include", strings.Join(opt.Include, ",")}...)
 	}
+
 	out, err := execOnPod(opt.Config, pod, command)
 	if err != nil {
 		return err
@@ -350,36 +363,20 @@ func (opt *options) runCmdViaPod(pod *core.Pod, snapshotName string) error {
 	return nil
 }
 
-/*
-	func (opt *options) getContentsViaPod(pod *core.Pod) ([]os.FileInfo, error) {
-		findCmd := []string{
-			"find", SnapshotDownloadDir, "-type", "f", "-name", "*.yaml",
-		}
-		out, err := execOnPod(opt.Config, pod, findCmd)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list yaml files in pod: %v\nOutput: %s", err, out)
-		}
-		files := strings.Split(strings.TrimSpace(out), "\n")
-
-		fileInfos := []os.FileInfo
-		for _, fullPath := range files {
-			if strings.TrimSpace(fullPath) == "" {
-				continue
-			}
-			catCmd := []string{"cat", fullPath}
-			content, err := execOnPod(opt.Config, pod, catCmd)
-			if err != nil {
-				fmt.Printf("WARN: failed to read file %s: %v\nOutput: %s\n", fullPath, err, content)
-				continue
-			}
-			fileInfos = append(fileInfos, content)
-		}
-
-		return filteredFiles, nil
+func (opt *options) copyDownloadedDataToDestination(pod *core.Pod) error {
+	_, err := exec.Command(CmdKubectl, "cp", fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, SnapshotDownloadDir), opt.DataDir).CombinedOutput()
+	if err != nil {
+		return err
 	}
+	return nil
+}
 
-/*
-*/
+func (opt *options) clearDataFromPod(pod *core.Pod) error {
+	cmd := []string{"rm", "-rf", SnapshotDownloadDir}
+	_, err := execOnPod(opt.Config, pod, cmd)
+	return err
+}
+
 func (opt *options) runRestoreViaDocker(destination string, args []string) error {
 	// get current user
 	currentUser, err := user.Current()

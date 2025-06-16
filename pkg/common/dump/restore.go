@@ -40,8 +40,6 @@ func (m *ResourceManager) RestoreManifests(ctx context.Context) error {
 		return fmt.Errorf("failed to parse items: %w", err)
 	}
 
-	fmt.Println("Restoring Manifests...")
-
 	// 1. Restore CRD First
 	if err := m.restoreResourceType(ctx, common.CustomResourceDefinitions.String()); err != nil {
 		return err
@@ -63,10 +61,8 @@ func (m *ResourceManager) RestoreManifests(ctx context.Context) error {
 }
 
 func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes string) error {
-	fmt.Printf("#####Called restoreResourceType() function for resource %s...\n", groupRes)
 	rItems, ok := m.backupResources[groupRes]
 	if !ok {
-		fmt.Println("#####No backups found....")
 		klog.V(2).Infof("no backups for %s", groupRes)
 		return nil
 	}
@@ -76,10 +72,9 @@ func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes stri
 	}
 	if !m.filter.ShouldIncludeResource(groupRes, ns) {
 		klog.V(2).Infof("skipping %s by filter", groupRes)
-		fmt.Println("#####Skipping resource by filter...")
 		return nil
 	}
-	fmt.Println("Passed filter now check group resources...%s...", groupRes)
+
 	restorable := m.getRestoreableItems(rItems)
 	for namespace, items := range restorable.SelectedItemsByNamespace {
 		if namespace != "" {
@@ -93,12 +88,10 @@ func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes stri
 			}
 		}
 	}
-	fmt.Printf("####Called restoreResourceType() function\n")
 	return nil
 }
 
 func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm common.RestoreableItem) error {
-	fmt.Printf("####Called applyItem() function\n")
 	obj, err := m.unmarshal(itm.Path)
 	if err != nil {
 		klog.Errorf("unmarshal %s: %v", itm.Path, err)
@@ -126,7 +119,6 @@ func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm co
 		return err
 	}
 
-	// here comes the dry-run logic
 	if m.DryRunDir != "" {
 		dryRunPath := filepath.Join(m.DryRunDir, groupRes)
 		namespaceOfObject := obj.GetNamespace()
@@ -150,22 +142,17 @@ func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm co
 		return fmt.Errorf("sanitize %s: %w", key, err)
 	}
 
-	if gvr.Group == "apps" {
-		fmt.Printf("####Deployment detected %v\n", sObj)
-	}
-	/*
-		if m.StorageClassMappingsStr != "" {
-			spec := sObj["spec"].(map[string]interface{})
-			if spec["storageClassName"] == nil {
-				oldStorageClassName := spec["storageClassName"].(string)
-				spec["storageClassName"] = m.StorageClassMappings[oldStorageClassName]
-			}
-			sObj["spec"] = spec
+	if m.StorageClassMappingsStr != "" {
+		spec := sObj["spec"].(map[string]interface{})
+		if spec["storageClassName"] == nil {
+			oldStorageClassName := spec["storageClassName"].(string)
+			spec["storageClassName"] = m.StorageClassMappings[oldStorageClassName]
 		}
-	*/
+		sObj["spec"] = spec
+	}
+
 	//updateNamespaceFields(sObj, m.TargetNamespace)
 	obj.Object = sObj
-	fmt.Printf("######Object after namespace field updated %v\n", obj.Object)
 	if err := m.createIfMissing(ctx, gvr, obj); err != nil {
 		return err
 	}
@@ -240,13 +227,11 @@ func (m *ResourceManager) exists(ctx context.Context, ri dynamic.ResourceInterfa
 }
 
 func (m *ResourceManager) shouldRestore(obj *unstructured.Unstructured) bool {
-	fmt.Printf("####Inside filter function Resource Name: %s, Namespace: %s\n", obj.GetName(), obj.GetNamespace())
 	if ns := obj.GetNamespace(); ns != "" && !m.filter.ShouldIncludeNamespace(ns) {
 		fmt.Printf("skipping %s by filter\n", obj.GetName())
 		return false
 	}
-	labels := toStrings(obj.GetName(), obj.GetLabels())
-	fmt.Printf("####Check ResourceName: %s, Namespace: %s\n", obj.GetName(), obj.GetNamespace())
+	labels := toStrings(obj.GetLabels())
 	return matchesAny(labels, m.Options.ORedLabelSelector) && matchesAll(labels, m.Options.ANDedLabelSelector)
 }
 
@@ -276,22 +261,14 @@ func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error)
 			baseDir := filepath.Join(m.Options.DataDir, m.SnapshotName, componentName, resticStat.HostPath)
 			entries, err := m.reader.ReadDir(baseDir)
 
-			fmt.Println("####Check DataDir inside parseItems function %s...\n", m.Options.DataDir)
-			fmt.Println("Check baseDir inside parseItems function %s...\n", baseDir)
-
 			if err != nil {
 				return nil, fmt.Errorf("failed to read backup directory: %w", err)
 			}
 
-			fmt.Println("####Check entries in parseItems() function....")
-			fmt.Println("####Entries %v", entries)
-
-			resources := make(map[string]*common.ResourceItems)
-
 			for _, entry := range entries {
-				name := entry.Name()
+				groupResource := entry.Name()
 				ri := &common.ResourceItems{
-					GroupResource:    name,
+					GroupResource:    groupResource,
 					ItemsByNamespace: map[string][]string{},
 				}
 				addResourceItems := func(ns, nsDir string) error {
@@ -304,9 +281,7 @@ func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error)
 					}
 					return nil
 				}
-				fmt.Println("####Check Name of the Entry: %v", name)
-				s := filepath.Join(baseDir, name)
-				fmt.Println("####Check Name of s: %v", s)
+				s := filepath.Join(baseDir, groupResource)
 				scopes := []struct{ dir, ns string }{
 					{dir: filepath.Join(s, common.ClusterScopedDir), ns: ""},
 					{dir: filepath.Join(s, common.NamespaceScopedDir), ns: "*"},
@@ -338,7 +313,7 @@ func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error)
 						}
 					}
 				}
-				resources[name] = ri
+				resources[groupResource] = ri
 			}
 		}
 	}
