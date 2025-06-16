@@ -77,21 +77,6 @@ func (opt *Options) GetBackupSession() (*coreapi.BackupSession, error) {
 	return backupSession, nil
 }
 
-func (opt *Options) GetRestoreSession() (*coreapi.RestoreSession, error) {
-	restoreSession := &coreapi.RestoreSession{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      opt.RestoreSessionName,
-			Namespace: opt.Namespace,
-		},
-	}
-
-	if err := opt.Client.Get(context.Background(), client.ObjectKeyFromObject(restoreSession), restoreSession); err != nil {
-		return nil, err
-	}
-
-	return restoreSession, nil
-}
-
 func (opt *Options) GetBackupConfiguration() (*coreapi.BackupConfiguration, error) {
 	backupConfig := &coreapi.BackupConfiguration{
 		ObjectMeta: metav1.ObjectMeta{

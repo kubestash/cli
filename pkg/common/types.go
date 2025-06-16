@@ -65,9 +65,8 @@ type Options struct {
 	Namespace       string
 	TargetNamespace string
 
-	SnapshotName       string
-	BackupSessionName  string
-	RestoreSessionName string
+	SnapshotName      string
+	BackupSessionName string
 
 	SetupOptions   restic.SetupOptions
 	BackupOptions  restic.BackupOptions

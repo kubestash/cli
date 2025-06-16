@@ -20,7 +20,6 @@ import (
 	_ "bufio"
 	"fmt"
 	_ "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"kubestash.dev/apimachinery/apis"
 	"kubestash.dev/cli/pkg/filter"
 	_ "log"
 	"os"
@@ -48,7 +47,7 @@ import (
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg"
 	"kubestash.dev/apimachinery/pkg/restic"
-	_ "kubestash.dev/cli/pkg/tree"
+	"kubestash.dev/cli/pkg/common"
 )
 
 type viewOptions struct {
@@ -122,6 +121,7 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 			if err != nil {
 				return err
 			}
+
 			backupStorage, err := getBackupStorage(kmapi.ObjectReference{
 				Name:      repository.Spec.StorageRef.Name,
 				Namespace: repository.Spec.StorageRef.Namespace,
@@ -129,9 +129,7 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 			if err != nil {
 				return err
 			}
-			if err = viewOpt.prepareDestinationDir(); err != nil {
-				return err
-			}
+
 			if backupStorage.Spec.Storage.Local != nil {
 				if !backupStorage.LocalNetworkVolume() {
 					return fmt.Errorf("unsupported type of local backend provided")
@@ -143,12 +141,12 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 				if err := viewOpt.runCmdViaPod(accessorPod, snapshotName); err != nil {
 					return err
 				}
-				files, err := viewOpt.listFilesViaPodThenFilter(accessorPod)
+				files, err := viewOpt.listFilesViaPodThenFilter(accessorPod, snapshot)
 				if err != nil {
 					return err
 				}
 				viewOpt.showInTreeFormat(files)
-				return nil
+				return viewOpt.clearDataFromPod(accessorPod)
 			}
 
 			operatorPod, err := getOperatorPod()
@@ -163,12 +161,12 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 				if err := viewOpt.runCmdViaPod(&operatorPod, snapshotName); err != nil {
 					return err
 				}
-				files, err := viewOpt.listFilesViaPodThenFilter(&operatorPod)
+				files, err := viewOpt.listFilesViaPodThenFilter(&operatorPod, snapshot)
 				if err != nil {
 					return err
 				}
 				viewOpt.showInTreeFormat(files)
-				return nil
+				return viewOpt.clearDataFromPod(&operatorPod)
 			}
 
 			if err = os.MkdirAll(ScratchDir, 0o755); err != nil {
@@ -191,19 +189,11 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 					},
 				},
 			}
-
-			viewOpt.dataDir = filepath.Join(viewOpt.SetupOptions.ScratchDir, apis.ComponentManifest)
-
-			fmt.Println("###Check dataDir %v", viewOpt.dataDir)
-
-			fmt.Println("#####Changes applied010...")
-
 			// apply nice, ionice settings from env
 			setupOptions.Nice, err = v1.NiceSettingsFromEnv()
 			if err != nil {
 				return fmt.Errorf("failed to set nice settings: %w", err)
 			}
-
 			setupOptions.IONice, err = v1.IONiceSettingsFromEnv()
 			if err != nil {
 				return fmt.Errorf("failed to set ionice settings: %w", err)
@@ -216,33 +206,26 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 				}
 
 				setupOptions.Backends[0].Directory = filepath.Join(repository.Spec.Path, comp.Path)
-
 				w, err := restic.NewResticWrapper(setupOptions)
 				if err != nil {
 					return err
 				}
-
 				// dump restic's environments into `restic-env` file.
 				// we will pass this env file to restic docker container.
 				err = w.DumpEnv(repository.Name, ConfigDir, ResticEnvs)
 				if err != nil {
 					return err
 				}
-
 				restoreArgs := []string{
 					"restore",
 					"--cache-dir",
 					ScratchDir,
-					"--target", "/tmp/restore",
 				}
-
 				// For TLS secured Minio/REST server, specify cert path
 				if w.GetCaPath(repository.Name) != "" {
 					restoreArgs = append(restoreArgs, "--cacert", w.GetCaPath(repository.Name))
 				}
-
 				viewOpt.resticStats = comp.ResticStats
-
 				files, err := viewOpt.listFilesViaDockerThenFilter(restoreArgs)
 
 				viewOpt.showInTreeFormat(files)
@@ -252,7 +235,6 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 		},
 	}
 
-	cmd.Flags().StringVar(&viewOpt.destinationDir, "destination", viewOpt.destinationDir, "Destination path where components will be restored.")
 	cmd.Flags().StringSliceVar(&viewOpt.components, "components", viewOpt.components, "List of components to restore")
 	cmd.Flags().StringSliceVar(&viewOpt.exclude, "exclude", viewOpt.exclude, "List of pattern for directory/file to ignore during restore")
 	cmd.Flags().StringSliceVar(&viewOpt.include, "include", viewOpt.include, "List of pattern for directory/file to restore")
@@ -278,6 +260,9 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 }
 
 func (opt *viewOptions) runCmdViaPod(pod *core.Pod, snapshotName string) error {
+	if err := os.MkdirAll(SnapshotDownloadDir, 0o755); err != nil {
+		return err
+	}
 	command := []string{
 		"/kubestash",
 		"download", snapshotName,
@@ -301,53 +286,52 @@ func (opt *viewOptions) runCmdViaPod(pod *core.Pod, snapshotName string) error {
 	return nil
 }
 
-func (opt *viewOptions) listFilesViaPodThenFilter(pod *core.Pod) ([]string, error) {
+func (opt *viewOptions) clearDataFromPod(pod *core.Pod) error {
+	cmd := []string{"rm", "-rf", SnapshotDownloadDir}
+	_, err := execOnPod(opt.restConfig, pod, cmd)
+	return err
+}
+
+func (opt *viewOptions) listFilesViaPodThenFilter(pod *core.Pod, snapshot *storageapi.Snapshot) ([]string, error) {
 	resourceFilter := filter.NewIncludeExclude().Includes(opt.IncludeResources...).Excludes(opt.ExcludeResources...)
 	namespaceFilter := filter.NewIncludeExclude().Includes(opt.IncludeNamespaces...).Excludes(opt.ExcludeNamespaces...)
 	globalIncludeExclude = filter.NewGlobalIncludeExclude(resourceFilter, namespaceFilter, opt.IncludeClusterResources)
 
-	findCmd := []string{
-		"find", SnapshotDownloadDir, "-type", "f", "-name", "*.yaml",
-	}
-	out, err := execOnPod(opt.restConfig, pod, findCmd)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list yaml files in pod: %v\nOutput: %s", err, out)
-	}
-	files := strings.Split(strings.TrimSpace(out), "\n")
-
 	filteredFiles := []string{}
-	for _, fullPath := range files {
-		if strings.TrimSpace(fullPath) == "" {
-			continue
-		}
-		catCmd := []string{"cat", fullPath}
-		content, err := execOnPod(opt.restConfig, pod, catCmd)
-		if err != nil {
-			fmt.Printf("WARN: failed to read file %s: %v\nOutput: %s\n", fullPath, err, content)
-			continue
-		}
-		labels := opt.extractLabels(content)
-		fmt.Printf("-----\n{filename: %s,\nfilecontent:\n%s \nlabels: %v \n}\n", fullPath, content, labels)
-		if opt.matchLabels(labels) {
-			// remove SnapshotDownloadDir and opt.dataDir prefix from path
-			relativePath := strings.TrimPrefix(fullPath, filepath.Join(SnapshotDownloadDir, opt.dataDir))
-			if opt.shouldShow(relativePath) {
-				filteredFiles = append(filteredFiles, relativePath)
+	for componentName, component := range snapshot.Status.Components {
+		for _, resticStat := range component.ResticStats {
+
+			findCmd := []string{
+				"find", filepath.Join(SnapshotDownloadDir, snapshot.Name, componentName, resticStat.HostPath), "-type", "f", "-name", "*.yaml",
+			}
+			out, err := execOnPod(opt.restConfig, pod, findCmd)
+			if err != nil {
+				return nil, fmt.Errorf("failed to list yaml files in pod: %v\nOutput: %s", err, out)
+			}
+
+			files := strings.Split(strings.TrimSpace(out), "\n")
+			for _, fullPath := range files {
+				if strings.TrimSpace(fullPath) == "" {
+					continue
+				}
+				catCmd := []string{"cat", fullPath}
+				content, err := execOnPod(opt.restConfig, pod, catCmd)
+				if err != nil {
+					fmt.Printf("WARN: failed to read file %s: %v\nOutput: %s\n", fullPath, err, content)
+					continue
+				}
+				labels := opt.extractLabels(content)
+				if opt.matchLabels(labels) {
+					relativePath := strings.TrimPrefix(fullPath, filepath.Join(SnapshotDownloadDir, snapshot.Name, componentName, resticStat.HostPath))
+					if opt.shouldShow(relativePath) {
+						filteredFiles = append(filteredFiles, filepath.Join(resticStat.HostPath, relativePath))
+					}
+				}
 			}
 		}
 	}
 
 	return filteredFiles, nil
-}
-
-func (opt *viewOptions) prepareDestinationDir() (err error) {
-	// if destination flag is not specified, restore in current directory
-	if opt.destinationDir == "" {
-		if opt.destinationDir, err = os.Getwd(); err != nil {
-			return err
-		}
-	}
-	return os.MkdirAll(opt.destinationDir, 0o755)
 }
 
 func getResourceFromGroupResource(gv string) string {
@@ -374,7 +358,6 @@ func (viewOpt *viewOptions) extractLabels(yamlStr string) []string {
 	if err != nil {
 		fmt.Printf("Error getting unstructured file: %s\n", err)
 	}
-	//klog.Infoln("###Unstructered Object string view", unstructuredObject)
 	return labelsToStrings(unstructuredObject.GetLabels())
 }
 
@@ -421,7 +404,7 @@ func (opt viewOptions) shouldShow(file string) bool {
 	parts[len(parts)-1] = strings.TrimSuffix(parts[len(parts)-1], filepath.Ext(parts[len(parts)-1]))
 	resource := getResourceFromGroupResource(parts[0])
 	var namespace string
-	if parts[1] == "cluster" {
+	if parts[1] == common.ClusterScopedDir {
 		namespace = ""
 	} else {
 		namespace = parts[2]
@@ -487,7 +470,6 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 		return nil, fmt.Errorf("failed to check existing containers: %v", err)
 	}
 	containerExists := strings.Contains(string(out), containerName)
-
 	if !containerExists {
 		baseArgs := []string{
 			"run", "-d",
@@ -508,28 +490,25 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 			return nil, fmt.Errorf("failed to create container: %v\nOutput: %s", err, string(runOut))
 		}
 	}
-
 	defer func() {
 		_ = exec.Command(CmdDocker, "rm", "-f", containerName).Run()
 	}()
 
-	// Run restic restore for each snapshot
 	for _, resticStat := range opt.resticStats {
 		restoreCmd := []string{
 			"exec", "-u", currentUser.Uid,
 			containerName,
 			"restic",
 		}
-		restoreCmd = append(restoreCmd, args...) // args includes "restore", "--target", etc.
+		restoreCmd = append(restoreCmd, args...)
 		restoreCmd = append(restoreCmd, resticStat.Id)
-
 		for _, include := range opt.include {
 			restoreCmd = append(restoreCmd, "--include", include)
 		}
 		for _, exclude := range opt.exclude {
 			restoreCmd = append(restoreCmd, "--exclude", exclude)
 		}
-
+		restoreCmd = append(restoreCmd, "--target", restoreDir)
 		klog.Infof("Running docker command: docker %v", restoreCmd)
 		output, err := exec.Command(CmdDocker, restoreCmd...).CombinedOutput()
 		if err != nil {
@@ -538,40 +517,39 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 		fmt.Println("Restored:", string(output))
 	}
 
-	findCmd := exec.Command(
-		CmdDocker, "exec", "-u", currentUser.Uid,
-		containerName,
-		"find", restoreDir, "-type", "f", "-name", "*.yaml",
-	)
-	findOutput, err := findCmd.CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list yaml files: %v\nOutput: %s", err, string(findOutput))
-	}
-	files := strings.Split(strings.TrimSpace(string(findOutput)), "\n")
-
 	filteredFiles := []string{}
-	for _, fullPath := range files {
-		if strings.TrimSpace(fullPath) == "" {
-			continue
-		}
-		catCmd := exec.Command(
+	for _, resticStat := range opt.resticStats {
+		findFilePathsCmd := exec.Command(
 			CmdDocker, "exec", "-u", currentUser.Uid,
 			containerName,
-			"cat", fullPath,
+			"find", filepath.Join(restoreDir, resticStat.HostPath), "-type", "f", "-name", "*.yaml",
 		)
-		content, err := catCmd.CombinedOutput()
+		findOutput, err := findFilePathsCmd.CombinedOutput()
 		if err != nil {
-			fmt.Printf("WARN: failed to read file %s: %v\nOutput: %s\n", fullPath, err, string(content))
-			continue
+			return nil, fmt.Errorf("failed to list yaml files: %v\nOutput: %s", err, string(findOutput))
 		}
+		filePaths := strings.Split(strings.TrimSpace(string(findOutput)), "\n")
+		for _, fullPath := range filePaths {
+			if strings.TrimSpace(fullPath) == "" {
+				continue
+			}
+			catCmd := exec.Command(
+				CmdDocker, "exec", "-u", currentUser.Uid,
+				containerName,
+				"cat", fullPath,
+			)
+			content, err := catCmd.CombinedOutput()
+			if err != nil {
+				fmt.Printf("WARN: failed to read file %s: %v\nOutput: %s\n", fullPath, err, string(content))
+				continue
+			}
 
-		labels := opt.extractLabels(string(content))
-		fmt.Printf("-----\n{filename: %s,\nfilecontent:\n%s \nlabels: %v \n}\n", fullPath, string(content), labels)
-
-		if opt.matchLabels(labels) {
-			relativePath := strings.TrimPrefix(fullPath, filepath.Join(restoreDir, opt.dataDir))
-			if opt.shouldShow(relativePath) {
-				filteredFiles = append(filteredFiles, relativePath)
+			labels := opt.extractLabels(string(content))
+			if opt.matchLabels(labels) {
+				relativePath := strings.TrimPrefix(fullPath, filepath.Join(restoreDir, resticStat.HostPath))
+				if opt.shouldShow(relativePath) {
+					filteredFiles = append(filteredFiles, filepath.Join(resticStat.HostPath, relativePath))
+				}
 			}
 		}
 	}
