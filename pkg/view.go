@@ -17,11 +17,8 @@ limitations under the License.
 package pkg
 
 import (
-	_ "bufio"
 	"fmt"
-	_ "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"kubestash.dev/cli/pkg/filter"
-	_ "log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -29,10 +26,7 @@ import (
 	"slices"
 	"strings"
 
-	_ "encoding/json"
-
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	_ "k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
 
 	"github.com/jedib0t/go-pretty/v6/list"
@@ -315,6 +309,7 @@ func (opt *viewOptions) listFilesViaPodThenFilter(pod *core.Pod, snapshot *stora
 					continue
 				}
 				catCmd := []string{"cat", fullPath}
+				klog.V(3).Infoln("Executing docker command: ", catCmd, "for reading contents of filePath: ", fullPath, "inside container")
 				content, err := execOnPod(opt.restConfig, pod, catCmd)
 				if err != nil {
 					fmt.Printf("WARN: failed to read file %s: %v\nOutput: %s\n", fullPath, err, content)
@@ -399,7 +394,8 @@ func labelsToStrings(labels map[string]string) []string {
 	return out
 }
 
-func (opt viewOptions) shouldShow(file string) bool {
+func (opt *viewOptions) shouldShow(file string) bool {
+	file = strings.TrimPrefix(file, "/")
 	parts := strings.Split(file, "/")
 	parts[len(parts)-1] = strings.TrimSuffix(parts[len(parts)-1], filepath.Ext(parts[len(parts)-1]))
 	resource := getResourceFromGroupResource(parts[0])
@@ -509,7 +505,6 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 			restoreCmd = append(restoreCmd, "--exclude", exclude)
 		}
 		restoreCmd = append(restoreCmd, "--target", restoreDir)
-		//klog.Infof("Running docker command: docker %v", restoreCmd)
 		output, err := exec.Command(CmdDocker, restoreCmd...).CombinedOutput()
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore snapshot: %v\nOutput: %s", err, string(output))
@@ -538,6 +533,7 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 				containerName,
 				"cat", fullPath,
 			)
+			klog.V(3).Infoln("Executing docker command: ", catCmd, "for reading contents of filePath: ", fullPath, "inside container")
 			content, err := catCmd.CombinedOutput()
 			if err != nil {
 				fmt.Printf("WARN: failed to read file %s: %v\nOutput: %s\n", fullPath, err, string(content))
