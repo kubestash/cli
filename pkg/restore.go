@@ -27,7 +27,6 @@ import (
 	"kubestash.dev/apimachinery/pkg/restic"
 	"kubestash.dev/cli/pkg/common"
 	"kubestash.dev/cli/pkg/common/dump"
-	_ "kubestash.dev/cli/pkg/filter"
 	"os"
 	"os/exec"
 	"os/user"
@@ -81,7 +80,7 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 				Namespace: srcNamespace,
 			})
 			if err != nil {
-				return fmt.Errorf("failed to get snapshot Namespace: %s SnapshotName: %s: Error: %w", opt.Snapshot.Name, err)
+				return fmt.Errorf("failed to get snapshot Namespace: %s SnapshotName: %s: Error: %w", opt.Namespace, opt.Snapshot.Name, err)
 			}
 
 			repository, err := getRepository(kmapi.ObjectReference{
