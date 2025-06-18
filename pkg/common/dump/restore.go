@@ -19,20 +19,19 @@ package dump
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"path/filepath"
-	"sigs.k8s.io/yaml"
 	"strings"
-
-	"kubestash.dev/cli/pkg/common"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
+	"kubestash.dev/cli/pkg/common"
+	"sigs.k8s.io/yaml"
 )
 
 func (m *ResourceManager) RestoreManifests(ctx context.Context) error {
@@ -248,7 +247,6 @@ func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error)
 		for _, resticStat := range component.ResticStats {
 			baseDir := filepath.Join(m.Options.DataDir, m.SnapshotName, componentName, resticStat.HostPath)
 			entries, err := m.reader.ReadDir(baseDir)
-
 			if err != nil {
 				return nil, fmt.Errorf("failed to read backup directory: %w", err)
 			}

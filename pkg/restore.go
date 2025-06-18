@@ -19,14 +19,6 @@ package pkg
 import (
 	"context"
 	"fmt"
-	core "k8s.io/api/core/v1"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/klog/v2"
-	kmapi "kmodules.xyz/client-go/api/v1"
-	v1 "kmodules.xyz/offshoot-api/api/v1"
-	"kubestash.dev/apimachinery/pkg/restic"
-	"kubestash.dev/cli/pkg/common"
-	"kubestash.dev/cli/pkg/common/dump"
 	"os"
 	"os/exec"
 	"os/user"
@@ -35,6 +27,14 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	core "k8s.io/api/core/v1"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
+	v1 "kmodules.xyz/offshoot-api/api/v1"
+	"kubestash.dev/apimachinery/pkg/restic"
+	"kubestash.dev/cli/pkg/common"
+	"kubestash.dev/cli/pkg/common/dump"
 )
 
 type options struct {
@@ -290,11 +290,11 @@ func (opt *options) prepareDirectories() (err error) {
 	if opt.DataDir == "" {
 		opt.DataDir = DestinationDir
 	}
-	if err := os.MkdirAll(opt.DataDir, 0755); err != nil {
+	if err := os.MkdirAll(opt.DataDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create data dir: %w", err)
 	}
 	if opt.DryRunDir != "" {
-		if err := os.MkdirAll(opt.DryRunDir, 0755); err != nil {
+		if err := os.MkdirAll(opt.DryRunDir, 0o755); err != nil {
 			return fmt.Errorf("error while creating dry run directory: %w", err)
 		}
 	}

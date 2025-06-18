@@ -22,11 +22,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"kubestash.dev/apimachinery/apis"
-	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
-	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
-	"kubestash.dev/apimachinery/pkg/restic"
-
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -36,6 +31,10 @@ import (
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+	"kubestash.dev/apimachinery/apis"
+	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
+	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/pkg/restic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
@@ -158,8 +157,8 @@ func (opt *Options) setSetupOptionsForSnapshots(snapshots ...storageapi.Snapshot
 
 	var err error
 
-	//opt.SetupOptions.Timeout, err = opt.getTimeout()
-	//if err != nil {
+	// opt.SetupOptions.Timeout, err = opt.getTimeout()
+	// if err != nil {
 	//	return fmt.Errorf("failed to get timeout: %w", err)
 	//	}
 
@@ -191,7 +190,7 @@ func (opt *Options) setSetupOptionsForSnapshots(snapshots ...storageapi.Snapshot
 		backend.Repository = repo.Name
 		backend.BackupStorage = &repo.Spec.StorageRef
 		backend.Directory = filepath.Join(repo.Spec.Path, snap.GetComponentPath(apis.ComponentManifest))
-		//if opt.BackupSession != nil {
+		// if opt.BackupSession != nil {
 		backend.EncryptionSecret = repo.Spec.EncryptionSecret
 		//} else {
 		//	backend.EncryptionSecret = opt.RestoreSession.Spec.DataSource.EncryptionSecret
@@ -216,23 +215,6 @@ func (opt *Options) InitializeRepositories(w *restic.ResticWrapper) {
 		}
 	}
 	w.Config.Backends = validBackends
-}
-
-func (opt *Options) getTimeout() (*metav1.Duration, error) {
-	var err error
-	var timeout *metav1.Duration
-	if opt.BackupSession != nil {
-		timeout, err = opt.BackupSession.GetRemainingTimeoutDuration()
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		//timeout, err = opt.RestoreSession.GetRemainingTimeoutDuration()
-		//if err != nil {
-		//	return nil, err
-		//	}
-	}
-	return timeout, nil
 }
 
 func ClearDir(dir string) error {

@@ -22,10 +22,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"kubestash.dev/cli/pkg/common"
-	"kubestash.dev/cli/pkg/filter"
-	"kubestash.dev/cli/pkg/sanitizers"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -35,6 +31,9 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
+	"kubestash.dev/cli/pkg/common"
+	"kubestash.dev/cli/pkg/filter"
+	"kubestash.dev/cli/pkg/sanitizers"
 	yaml "sigs.k8s.io/yaml/goyaml.v2"
 )
 
