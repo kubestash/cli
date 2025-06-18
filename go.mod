@@ -9,7 +9,7 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0
 	github.com/olekukonko/tablewriter v0.0.6-0.20230925090304-df64c4bbad77
 	github.com/spf13/cobra v1.9.1
-	golang.org/x/text v0.23.0
+	golang.org/x/text v0.24.0
 	gomodules.xyz/flags v0.1.3
 	gomodules.xyz/go-sh v0.2.0
 	gomodules.xyz/logs v0.0.7
@@ -23,11 +23,12 @@ require (
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.30.1
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	kmodules.xyz/client-go v0.32.1
+	kmodules.xyz/client-go v0.32.6
 	kmodules.xyz/offshoot-api v0.32.0
 	kmodules.xyz/prober v0.32.0
-	kubestash.dev/apimachinery v0.18.0
-	sigs.k8s.io/controller-runtime v0.20.3
+	kubedb.dev/apimachinery v0.54.0
+	kubestash.dev/apimachinery v0.18.2-0.20250531084216-1422c5d19aea
+	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/yaml v1.4.0
 	stash.appscode.dev/apimachinery v0.39.0
 )
@@ -117,7 +118,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.1-0.20220621161143-b0104c826a24 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.17.11 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
@@ -160,12 +161,12 @@ require (
 	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	go.virtual-secrets.dev/apimachinery v0.0.1 // indirect
 	gocloud.dev v0.40.0 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
-	golang.org/x/term v0.30.0 // indirect
+	golang.org/x/sync v0.13.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/term v0.31.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240716161551-93cc26a95ae9 // indirect
 	gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f // indirect
@@ -191,7 +192,6 @@ require (
 	kmodules.xyz/custom-resources v0.32.0 // indirect
 	kmodules.xyz/monitoring-agent-api v0.32.0 // indirect
 	kmodules.xyz/objectstore-api v0.32.0 // indirect
-	kubedb.dev/apimachinery v0.53.0 // indirect
 	kubeops.dev/petset v0.0.10 // indirect
 	kubeops.dev/sidekick v0.0.11 // indirect
 	sigs.k8s.io/gateway-api v1.1.0 // indirect
