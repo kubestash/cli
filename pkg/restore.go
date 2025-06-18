@@ -50,9 +50,9 @@ var (
 	dumpImplementer *dump.ResourceManager
 )
 
-func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
+func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "restore",
+		Use:               "manifest-restore",
 		Short:             "Restore Kubernetes resources",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -70,7 +70,7 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 			klient = opt.Client
 
 			srcNamespace = opt.Namespace
-			//srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
+
 			if err != nil {
 				return err
 			}
@@ -245,7 +245,7 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 	cmd.Flags().StringVar(&opt.TargetNamespace, "target-namespace", "default", "Namespace where the resources will be restored")
 	cmd.Flags().StringVar(&opt.SnapshotName, "snapshot", "", "Name of the snapshot")
 
-	cmd.Flags().StringVar(&opt.DataDir, "data-dir", opt.DataDir, "Local directory where snapshot data will be downloaded and will be deleted")
+	cmd.Flags().StringVar(&opt.DataDir, "data-dir", opt.DataDir, "Temporary local directory where snapshot data will be downloaded and will be deleted")
 	cmd.Flags().StringVar(&opt.DryRunDir, "dry-run-dir", opt.DryRunDir, "Local directory where snapshot data will be downloaded for dry run")
 
 	cmd.Flags().StringVar(&opt.SetupOptions.ScratchDir, "scratch-dir", opt.SetupOptions.ScratchDir, "Temporary directory")
@@ -255,8 +255,8 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 	cmd.Flags().StringSliceVar(&opt.ExcludeNamespaces, "exclude-namespaces", opt.ExcludeNamespaces, "Namespaces to exclude from restore (comma-separated, e.g., 'kube-public,temp')")
 	cmd.Flags().StringSliceVar(&opt.IncludeResources, "include-resources", opt.IncludeResources, "Resource types to include (comma-separated, e.g., 'pods,deployments')")
 	cmd.Flags().StringSliceVar(&opt.ExcludeResources, "exclude-resources", opt.ExcludeResources, "Resource types to exclude (comma-separated, e.g., 'secrets,configmaps')")
-	cmd.Flags().StringSliceVar(&opt.ANDedLabelSelector, "and-label-selectors", opt.ANDedLabelSelector, "A set of labels, all of which need to be matched to filter the resources.")
-	cmd.Flags().StringSliceVar(&opt.ORedLabelSelector, "or-label-selectors", opt.ORedLabelSelector, "A set of labels, a subset of which need to be matched to filter the resources.")
+	cmd.Flags().StringSliceVar(&opt.ANDedLabelSelector, "and-label-selectors", opt.ANDedLabelSelector, "A set of labels, all of which need to be matched to filter the resources (comma-separated, e.g., 'key1:value1,key2:value2')")
+	cmd.Flags().StringSliceVar(&opt.ORedLabelSelector, "or-label-selectors", opt.ORedLabelSelector, "A set of labels, a subset of which need to be matched to filter the resources (comma-separated, e.g., 'key1:value1,key2:value2')")
 
 	cmd.Flags().BoolVar(&opt.IncludeClusterResources, "include-cluster-resources", false, "Specify whether to restore cluster scoped resources")
 	cmd.Flags().BoolVar(&opt.OverrideResources, "override-resources", false, "Specify whether to override resources while restoring")
@@ -268,22 +268,6 @@ func NewCmdRestore(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 }
 
 func (opt *options) performRestore() error {
-	/*
-		w, err := opt.GetResticWrapperForSnapshots(*opt.Snapshot)
-		if err != nil {
-			return fmt.Errorf("failed to initiate restic wrapper: %w", err)
-		}
-		opt.RestoreOptions.Snapshots, err = opt.GetResticSnapshotIDs()
-		if err != nil {
-			return err
-		}
-
-		_, err = w.RunRestore(opt.Snapshot.Spec.Repository, opt.RestoreOptions)
-		if err != nil {
-			return err
-		}
-		fmt.Println("Restic restore completed.")
-	    /**/
 	if dumpImplementer == nil {
 		return fmt.Errorf("dumpImplementer is nil")
 	}

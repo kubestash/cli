@@ -47,18 +47,6 @@ func (f *IncludeExclude) Excludes(items ...string) *IncludeExclude {
 	return f
 }
 
-func GetIncludeExcludeResources(includes, excludes []string) *IncludeExclude {
-	f := NewIncludeExclude()
-	f.Includes(includes...)
-	for _, item := range excludes {
-		if item == "*" {
-			continue
-		}
-		f.Excludes(item)
-	}
-	return f
-}
-
 func (f *IncludeExclude) ShouldInclude(item string) bool {
 	// Always excluded if in excludes.
 	if _, blocked := f.excludes[item]; blocked {

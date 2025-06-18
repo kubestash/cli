@@ -73,12 +73,12 @@ type TreeNode struct {
 
 var globalIncludeExclude *filter.GlobalIncludeExclude
 
-func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
+func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 	viewOpt := &viewOptions{}
 	cmd := &cobra.Command{
-		Use:               "view",
-		Short:             `view components of a snapshot`,
-		Long:              `view components of a snapshot from restic repositories`,
+		Use:               "manifest-view",
+		Short:             `view components(manifest) of a snapshot`,
+		Long:              `view components(manifest) of a snapshot from restic repositories`,
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -241,8 +241,8 @@ func NewCmdView(clientGetter genericclioptions.RESTClientGetter) *cobra.Command 
 	cmd.Flags().StringVar(&viewOpt.SetupOptions.ScratchDir, "scratch-dir", viewOpt.SetupOptions.ScratchDir, "Temporary directory")
 	cmd.Flags().BoolVar(&viewOpt.SetupOptions.EnableCache, "enable-cache", viewOpt.SetupOptions.EnableCache, "Specify whether to enable caching for restic")
 
-	cmd.Flags().StringSliceVar(&viewOpt.ANDedLabelSelector, "and-label-selectors", viewOpt.ANDedLabelSelector, "A set of labels, all of which need to be matched to filter the resources.")
-	cmd.Flags().StringSliceVar(&viewOpt.ORedLabelSelector, "or-label-selectors", viewOpt.ORedLabelSelector, "A set of labels, a subset of which need to be matched to filter the resources.")
+	cmd.Flags().StringSliceVar(&opt.ANDedLabelSelector, "and-label-selectors", opt.ANDedLabelSelector, "A set of labels, all of which need to be matched to filter the resources (comma-separated, e.g., 'key1:value1,key2:value2')")
+	cmd.Flags().StringSliceVar(&opt.ORedLabelSelector, "or-label-selectors", opt.ORedLabelSelector, "A set of labels, a subset of which need to be matched to filter the resources (comma-separated, e.g., 'key1:value1,key2:value2')")
 
 	cmd.Flags().StringSliceVar(&viewOpt.IncludeNamespaces, "include-namespaces", viewOpt.IncludeNamespaces, "Namespaces to include in backup (comma-separated, e.g., 'default,kube-system')")
 	cmd.Flags().StringSliceVar(&viewOpt.ExcludeNamespaces, "exclude-namespaces", viewOpt.ExcludeNamespaces, "Namespaces to exclude from backup (comma-separated, e.g., 'kube-public,temp')")
