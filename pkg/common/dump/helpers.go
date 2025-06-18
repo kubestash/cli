@@ -20,14 +20,13 @@ import (
 	"fmt"
 	"strings"
 
-	"kubestash.dev/cli/pkg/common"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"kubestash.dev/cli/pkg/common"
 	"sigs.k8s.io/yaml"
 )
 

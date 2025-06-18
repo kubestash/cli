@@ -18,7 +18,6 @@ package pkg
 
 import (
 	"fmt"
-	"kubestash.dev/cli/pkg/filter"
 	"os"
 	"os/exec"
 	"os/user"
@@ -26,12 +25,10 @@ import (
 	"slices"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/yaml"
-
 	"github.com/jedib0t/go-pretty/v6/list"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
@@ -42,12 +39,12 @@ import (
 	"kubestash.dev/apimachinery/pkg"
 	"kubestash.dev/apimachinery/pkg/restic"
 	"kubestash.dev/cli/pkg/common"
+	"kubestash.dev/cli/pkg/filter"
+	"sigs.k8s.io/yaml"
 )
 
 type viewOptions struct {
-	restConfig     *rest.Config
-	destinationDir string // user provided or, current working dir
-	dataDir        string
+	restConfig *rest.Config
 
 	SetupOptions restic.SetupOptions
 	resticStats  []storageapi.ResticStats
@@ -137,7 +134,7 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 				}
 				files, err := viewOpt.listFilesViaPodThenFilter(accessorPod, snapshot)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to list files via pod then filter. Reason: %v", err)
 				}
 				viewOpt.showInTreeFormat(files)
 				return viewOpt.clearDataFromPod(accessorPod)
@@ -157,7 +154,7 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 				}
 				files, err := viewOpt.listFilesViaPodThenFilter(&operatorPod, snapshot)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to list files via pod then filter. Reason: %v", err)
 				}
 				viewOpt.showInTreeFormat(files)
 				return viewOpt.clearDataFromPod(&operatorPod)
@@ -221,7 +218,9 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 				}
 				viewOpt.resticStats = comp.ResticStats
 				files, err := viewOpt.listFilesViaDockerThenFilter(restoreArgs)
-
+				if err != nil {
+					return fmt.Errorf("failed to list files via docker then filter. Reason: %v", err)
+				}
 				viewOpt.showInTreeFormat(files)
 			}
 

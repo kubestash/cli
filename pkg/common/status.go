@@ -19,13 +19,12 @@ package common
 import (
 	"context"
 	"fmt"
-	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
-
-	"kubestash.dev/apimachinery/apis"
-	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
-	"kubestash.dev/apimachinery/pkg/restic"
 
 	kmc "kmodules.xyz/client-go/client"
+	"kubestash.dev/apimachinery/apis"
+	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
+	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/pkg/restic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

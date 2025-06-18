@@ -17,14 +17,14 @@ limitations under the License.
 package common
 
 import (
-	"kubestash.dev/apimachinery/apis"
-	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
-	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
-	"kubestash.dev/apimachinery/pkg/restic"
 	"os"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
+	"kubestash.dev/apimachinery/apis"
+	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
+	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/pkg/restic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
