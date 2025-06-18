@@ -19,8 +19,10 @@ package dump
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/yaml"
 	"strings"
 
 	"kubestash.dev/cli/pkg/common"
@@ -127,11 +129,16 @@ func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm co
 		} else {
 			dryRunPath = filepath.Join(dryRunPath, common.NamespaceScopedDir, namespaceOfObject, obj.GetName())
 		}
-		byteData, err := obj.MarshalJSON()
+		jsonBytes, err := runtime.Encode(unstructured.UnstructuredJSONScheme, obj)
 		if err != nil {
 			return err
 		}
-		if err := m.writer.Write(dryRunPath, byteData); err != nil {
+		yamlBytes, err := yaml.JSONToYAML(jsonBytes)
+		if err != nil {
+			return err
+		}
+		dryRunPath = dryRunPath + ".yaml"
+		if err := m.writer.Write(dryRunPath, yamlBytes); err != nil {
 			return err
 		}
 		return nil
@@ -151,30 +158,11 @@ func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm co
 		sObj["spec"] = spec
 	}
 
-	//updateNamespaceFields(sObj, m.TargetNamespace)
 	obj.Object = sObj
 	if err := m.createIfMissing(ctx, gvr, obj); err != nil {
 		return err
 	}
 	return nil
-}
-
-func updateNamespaceFields(obj interface{}, targetNamespace string) {
-	switch val := obj.(type) {
-	case map[string]interface{}:
-		for key, value := range val {
-			if key == "namespace" {
-				val[key] = targetNamespace // modifies original map
-				fmt.Printf("Namespace field updated %v\n", val)
-			} else {
-				updateNamespaceFields(value, targetNamespace)
-			}
-		}
-	case []interface{}:
-		for _, item := range val {
-			updateNamespaceFields(item, targetNamespace)
-		}
-	}
 }
 
 func (m *ResourceManager) ensureNamespace(ctx context.Context, ns string) error {
