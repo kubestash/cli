@@ -375,6 +375,7 @@ const (
 	MaxscaleDataVolumePath    = "/var/lib/maxscale"
 	MaxscaleUIPort            = 8989
 	MaxscaleUIPortName        = "ui"
+	MaxscaleCertMountPath     = "/etc/ssl/maxscale"
 
 	// =========================== SingleStore Constants ============================
 	SinglestoreDatabasePortName       = "db"
@@ -614,6 +615,8 @@ const (
 
 	EnvValkeyPassword          = "VALKEYCLI_AUTH"
 	EnvValkeyMajorRedisVersion = "MAJOR_VALKEY_VERSION"
+	ValkeyConfigVolumePath     = "/usr/local/etc/valkey/"
+	ValkeyConfigVolumeName     = "valkey-config"
 
 	// =========================== PgBouncer Constants ============================
 	PgBouncerUpstreamServerCA               = "upstream-server-ca.crt"
@@ -746,6 +749,32 @@ const (
 	ZooKeeperSuperUsername       = "super"
 	ZooKeeperSASLAuthLoginConfig = "-Djava.security.auth.login.config"
 	ZooKeeperJaasFilePath        = "/data/jaas.conf"
+
+	// ========================================== Hazelcast Constants =================================================//
+	HazelcastAdmin                = "admin"
+	HazelcastSecretKey            = "hazelcast.yaml"
+	HazelcastClientSecretKey      = "hazelcast-client.yaml"
+	HazelcastRestPort             = 5701
+	HazelcastPortName             = "hazelcast"
+	HazelcastConfigVolume         = "hzconfig"
+	HazelcastDefaultConfigVolume  = "default-config"
+	HazelcastCustomConfigVolume   = "custom-config"
+	HazelcastCustomConfigDir      = "/data/custom"
+	HazelcastTempConfigDir        = "/data/temp"
+	HazelcastConfigFileName       = "hazelcast.yaml"
+	HazelcastVolumeData           = "data"
+	HazelcastDataDir              = "/data/persistence"
+	HazelcastContainerName        = "hazelcast"
+	HazelcastInitContainerName    = "hazelcast-init"
+	HazelcastConfigDir            = "/data/hazelcast"
+	HazelcastKeystorePassKey      = "keystore-secret"
+	HazelcastServerKeystoreFile   = "/data/etc/server/keystore.p12"
+	HazelcastServerTruststoreFile = "/data/etc/server/truststore.p12"
+	HazelcastClientKeystoreFile   = "/data/etc/client/keystore.p12"
+	HazelcastClientTruststoreFile = "/data/etc/client/truststore.p12"
+	HazelcastTLSServerMountPath   = "/data/etc/server"
+	HazelcastTLSClientMountPath   = "/data/etc/client"
+	HazelcastLicenseKey           = "licenseKey"
 )
 
 // List of possible condition types for a KubeDB object
@@ -1469,6 +1498,40 @@ const (
 	FerretDBBackendConfigFile    = "user.conf"
 )
 
+// =========================== Ignite Constants ============================
+const (
+	IgniteCustomConfigVolName = "custom-config"
+	IgniteCustomConfigDir     = "/tmp/config/custom_config"
+	IgniteTempConfigVolName   = "temp-config"
+	IgniteTempConfigDir       = "/tmp/config"
+	IgniteInitContainerName   = "ignite-init"
+	IgniteInitScriptVolName   = "init-scripts"
+	IgniteInitScriptDir       = "/scripts"
+	IgniteConfigVolName       = "ignite-config"
+	IgniteWorkVolName         = "ignite-work"
+	IgniteConfigFileName      = "node-configuration.xml"
+	IgniteDataVolName         = "data"
+	IgniteDataDir             = "/ignite/data"
+	IgniteContainerName       = "ignite"
+	IgniteConfigDir           = "/ignite/config"
+	IgniteRestPortName        = "rest"
+	IgniteRestPort            = 8080
+	IgniteThinPortName        = "thin"
+	IgniteThinPort            = 10800
+	IgniteSPIPortName         = "spi"
+	IgniteSPIPort             = 47100
+	IgniteTCPPortName         = "tcp"
+	IgniteTCPPort             = 47500
+	IgniteJMXPortName         = "jmx"
+	IgniteJMXPort             = 49112
+	IgniteUserName            = "ignite"
+	OPTION_LIBS               = "OPTION_LIBS"
+	CONFIG_URI                = "CONFIG_URI"
+	CONTROL_JVM_OPTS          = "CONTROL_JVM_OPTS"
+	IGNITE_PASSWORD           = "IGNITE_PASSWORD"
+	DISABLE_SECURITY          = "DISABLE_SECURITY"
+)
+
 // =========================== ClickHouse Constants ============================
 
 const (
@@ -1480,7 +1543,7 @@ const (
 	ClickhousePromethues  = 9363
 	ClickHouseRaftPort    = 9234
 
-	ComponentCoOrdinator = "co-ordinator"
+	ComponentCoOrdinator = "coordinator"
 
 	ClickHousePromethusEndpoint           = "/metrics"
 	ClickHouseDataDir                     = "/var/lib/clickhouse"
@@ -1488,14 +1551,17 @@ const (
 	ClickHouseConfigDir                   = "/etc/clickhouse-server/config.d"
 	ClickHouseKeeperConfigDir             = "/etc/clickhouse-keeper"
 	ClickHouseCommonConfigDir             = "/etc/clickhouse-server/conf.d"
-	ClickHouseTempConfigDir               = "/ch-tmp"
 	ClickHouseInternalKeeperTempConfigDir = "/keeper"
-	ClickHouseTempDir                     = "/ch-tmp"
-	ClickHouseKeeperTempDir               = "/ch-tmp"
 	ClickHouseKeeperConfigPath            = "/etc/clickhouse-keeper"
 	ClickHouseUserConfigDir               = "/etc/clickhouse-server/user.d"
 	ClickHouseLogPath                     = "/var/log/clickhouse-server/clickhouse-server.log"
 	ClickHouseErrorLogPath                = "/var/log/clickhouse-server/clickhouse-server.err.log"
+
+	ClickHouseClientCertMountPath      = "/etc/clickhouse-server/certs"
+	ClickHouseClientCertVolumeName     = "certs"
+	ClickHouseTempClientCertVolumeName = "certs-tmp"
+	ClickHouseTempClientCertMountPath  = "/certs-tmp"
+	ClickHouseTempConfigDir            = "/config-tmp"
 
 	// keeper
 	ClickHouseKeeperDataPath     = "/var/lib/clickhouse_keeper"
@@ -1531,6 +1597,7 @@ const (
 
 	ClickHouseHealthCheckerDatabase = "kubedb_system"
 	ClickHouseHealthCheckerTable    = "kubedb_write_check"
+	ClickHouseReplicationTableName  = "kubedb_events_local"
 
 	ClickHouseServerConfigFile   = "server-config.yaml"
 	ClickHouseKeeperFileConfig   = "keeper_config.yaml"
@@ -1564,7 +1631,7 @@ const (
 
 	CassandraUserAdmin = "admin"
 
-	CassandraAuthCommand       = "/tmp/sc/cassandra-auth.sh"
+	CassandraAuthCommand       = "/tmp/sc/cassandra-start-and-auth.sh"
 	CassandraMetadataName      = "metadata.name"
 	CassandraMetadataNamespace = "metadata.namespace"
 	CassandraStatusPodIP       = "status.podIP"
@@ -1584,16 +1651,18 @@ const (
 	CassandraVolumeCustomConfig   = "custom-config"
 	CassandraVolumeScript         = "script-volume"
 
-	CassandraVolumeData        = "data"
-	CassandraDataDir           = "/var/lib/cassandra"
-	CassandraServerLogDir      = "var/log/cassandra-server/cassandra-server.log"
-	CassandraServerErrorLogDir = "var/log/cassandra-server/cassandra-server.err.log"
-	CassandraContainerName     = "cassandra"
-	CassandraInitContainerName = "cassandra-init"
-	CassandraMainConfigFile    = "cassandra.yaml"
-	CassandraRackConfigFile    = "rack-config.yaml"
-	CassandraStandalone        = "standalone"
-	CassandraServerConfigFile  = "server-config.yaml"
+	CassandraVolumeData                  = "data"
+	CassandraDataDir                     = "/var/lib/cassandra"
+	CassandraServerLogFile               = "var/log/cassandra-server/cassandra-server.log"
+	CassandraServerErrorLogFile          = "var/log/cassandra-server/cassandra-server.err.log"
+	CassandraContainerName               = "cassandra"
+	CassandraMedusaInitContainerName     = "medusa-init"
+	CassandraMetricExporterContainerName = "exporter"
+	CassandraInitContainerName           = "cassandra-init"
+	CassandraMainConfigFile              = "cassandra.yaml"
+	CassandraRackConfigFile              = "rack-config.yaml"
+	CassandraStandalone                  = "standalone"
+	CassandraServerConfigFile            = "server-config.yaml"
 
 	EnvNameCassandraEndpointSnitch = "CASSANDRA_ENDPOINT_SNITCH"
 	EnvValCassandraEndpointSnitch  = "GossipingPropertyFileSnitch"
@@ -1616,6 +1685,15 @@ const (
 	EnvNameCassandraPodName          = "CASSANDRA_POD_NAME"
 	EnvNameCassandraUser             = "CASSANDRA_USER"
 	EnvNameCassandraPassword         = "CASSANDRA_PASSWORD"
+
+	EnvNameMgmtApiListenTcpPort = "MGMT_API_LISTEN_TCP_PORT"
+	EnvValMgmtApiListenTcpPort  = "8081"
+	EnvNameMedusaMode           = "MEDUSA_MODE"
+	EnvValMedusaModeRestore     = "RESTORE"
+	EnvNameMedusaDebugSleep     = "DEBUG_SLEEP"
+	EnvValMedusaDebugSleep      = "0s"
+	CassandraNodetoolDir        = "/opt/cassandra/temp/bin"
+	CassandraBackupBinary       = "nodetool"
 )
 
 // =========================== Virtual Secrets Constants ============================
@@ -1678,6 +1756,7 @@ var (
 			core.ResourceMemory: resource.MustParse("4Gi"),
 		},
 	}
+
 	// CoordinatorDefaultResources must be used for raft backed coordinators to avoid unintended leader switches
 	CoordinatorDefaultResources = core.ResourceRequirements{
 		Requests: core.ResourceList{
@@ -1765,6 +1844,32 @@ var (
 		},
 	}
 
+	DefaultResourcesCoreAndMemoryIntensiveOracle = core.ResourceRequirements{
+		Requests: core.ResourceList{
+			core.ResourceCPU:    resource.MustParse("2"),
+			core.ResourceMemory: resource.MustParse("7Gi"),
+		},
+		Limits: core.ResourceList{
+			core.ResourceCPU:    resource.MustParse("4"),
+			core.ResourceMemory: resource.MustParse("10Gi"),
+		},
+	}
+	DefaultResourcesCoreAndMemoryIntensiveOracleObserver = core.ResourceRequirements{
+		Requests: core.ResourceList{
+			core.ResourceCPU:    resource.MustParse("500m"),
+			core.ResourceMemory: resource.MustParse("2Gi"),
+		},
+		Limits: core.ResourceList{
+			core.ResourceCPU:    resource.MustParse("1"),
+			core.ResourceMemory: resource.MustParse("3Gi"),
+		},
+	}
+	DefaultResourceStorageOracleObserver = core.VolumeResourceRequirements{
+		Requests: core.ResourceList{
+			core.ResourceStorage: resource.MustParse("1Gi"),
+		},
+	}
+
 	// DefaultResourcesMemoryIntensiveSDB must be used for Singlestore when enabled monitoring or version >= 8.5.x
 	DefaultResourcesMemoryIntensiveSDB = core.ResourceRequirements{
 		Requests: core.ResourceList{
@@ -1802,4 +1907,40 @@ const (
 	GitSecretVolume      = "git-secret"
 	GitSecretMountPath   = "/etc/git-secret"
 	GitSyncContainerName = "git-sync"
+)
+
+const (
+	OracleDatabaseServiceName = "ORCL"
+	OracleSqlNetPortName      = "sqlnet"
+
+	OracleEditionEnterprise = "enterprise"
+
+	OraclePrimaryRole = "primary"
+	OracleStandbyRole = "standby"
+
+	OracleDatabasePort = 1521
+
+	OracleSysDbaUser = "sys"
+
+	OracleContainerName             = "oracle"
+	OracleCoordinatorContainerName  = "oracle-coordinator"
+	OracleObserverContainerName     = "observer"
+	OracleInitContainerName         = "oracle-init"
+	OracleObserverInitContainerName = "observer-init"
+
+	OracleVolumeScripts = "oracle-scripts"
+	OracleDataVolume    = "data"
+
+	OracleVolumeMountScripts = "/scripts"
+	OracleDataDir            = "/opt/oracle/oradata"
+
+	OracleStandbyServiceSuffix = "standby"
+
+	OracleDatabaseRoleKey      = "oracle.db/role"
+	OracleDatabaseRoleObserver = "observer"
+	OracleDatabaseRoleInstance = "instance"
+	OracleEnvUserName          = "SYS_USER"
+	OracleEnvPassword          = "ORACLE_PWD"
+	OracleEnvOracleSID         = "ORACLE_SID"
+	OracleEnvDataDir           = "ORADATA"
 )

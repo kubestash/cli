@@ -217,7 +217,7 @@ func (r *Redis) SetDefaults(rdVersion *catalog.RedisVersion) error {
 	if err != nil {
 		return fmt.Errorf("can't get the semvar version from RedisVersion spec. err: %v", err)
 	}
-	if curVersion.Major() <= 4 {
+	if rdVersion.Spec.Distribution == catalog.RedisDistroOfficial && curVersion.Major() <= 4 {
 		r.Spec.DisableAuth = true
 	}
 
@@ -437,9 +437,9 @@ func (r *Redis) GetCertSecretName(alias RedisCertificateAlias) string {
 }
 
 func (r *Redis) ReplicasAreReady(lister pslister.PetSetLister) (bool, string, error) {
-	// Desire number of statefulSets
+	// Desire number of PetSets
 	expectedItems := 1
-	if r.Spec.Cluster != nil {
+	if r.Spec.Mode == RedisModeCluster {
 		expectedItems = int(pointer.Int32(r.Spec.Cluster.Shards))
 	}
 	return checkReplicas(lister.PetSets(r.Namespace), labels.SelectorFromSet(r.OffshootLabels()), expectedItems)
