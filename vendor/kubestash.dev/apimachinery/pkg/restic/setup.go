@@ -164,6 +164,19 @@ func (w *ResticWrapper) setupEnvsForBackend(b *Backend) error {
 			b.envs[AWS_DEFAULT_REGION] = b.region
 		}
 
+	case storage.ProviderAzure:
+		b.envs[RESTIC_REPOSITORY] = fmt.Sprintf("azure:%s:/%s", b.bucket, filepath.Join(b.path, b.Directory))
+		if b.storageAccount == "" {
+			return fmt.Errorf("missing storage account for Azure storage")
+		} else {
+			b.envs[AZURE_ACCOUNT_NAME] = b.storageAccount
+		}
+		if val, err := w.getSecretKey(b.storageSecret, AZURE_ACCOUNT_KEY, false); err != nil {
+			return err
+		} else {
+			b.envs[AZURE_ACCOUNT_KEY] = val
+		}
+
 	case storage.ProviderGCS:
 		b.envs[RESTIC_REPOSITORY] = fmt.Sprintf("gs:%s:/%s", b.bucket, filepath.Join(b.path, b.Directory))
 		if w.isSecretKeyExist(b.storageSecret, GOOGLE_SERVICE_ACCOUNT_JSON_KEY) {
