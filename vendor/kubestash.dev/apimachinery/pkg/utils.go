@@ -19,7 +19,7 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
-	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v7/apis/volumesnapshot/v1"
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
 	"gomodules.xyz/envsubst"
 	core "k8s.io/api/core/v1"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"

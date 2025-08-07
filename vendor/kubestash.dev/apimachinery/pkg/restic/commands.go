@@ -532,6 +532,36 @@ func (w *ResticWrapper) listKey(repository string) ([]byte, error) {
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
 
+func (w *ResticWrapper) listLocks(repository string) ([]byte, error) {
+	klog.Infoln("Listing restic locks")
+
+	args := []interface{}{"list", "locks", "--no-lock"}
+
+	b := w.getMatchedBackend(repository)
+	args = w.appendCacheDirFlag(args)
+	args = b.appendMaxConnectionsFlag(args)
+	args = b.appendCaCertFlag(args)
+	args = b.appendInsecureTLSFlag(args)
+	args = append(args, b.envs)
+
+	return w.run(Command{Name: ResticCMD, Args: args})
+}
+
+func (w *ResticWrapper) lockStats(repository, lockID string) ([]byte, error) {
+	klog.Infoln("Getting stats of restic lock")
+
+	args := []interface{}{"cat", "lock", lockID, "--no-lock"}
+
+	b := w.getMatchedBackend(repository)
+	args = w.appendCacheDirFlag(args)
+	args = b.appendMaxConnectionsFlag(args)
+	args = b.appendCaCertFlag(args)
+	args = b.appendInsecureTLSFlag(args)
+	args = append(args, b.envs)
+
+	return w.run(Command{Name: ResticCMD, Args: args})
+}
+
 func (w *ResticWrapper) updateKey(repository string, params keyParams) ([]byte, error) {
 	klog.Infoln("Updating restic key")
 
