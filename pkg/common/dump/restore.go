@@ -153,7 +153,7 @@ func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes stri
 	var errs []error
 
 	for namespace, items := range selectedItemsByNamespace {
-		if namespace != "" {
+		if namespace != "" && m.DryRunDir == "" {
 			err = m.ensureNamespace(ctx, namespace)
 			if err != nil {
 				errs = append(errs, err)
