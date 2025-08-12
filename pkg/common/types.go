@@ -22,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	"kubestash.dev/apimachinery/apis"
-	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg/restic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,17 +54,15 @@ type Options struct {
 	Client          client.Client
 	DataDir         string
 	DryRunDir       string
+	MaxIterations   uint
 	WaitTimeout     int32
 	Namespace       string
 	TargetNamespace string
 
-	SnapshotName       string
-	BackupSessionName  string
-	RestoreSessionName string
+	SnapshotName string
 
-	SetupOptions   restic.SetupOptions
-	BackupOptions  restic.BackupOptions
-	RestoreOptions restic.RestoreOptions
+	SetupOptions  restic.SetupOptions
+	BackupOptions restic.BackupOptions
 
 	ResticStats []storageapi.ResticStats
 	Components  []string
@@ -73,12 +70,8 @@ type Options struct {
 	Include     []string
 	Paths       []string
 
-	Target              *v1.TypedObjectReference
-	Snapshot            *storageapi.Snapshot
-	Snapshots           []storageapi.Snapshot
-	BackupSession       *coreapi.BackupSession
-	RestoreSession      *coreapi.RestoreSession
-	BackupConfiguration *coreapi.BackupConfiguration
+	Target   *v1.TypedObjectReference
+	Snapshot *storageapi.Snapshot
 
 	ANDedLabelSelectors []string
 	ORedLabelSelectors  []string

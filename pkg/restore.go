@@ -103,10 +103,10 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				return err
 			}
 			defer func() {
-				if err := os.RemoveAll(ScratchDir); err != nil {
+				if err := common.ClearDir(ScratchDir); err != nil {
 					klog.Errorf("failed to remove scratch dir. Reason: %v", err)
 				}
-				if err := os.RemoveAll(opt.DataDir); err != nil {
+				if err := common.ClearDir(opt.DataDir); err != nil {
 					klog.Errorf("failed to remove data dir. Reason: %v", err)
 				}
 			}()
@@ -130,7 +130,7 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				}
 
 				if err = opt.performRestore(); err != nil {
-					opt.UpsertRestoreComponentStatus(nil, err)
+					return err
 				}
 				return nil
 			}
@@ -247,6 +247,7 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 
 	cmd.Flags().StringVar(&opt.DataDir, "data-dir", opt.DataDir, "Temporary local directory where snapshot data will be downloaded and will be deleted")
 	cmd.Flags().StringVar(&opt.DryRunDir, "dry-run-dir", opt.DryRunDir, "Local directory where snapshot data will be downloaded for dry run")
+	cmd.Flags().UintVar(&opt.MaxIterations, "max-iterations", uint(5), "Maximum number of iterations in restore process")
 
 	cmd.Flags().StringVar(&opt.SetupOptions.ScratchDir, "scratch-dir", opt.SetupOptions.ScratchDir, "Temporary directory")
 	cmd.Flags().BoolVar(&opt.SetupOptions.EnableCache, "enable-cache", opt.SetupOptions.EnableCache, "Specify whether to enable caching for restic")

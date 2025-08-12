@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -34,6 +35,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 	"kubestash.dev/apimachinery/apis"
+	"kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/pkg/resourceops/priority"
 	"kubestash.dev/cli/pkg/common"
 	"sigs.k8s.io/yaml"
 )
@@ -46,7 +49,11 @@ func (m *ResourceManager) RestoreManifests(ctx context.Context) error {
 	}
 
 	var errs []error
-	for m.currentIteration = 1; m.currentIteration <= m.maxIterations; m.currentIteration += 1 {
+	for m.currentIteration = 1; m.currentIteration <= m.MaxIterations; m.currentIteration += 1 {
+		if m.currentIteration > 1 && m.DryRunDir != "" {
+			klog.Infof("Skipping next iterations for dry-run.")
+			break
+		}
 		errs = []error{}
 		needIteration := false
 		klog.Infof("Iteration %d: Starting restore process.", m.currentIteration)
@@ -101,6 +108,30 @@ func (m *ResourceManager) restoreResourcesInOrder(ctx context.Context) error {
 	return utilErr.NewAggregate(errs)
 }
 
+func getOrderedResources(backupResources map[string]*common.ResourceItems) []string {
+	priorities := map[string]struct{}{}
+	for _, prior := range priority.DefaultRestorePriorities.HighPriorities {
+		priorities[prior] = struct{}{}
+	}
+	for _, prior := range priority.DefaultRestorePriorities.LowPriorities {
+		priorities[prior] = struct{}{}
+	}
+
+	// pick the prioritized resources out
+	var orderedBackupResources []string
+	for resource := range backupResources {
+		if _, exist := priorities[resource]; exist {
+			continue
+		}
+		orderedBackupResources = append(orderedBackupResources, resource)
+	}
+	// alphabetize resources in the backup
+	sort.Strings(orderedBackupResources)
+
+	list := append(priority.DefaultRestorePriorities.HighPriorities, orderedBackupResources...)
+	return append(list, priority.DefaultRestorePriorities.LowPriorities...)
+}
+
 func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes string) error {
 	rItems, ok := m.backupResources[groupRes]
 	if !ok {
@@ -134,7 +165,7 @@ func (m *ResourceManager) restoreResourceType(ctx context.Context, groupRes stri
 			if err != nil {
 				errs = append(errs, err)
 				klog.Infof("Iteration %d: failed to apply GroupResource: %s, Item: %s", m.currentIteration, groupRes, item)
-				if m.currentIteration < m.maxIterations {
+				if m.currentIteration < m.MaxIterations {
 					continue
 				}
 			}
@@ -184,7 +215,7 @@ func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm co
 			sObj["spec"] = m.mapStorageClass(spec)
 		}
 	}
-
+	obj.Object = sObj
 	if m.DryRunDir != "" {
 		if err := m.downloadTheItem(groupRes, obj); err != nil {
 			klog.Infof("Iteration %d: failed to download item in dry-run-dir, error: %v.", m.currentIteration, err)
@@ -195,7 +226,6 @@ func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm co
 		return nil
 	}
 
-	obj.Object = sObj
 	if err := m.createIfMissing(ctx, gvr, obj); err != nil {
 		klog.Infof("Iteration %d: failed to restore GVR: %s, Name: %s, Error: %v", m.currentIteration, gvr, obj.GetName(), err)
 		return err
@@ -395,9 +425,12 @@ func (m *ResourceManager) isNamespaced(groupRes string) (bool, error) {
 func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error) {
 	resources := make(map[string]*common.ResourceItems)
 
-	for componentName, component := range m.Snapshot.Status.Components {
-		for _, resticStat := range component.ResticStats {
-			baseDir := filepath.Join(m.Options.DataDir, m.SnapshotName, componentName, resticStat.HostPath)
+	manifestResticStats, err := m.GetManifestResticStats()
+	if err != nil {
+		klog.Errorf("Failed to get restic stats: %v", err)
+	} else {
+		for _, resticStat := range manifestResticStats {
+			baseDir := filepath.Join(m.Options.DataDir, m.SnapshotName, apis.ComponentManifest, resticStat.HostPath)
 			entries, err := m.reader.ReadDir(baseDir)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read backup directory: %w", err)
@@ -460,9 +493,12 @@ func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error)
 
 func (m *ResourceManager) getRestoreableItems(r *common.ResourceItems) map[string][]common.RestoreableItem {
 	selectedItemsByNamespace := make(map[string][]common.RestoreableItem)
-	for componentName, component := range m.Snapshot.Status.Components {
-		for _, resticStat := range component.ResticStats {
-			baseDir := filepath.Join(m.Options.DataDir, m.SnapshotName, componentName, resticStat.HostPath)
+	manifestResticStats, err := m.GetManifestResticStats()
+	if err != nil {
+		klog.Errorf("Failed to get restic stats: %v", err)
+	} else {
+		for _, resticStat := range manifestResticStats {
+			baseDir := filepath.Join(m.Options.DataDir, m.SnapshotName, apis.ComponentManifest, resticStat.HostPath)
 			resourceForPath := filepath.Join(baseDir, r.GroupResource)
 			for namespace, items := range r.ItemsByNamespace {
 				identifier := apis.NamespaceScopedDir
@@ -482,6 +518,17 @@ func (m *ResourceManager) getRestoreableItems(r *common.ResourceItems) map[strin
 		}
 	}
 	return selectedItemsByNamespace
+}
+
+func (m *ResourceManager) GetManifestResticStats() ([]v1alpha1.ResticStats, error) {
+	if len(m.Snapshot.Status.Components) == 0 {
+		return nil, fmt.Errorf("no components found in snapshot %s", m.SnapshotName)
+	}
+	manifestComponent, ok := m.Snapshot.Status.Components[apis.ComponentManifest]
+	if !ok {
+		return nil, fmt.Errorf("manifest component not found in snapshot %s", m.SnapshotName)
+	}
+	return manifestComponent.ResticStats, nil
 }
 
 func (m *ResourceManager) getResourceItemsForScope(dir string) ([]string, error) {

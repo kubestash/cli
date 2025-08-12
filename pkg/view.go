@@ -235,8 +235,6 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 	cmd.Flags().StringSliceVar(&viewOpt.exclude, "exclude", viewOpt.exclude, "List of pattern for directory/file to ignore during restore")
 	cmd.Flags().StringSliceVar(&viewOpt.include, "include", viewOpt.include, "List of pattern for directory/file to restore")
 	cmd.Flags().StringSliceVar(&viewOpt.paths, "paths", viewOpt.paths, "Gives a random list of paths")
-	cmd.Flags().StringVar(&imgRestic.Registry, "docker-registry", imgRestic.Registry, "Docker image registry for restic cli")
-	cmd.Flags().StringVar(&imgRestic.Tag, "image-tag", imgRestic.Tag, "Restic docker image tag")
 
 	cmd.MarkFlagsMutuallyExclusive("exclude", "include")
 

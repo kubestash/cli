@@ -14,13 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package dump
-
-import (
-	"sort"
-
-	"kubestash.dev/cli/pkg/common"
-)
+package priority
 
 type Priorities struct {
 	HighPriorities []string
@@ -53,28 +47,4 @@ var DefaultRestorePriorities = Priorities{
 		"apps.kappctrl.k14s.io",
 		"packageinstalls.packaging.carvel.dev",
 	},
-}
-
-func getOrderedResources(backupResources map[string]*common.ResourceItems) []string {
-	priorities := map[string]struct{}{}
-	for _, priority := range DefaultRestorePriorities.HighPriorities {
-		priorities[priority] = struct{}{}
-	}
-	for _, priority := range DefaultRestorePriorities.LowPriorities {
-		priorities[priority] = struct{}{}
-	}
-
-	// pick the prioritized resources out
-	var orderedBackupResources []string
-	for resource := range backupResources {
-		if _, exist := priorities[resource]; exist {
-			continue
-		}
-		orderedBackupResources = append(orderedBackupResources, resource)
-	}
-	// alphabetize resources in the backup
-	sort.Strings(orderedBackupResources)
-
-	list := append(DefaultRestorePriorities.HighPriorities, orderedBackupResources...)
-	return append(list, DefaultRestorePriorities.LowPriorities...)
 }

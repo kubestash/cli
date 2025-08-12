@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	"kubestash.dev/apimachinery/apis"
+	"kubestash.dev/apimachinery/pkg/resourceops/file"
 	"kubestash.dev/apimachinery/pkg/resourceops/filter"
 	"kubestash.dev/apimachinery/pkg/resourceops/sanitizers"
 	"kubestash.dev/cli/pkg/common"
@@ -38,12 +39,11 @@ type ResourceManager struct {
 	dynamicClient   *dynamic.DynamicClient
 	discoveryClient *discovery.DiscoveryClient
 
-	reader          Reader
-	writer          Writer
+	reader          file.Reader
+	writer          file.Writer
 	backupResources map[string]*common.ResourceItems
 	restoredItems   map[common.ItemKey]common.RestoredItemStatus
 
-	maxIterations    uint
 	currentIteration uint
 
 	filter           *filter.GlobalIncludeExclude
@@ -60,10 +60,9 @@ func NewResourceManager(opts *common.Options) (*ResourceManager, error) {
 	if opts.Config.UserAgent == "" {
 		opts.Config.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
-	if opts.RestoreSession != nil {
-		opts.StorageClassMappings = parseSCMappings(opts.StorageClassMappingsStr)
-		opts.ExcludeResources = append(opts.ExcludeResources, apis.DefaultNonRestorableResources...)
-	}
+
+	opts.StorageClassMappings = parseSCMappings(opts.StorageClassMappingsStr)
+	opts.ExcludeResources = append(opts.ExcludeResources, apis.DefaultNonRestorableResources...)
 
 	dyn, err := dynamic.NewForConfig(opts.Config)
 	if err != nil {
@@ -94,13 +93,12 @@ func NewResourceManager(opts *common.Options) (*ResourceManager, error) {
 		backupResources: make(map[string]*common.ResourceItems),
 		restoredItems:   make(map[common.ItemKey]common.RestoredItemStatus),
 
-		maxIterations:    uint(5),
 		currentIteration: uint(1),
 
 		sanitizerFactory: func(resource string) sanitizers.Sanitizer {
 			return sanitizers.NewSanitizer(resource)
 		},
-		reader: NewFileReader(),
-		writer: NewFileWriter(),
+		reader: file.NewFileReader(),
+		writer: file.NewFileWriter(),
 	}, nil
 }
