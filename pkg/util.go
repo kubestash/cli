@@ -357,7 +357,7 @@ func execOnPod(config *rest.Config, pod *core.Pod, command []string) (string, er
 		execErr bytes.Buffer
 	)
 
-	klog.Infof("Executing command %v on pod %s/%s", command, pod.Namespace, pod.Name)
+	klog.V(2).Infof("Executing command %v on pod %s/%s", command, pod.Namespace, pod.Name)
 
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {

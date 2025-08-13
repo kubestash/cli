@@ -98,8 +98,8 @@ func (h *Hazelcast) PodControllerLabels(extraLabels ...map[string]string) map[st
 	return h.offshootLabels(meta_util.OverwriteKeys(h.OffshootSelectors(), extraLabels...), h.Spec.PodTemplate.Controller.Labels)
 }
 
-func (h *Hazelcast) PVCName(alias string) string {
-	return meta_util.NameWithSuffix(h.Name, alias)
+func (d *Hazelcast) PVCName(alias string) string {
+	return alias
 }
 
 func (h *Hazelcast) PodLabels(extraLabels ...map[string]string) map[string]string {
@@ -230,6 +230,14 @@ func (h *Hazelcast) setDefaultProbes(podTemplate *ofst.PodTemplateSpec) {
 	container.LivenessProbe.HTTPGet.Path = "/hazelcast/health/node-state"
 	container.ReadinessProbe.HTTPGet.Path = "/hazelcast/health/ready"
 	podTemplate.Spec.Containers = coreutil.UpsertContainer(podTemplate.Spec.Containers, *container)
+}
+
+func (h *Hazelcast) SetTLSDefaults() {
+	if h.Spec.TLS == nil || h.Spec.TLS.IssuerRef == nil {
+		return
+	}
+	h.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(h.Spec.TLS.Certificates, string(HazelcastServerCert), h.CertificateName(HazelcastServerCert))
+	h.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(h.Spec.TLS.Certificates, string(HazelcastClientCert), h.CertificateName(HazelcastClientCert))
 }
 
 func (h *Hazelcast) setDefaultContainerSecurityContext(hzVersion *catalog.HazelcastVersion, podTemplate *ofst.PodTemplateSpec) {

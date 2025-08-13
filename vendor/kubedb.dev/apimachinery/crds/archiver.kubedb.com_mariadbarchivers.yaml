@@ -635,6 +635,8 @@ spec:
                     - Restic
                     - WalG
                     - VolumeSnapshotter
+                    - Solr
+                    - Medusa
                     type: string
                   jobTemplate:
                     properties:
