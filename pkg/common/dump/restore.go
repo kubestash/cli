@@ -425,7 +425,7 @@ func (m *ResourceManager) isNamespaced(groupRes string) (bool, error) {
 func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error) {
 	resources := make(map[string]*common.ResourceItems)
 
-	manifestResticStats, err := m.GetManifestResticStats()
+	manifestResticStats, err := m.getManifestResticStats()
 	if err != nil {
 		klog.Errorf("Failed to get restic stats: %v", err)
 	} else {
@@ -493,7 +493,7 @@ func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error)
 
 func (m *ResourceManager) getRestoreableItems(r *common.ResourceItems) map[string][]common.RestoreableItem {
 	selectedItemsByNamespace := make(map[string][]common.RestoreableItem)
-	manifestResticStats, err := m.GetManifestResticStats()
+	manifestResticStats, err := m.getManifestResticStats()
 	if err != nil {
 		klog.Errorf("Failed to get restic stats: %v", err)
 	} else {
@@ -520,7 +520,7 @@ func (m *ResourceManager) getRestoreableItems(r *common.ResourceItems) map[strin
 	return selectedItemsByNamespace
 }
 
-func (m *ResourceManager) GetManifestResticStats() ([]v1alpha1.ResticStats, error) {
+func (m *ResourceManager) getManifestResticStats() ([]v1alpha1.ResticStats, error) {
 	if len(m.Snapshot.Status.Components) == 0 {
 		return nil, fmt.Errorf("no components found in snapshot %s", m.SnapshotName)
 	}

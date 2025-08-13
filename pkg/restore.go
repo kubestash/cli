@@ -54,6 +54,7 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 	cmd := &cobra.Command{
 		Use:               "manifest-restore",
 		Short:             "Restore Kubernetes resources",
+		Long:              "Restore Kubernetes resources from snapshot",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
@@ -241,7 +242,7 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 	cmd.Flags().StringSliceVar(&opt.Include, "include", opt.Include, "List of pattern for directory/file to restore")
 	cmd.Flags().StringSliceVar(&opt.Paths, "paths", opt.Paths, "Gives a random list of paths")
 
-	cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of the RestoreSession")
+	cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of the snapshot")
 	cmd.Flags().StringVar(&opt.TargetNamespace, "target-namespace", "default", "Namespace where the resources will be restored")
 	cmd.Flags().StringVar(&opt.SnapshotName, "snapshot", "", "Name of the snapshot")
 

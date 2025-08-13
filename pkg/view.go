@@ -47,12 +47,14 @@ import (
 type viewOptions struct {
 	restConfig *rest.Config
 
-	SetupOptions restic.SetupOptions
-	resticStats  []storageapi.ResticStats
-	components   []string
-	exclude      []string
-	include      []string
-	paths        []string
+	SetupOptions      restic.SetupOptions
+	resticStats       []storageapi.ResticStats
+	components        []string
+	exclude           []string
+	include           []string
+	paths             []string
+	snapshotName      string
+	snapshotNamespace string
 
 	IncludeNamespaces       []string
 	IncludeResources        []string
@@ -77,20 +79,12 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 		Use:               "manifest-view",
 		Short:             `view components(manifest) of a snapshot`,
 		Long:              `view components(manifest) of a snapshot from restic repositories`,
-		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			snapshotName := args[0]
-
 			var err error
 			viewOpt.restConfig, err = clientGetter.ToRESTConfig()
 			if err != nil {
 				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
-			}
-
-			srcNamespace, _, err = clientGetter.ToRawKubeConfigLoader().Namespace()
-			if err != nil {
-				return err
 			}
 
 			klient, err = pkg.NewUncachedClient()
@@ -99,8 +93,8 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 			}
 
 			snapshot, err := getSnapshot(kmapi.ObjectReference{
-				Name:      snapshotName,
-				Namespace: srcNamespace,
+				Name:      viewOpt.snapshotName,
+				Namespace: viewOpt.snapshotNamespace,
 			})
 			if err != nil {
 				return err
@@ -108,7 +102,7 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 
 			repository, err := getRepository(kmapi.ObjectReference{
 				Name:      snapshot.Spec.Repository,
-				Namespace: srcNamespace,
+				Namespace: viewOpt.snapshotNamespace,
 			})
 			if err != nil {
 				return err
@@ -132,7 +126,7 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 				if err != nil {
 					return err
 				}
-				if err := viewOpt.runCmdViaPod(accessorPod, snapshotName); err != nil {
+				if err := viewOpt.runCmdViaPod(accessorPod, viewOpt.snapshotName); err != nil {
 					return err
 				}
 				files, err := viewOpt.listFilesViaPodThenFilter(accessorPod, snapshot)
@@ -152,7 +146,7 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 				return err
 			}
 			if yes {
-				if err := viewOpt.runCmdViaPod(&operatorPod, snapshotName); err != nil {
+				if err := viewOpt.runCmdViaPod(&operatorPod, viewOpt.snapshotName); err != nil {
 					return err
 				}
 				files, err := viewOpt.listFilesViaPodThenFilter(&operatorPod, snapshot)
@@ -237,12 +231,14 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 	cmd.Flags().StringSliceVar(&viewOpt.paths, "paths", viewOpt.paths, "Gives a random list of paths")
 
 	cmd.MarkFlagsMutuallyExclusive("exclude", "include")
+	cmd.Flags().StringVar(&viewOpt.snapshotName, "snapshot", "", "Name of the snapshot")
+	cmd.Flags().StringVar(&viewOpt.snapshotNamespace, "namespace", "default", "Namespace of the snapshot")
 
 	cmd.Flags().StringVar(&viewOpt.SetupOptions.ScratchDir, "scratch-dir", viewOpt.SetupOptions.ScratchDir, "Temporary directory")
 	cmd.Flags().BoolVar(&viewOpt.SetupOptions.EnableCache, "enable-cache", viewOpt.SetupOptions.EnableCache, "Specify whether to enable caching for restic")
 
-	cmd.Flags().StringSliceVar(&viewOpt.ANDedLabelSelectors, "and-label-selectors", opt.ANDedLabelSelectors, "A set of labels, all of which need to be matched to filter the resources (comma-separated, e.g., 'key1:value1,key2:value2')")
-	cmd.Flags().StringSliceVar(&viewOpt.ORedLabelSelectors, "or-label-selectors", opt.ORedLabelSelectors, "A set of labels, a subset of which need to be matched to filter the resources (comma-separated, e.g., 'key1:value1,key2:value2')")
+	cmd.Flags().StringSliceVar(&viewOpt.ANDedLabelSelectors, "and-label-selectors", viewOpt.ANDedLabelSelectors, "A set of labels, all of which need to be matched to filter the resources (comma-separated, e.g., 'key1:value1,key2:value2')")
+	cmd.Flags().StringSliceVar(&viewOpt.ORedLabelSelectors, "or-label-selectors", viewOpt.ORedLabelSelectors, "A set of labels, a subset of which need to be matched to filter the resources (comma-separated, e.g., 'key1:value1,key2:value2')")
 
 	cmd.Flags().StringSliceVar(&viewOpt.IncludeNamespaces, "include-namespaces", viewOpt.IncludeNamespaces, "Namespaces to include in backup (comma-separated, e.g., 'default,kube-system')")
 	cmd.Flags().StringSliceVar(&viewOpt.ExcludeNamespaces, "exclude-namespaces", viewOpt.ExcludeNamespaces, "Namespaces to exclude from backup (comma-separated, e.g., 'kube-public,temp')")
