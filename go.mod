@@ -7,8 +7,8 @@ toolchain go1.24.1
 require (
 	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0
 	github.com/olekukonko/tablewriter v0.0.6-0.20230925090304-df64c4bbad77
-	github.com/spf13/cobra v1.8.1
-	golang.org/x/text v0.21.0
+	github.com/spf13/cobra v1.9.1
+	golang.org/x/text v0.24.0
 	gomodules.xyz/flags v0.1.3
 	gomodules.xyz/go-sh v0.2.0
 	gomodules.xyz/logs v0.0.7
