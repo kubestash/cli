@@ -19,24 +19,39 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+
 	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
 	"gomodules.xyz/envsubst"
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	cu "kmodules.xyz/client-go/client"
 	"kubestash.dev/apimachinery/apis"
 	addonapi "kubestash.dev/apimachinery/apis/addons/v1alpha1"
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewUncachedClient() (client.Client, error) {
-	cfg, err := ctrl.GetConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Kubernetes config. Reason: %w", err)
+func NewUncachedClient(clientGetter ...genericclioptions.RESTClientGetter) (client.Client, error) {
+	var cfg *rest.Config
+	var err error
+	if len(clientGetter) > 0 {
+		cfg, err = clientGetter[0].ToRESTConfig()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get Kubernetes config. Reason: %w", err)
+		}
+	} else {
+		cfg, err = ctrl.GetConfig()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get Kubernetes config. Reason: %w", err)
+		}
 	}
 
 	return cu.NewUncachedClient(
@@ -46,6 +61,9 @@ func NewUncachedClient() (client.Client, error) {
 		coreapi.AddToScheme,
 		addonapi.AddToScheme,
 		vsapi.AddToScheme,
+		core.AddToScheme,
+		apps.AddToScheme,
+		storagev1.AddToScheme,
 	)
 }
 
@@ -62,6 +80,29 @@ func GetTmpVolumeAndMount() (core.Volume, core.VolumeMount) {
 	}
 
 	return vol, mnt
+}
+
+func NewVolumeSnapshot(meta metav1.ObjectMeta, pvcName, vsClassName string) *vsapi.VolumeSnapshot {
+	volSnapshot := &vsapi.VolumeSnapshot{
+		ObjectMeta: meta,
+		Spec: vsapi.VolumeSnapshotSpec{
+			Source: vsapi.VolumeSnapshotSource{
+				PersistentVolumeClaimName: &pvcName,
+			},
+		},
+	}
+	if vsClassName != "" {
+		volSnapshot.Spec.VolumeSnapshotClassName = &vsClassName
+	}
+	return volSnapshot
+}
+
+func NewVolumeSnapshotDataSource(snapshotName string) *core.TypedLocalObjectReference {
+	return &core.TypedLocalObjectReference{
+		APIGroup: &vsapi.SchemeGroupVersion.Group,
+		Kind:     apis.KindVolumeSnapshot,
+		Name:     snapshotName,
+	}
 }
 
 func ResolveWithInputs(obj interface{}, inputs map[string]string) error {

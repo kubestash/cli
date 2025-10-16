@@ -47,7 +47,7 @@ func NewCmdTriggerBackup(clientGetter genericclioptions.RESTClientGetter) *cobra
 
 			var err error
 
-			klient, err = pkg.NewUncachedClient()
+			klient, err = pkg.NewUncachedClient(clientGetter)
 			if err != nil {
 				return err
 			}

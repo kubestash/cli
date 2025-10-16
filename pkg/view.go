@@ -87,7 +87,7 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 				return fmt.Errorf("failed to read kubeconfig. Reason: %v", err)
 			}
 
-			klient, err = pkg.NewUncachedClient()
+			klient, err = pkg.NewUncachedClient(clientGetter)
 			if err != nil {
 				return err
 			}

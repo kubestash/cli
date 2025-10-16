@@ -60,7 +60,7 @@ func NewCmdKey(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 				return err
 			}
 
-			klient, err = pkg.NewUncachedClient()
+			klient, err = pkg.NewUncachedClient(clientGetter)
 			if err != nil {
 				return err
 			}
