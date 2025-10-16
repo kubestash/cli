@@ -27,7 +27,7 @@ require (
 	kmodules.xyz/offshoot-api v0.32.0
 	kmodules.xyz/prober v0.32.0
 	kubedb.dev/apimachinery v0.57.1-0.20250808121437-b314b1ab6c96
-	kubestash.dev/apimachinery v0.20.1-0.20250812115529-608774970b18
+	kubestash.dev/apimachinery v0.20.1-0.20251016071801-25288256f380
 	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/yaml v1.4.0
 	stash.appscode.dev/apimachinery v0.41.0
@@ -213,5 +213,3 @@ replace github.com/Masterminds/sprig/v3 => github.com/gomodules/sprig/v3 v3.2.3-
 replace sigs.k8s.io/controller-runtime => github.com/kmodules/controller-runtime v0.20.3-0.20250221050548-8eabe54e7dda
 
 replace k8s.io/apiserver => github.com/kmodules/apiserver v0.32.3-0.20250221062720-35dc674c7dd6
-
-replace kubestash.dev/apimachinery => ../apimachinery
