@@ -40,7 +40,7 @@ func NewCmdResume(clientGetter genericclioptions.RESTClientGetter) *cobra.Comman
 				return err
 			}
 
-			klient, err = pkg.NewUncachedClient()
+			klient, err = pkg.NewUncachedClient(clientGetter)
 			if err != nil {
 				return err
 			}
