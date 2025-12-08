@@ -443,7 +443,7 @@ func configureBackupAddonInfo(bc *v1beta1.BackupConfiguration) *coreapi.AddonInf
 	}
 	if bc.Spec.Target != nil && isTargetWorkload(bc.Spec.Target.Ref) {
 		params := &runtime.RawExtension{}
-		pathsMap := make(map[string]interface{})
+		pathsMap := make(map[string]any)
 
 		if len(bc.Spec.Target.Paths) > 0 {
 			pathsMap["paths"] = strings.Join(bc.Spec.Target.Paths, ",")
@@ -667,8 +667,8 @@ func setValidValue(fieldName string) string {
 	return fmt.Sprintf("### Set Valid %s ###", fieldName)
 }
 
-func writeToTargetDir(srcPath string, addSeparator bool, obj interface{}) error {
-	targetPath := strings.Replace(srcPath, sourceDir, targetDir, -1)
+func writeToTargetDir(srcPath string, addSeparator bool, obj any) error {
+	targetPath := strings.ReplaceAll(srcPath, sourceDir, targetDir)
 	if err := os.MkdirAll(filepath.Dir(targetPath), os.ModePerm); err != nil {
 		return err
 	}
@@ -689,7 +689,7 @@ func writeToTargetDir(srcPath string, addSeparator bool, obj interface{}) error 
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer closeFileWithLogError(file)
 	if _, err := file.Write(marshalled); err != nil {
 		return err
 	}
@@ -701,10 +701,17 @@ func addSeparatorToTargetFile(filePath string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer closeFileWithLogError(file)
 	separator := "\n---\n\n"
 	if _, err := file.WriteString(separator); err != nil {
 		return err
 	}
 	return nil
+}
+
+func closeFileWithLogError(file *os.File) {
+	err := file.Close()
+	if err != nil {
+		klog.Errorf("Error closing file: %v", err)
+	}
 }

@@ -211,7 +211,7 @@ func (m *ResourceManager) applyItem(ctx context.Context, groupRes string, itm co
 
 	if gvr.Resource == apis.PersistentVolumeClaims.Resource &&
 		m.StorageClassMappingsStr != "" {
-		if spec, ok := sObj["spec"].(map[string]interface{}); ok && spec != nil {
+		if spec, ok := sObj["spec"].(map[string]any); ok && spec != nil {
 			sObj["spec"] = m.mapStorageClass(spec)
 		}
 	}
@@ -257,7 +257,7 @@ func (m *ResourceManager) downloadTheItem(groupRes string, obj *unstructured.Uns
 	return nil
 }
 
-func (m *ResourceManager) mapStorageClass(spec map[string]interface{}) map[string]interface{} {
+func (m *ResourceManager) mapStorageClass(spec map[string]any) map[string]any {
 	if oldStorageClassName, ok := spec["storageClassName"].(string); ok {
 		if _, exist := m.StorageClassMappings[oldStorageClassName]; exist {
 			spec["storageClassName"] = m.StorageClassMappings[oldStorageClassName]
@@ -273,7 +273,7 @@ func (m *ResourceManager) ensureNamespace(ctx context.Context, ns string) error 
 		klog.V(2).Infof("Iteration %d: namespace %s exists", m.currentIteration, ns)
 		return nil
 	}
-	obj := &unstructured.Unstructured{Object: map[string]interface{}{"apiVersion": "v1", "kind": "Namespace", "metadata": map[string]interface{}{"name": ns}}}
+	obj := &unstructured.Unstructured{Object: map[string]any{"apiVersion": "v1", "kind": "Namespace", "metadata": map[string]any{"name": ns}}}
 	key := getItemKey(obj)
 	if _, done := m.restoredItems[key]; done {
 		klog.V(3).Infof("Iteration %d: already restored %s", m.currentIteration, key)
@@ -334,8 +334,8 @@ func (m *ResourceManager) setOwnerReferences(ctx context.Context) error {
 			continue
 		}
 
-		patchPayload := map[string]interface{}{
-			"metadata": map[string]interface{}{
+		patchPayload := map[string]any{
+			"metadata": map[string]any{
 				"ownerReferences": validRelinkedOwners,
 			},
 		}
@@ -401,7 +401,7 @@ func (m *ResourceManager) shouldRestore(obj *unstructured.Unstructured) bool {
 		return false
 	}
 	labels := LabelsToStrings(obj.GetLabels())
-	return matchesAny(labels, m.Options.ORedLabelSelectors) && matchesAll(labels, m.Options.ANDedLabelSelectors)
+	return matchesAny(labels, m.ORedLabelSelectors) && matchesAll(labels, m.ANDedLabelSelectors)
 }
 
 func (m *ResourceManager) isNamespaced(groupRes string) (bool, error) {
@@ -430,7 +430,7 @@ func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error)
 		klog.Errorf("Failed to get restic stats: %v", err)
 	} else {
 		for _, resticStat := range manifestResticStats {
-			baseDir := filepath.Join(m.Options.DataDir, m.SnapshotName, apis.ComponentManifest, resticStat.HostPath)
+			baseDir := filepath.Join(m.DataDir, m.SnapshotName, apis.ComponentManifest, resticStat.HostPath)
 			entries, err := m.reader.ReadDir(baseDir)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read backup directory: %w", err)
@@ -498,7 +498,7 @@ func (m *ResourceManager) getRestoreableItems(r *common.ResourceItems) map[strin
 		klog.Errorf("Failed to get restic stats: %v", err)
 	} else {
 		for _, resticStat := range manifestResticStats {
-			baseDir := filepath.Join(m.Options.DataDir, m.SnapshotName, apis.ComponentManifest, resticStat.HostPath)
+			baseDir := filepath.Join(m.DataDir, m.SnapshotName, apis.ComponentManifest, resticStat.HostPath)
 			resourceForPath := filepath.Join(baseDir, r.GroupResource)
 			for namespace, items := range r.ItemsByNamespace {
 				identifier := apis.NamespaceScopedDir
