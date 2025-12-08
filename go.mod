@@ -1,6 +1,6 @@
 module kubestash.dev/cli
 
-go 1.23.6
+go 1.24.0
 
 toolchain go1.24.3
 
@@ -9,7 +9,7 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0
 	github.com/olekukonko/tablewriter v0.0.6-0.20230925090304-df64c4bbad77
 	github.com/spf13/cobra v1.9.1
-	golang.org/x/text v0.25.0
+	golang.org/x/text v0.31.0
 	gomodules.xyz/flags v0.1.3
 	gomodules.xyz/go-sh v0.2.0
 	gomodules.xyz/logs v0.0.7
@@ -162,12 +162,12 @@ require (
 	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	go.virtual-secrets.dev/apimachinery v0.0.1 // indirect
 	gocloud.dev v0.40.0 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
-	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
-	golang.org/x/sync v0.14.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/term v0.32.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240716161551-93cc26a95ae9 // indirect
 	gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f // indirect
