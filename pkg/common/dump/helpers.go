@@ -161,7 +161,7 @@ func isCompleted(obj *unstructured.Unstructured) (bool, error) {
 			return false, nil
 		}
 		for _, conditionRaw := range conditions {
-			condition, ok := conditionRaw.(map[string]interface{})
+			condition, ok := conditionRaw.(map[string]any)
 			if !ok {
 				continue
 			}

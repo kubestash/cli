@@ -23,7 +23,6 @@ import (
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
@@ -40,7 +39,7 @@ func NewRuntimeClient(cfg *restclient.Config) (client.Client, error) {
 	utilruntime.Must(kubedbapi.AddToScheme(scheme))
 	utilruntime.Must(core.AddToScheme(scheme))
 
-	hc, err := rest.HTTPClientFor(cfg)
+	hc, err := restclient.HTTPClientFor(cfg)
 	if err != nil {
 		return nil, err
 	}
