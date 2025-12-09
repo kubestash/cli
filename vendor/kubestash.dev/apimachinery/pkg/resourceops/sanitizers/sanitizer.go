@@ -21,7 +21,7 @@ import (
 )
 
 type Sanitizer interface {
-	Sanitize(in map[string]interface{}) (map[string]interface{}, error)
+	Sanitize(in map[string]any) (map[string]any, error)
 }
 
 func NewSanitizer(resource string) Sanitizer {
@@ -44,7 +44,7 @@ func newDefaultSanitizer() Sanitizer {
 	return defaultSanitizer{}
 }
 
-func (s defaultSanitizer) Sanitize(in map[string]interface{}) (map[string]interface{}, error) {
+func (s defaultSanitizer) Sanitize(in map[string]any) (map[string]any, error) {
 	ms := newMetadataSanitizer()
 	in, err := ms.Sanitize(in)
 	if err != nil {

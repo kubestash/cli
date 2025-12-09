@@ -75,7 +75,7 @@ type keyParams struct {
 
 func (w *ResticWrapper) listSnapshots(repository string, snapshotIDs []string) ([]Snapshot, error) {
 	result := make([]Snapshot, 0)
-	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json", "--quiet", "--no-lock"})
+	args := w.appendCacheDirFlag([]any{"snapshots", "--json", "--quiet", "--no-lock"})
 	b := w.getMatchedBackend(repository)
 	args = b.appendCaCertFlag(args)
 	args = b.appendInsecureTLSFlag(args)
@@ -93,7 +93,7 @@ func (w *ResticWrapper) listSnapshots(repository string, snapshotIDs []string) (
 }
 
 func (w *ResticWrapper) tryDeleteSnapshots(repository string, snapshotIDs []string) ([]byte, error) {
-	args := w.appendCacheDirFlag([]interface{}{"forget", "--quiet", "--prune"})
+	args := w.appendCacheDirFlag([]any{"forget", "--quiet", "--prune"})
 	b := w.getMatchedBackend(repository)
 	args = b.appendCaCertFlag(args)
 	args = b.appendInsecureTLSFlag(args)
@@ -121,7 +121,7 @@ func (w *ResticWrapper) deleteSnapshots(repository string, snapshotIDs []string)
 func (w *ResticWrapper) repositoryExist(repository string) bool {
 	klog.Infoln("Checking whether the backend repository exist or not....")
 	b := w.getMatchedBackend(repository)
-	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json", "--no-lock"})
+	args := w.appendCacheDirFlag([]any{"snapshots", "--json", "--no-lock"})
 	args = b.appendCaCertFlag(args)
 	args = b.appendInsecureTLSFlag(args)
 	args = b.appendMaxConnectionsFlag(args)
@@ -147,7 +147,7 @@ func (w *ResticWrapper) initRepository(repository string) error {
 	if err := b.createLocalDir(); err != nil {
 		return err
 	}
-	args := w.appendCacheDirFlag([]interface{}{"init"})
+	args := w.appendCacheDirFlag([]any{"init"})
 	args = b.appendCaCertFlag(args)
 	args = b.appendInsecureTLSFlag(args)
 	args = b.appendMaxConnectionsFlag(args)
@@ -159,7 +159,7 @@ func (w *ResticWrapper) initRepository(repository string) error {
 func (w *ResticWrapper) backup(params backupParams) ([]byte, error) {
 	klog.Infoln("Backing up target data")
 	var commands []Command
-	commonArgs := []interface{}{"backup", params.path, "--quiet", "--json"}
+	commonArgs := []any{"backup", params.path, "--quiet", "--json"}
 	if params.host != "" {
 		commonArgs = append(commonArgs, "--host")
 		commonArgs = append(commonArgs, params.host)
@@ -182,7 +182,7 @@ func (w *ResticWrapper) backup(params backupParams) ([]byte, error) {
 	commonArgs = w.appendCleanupCacheFlag(commonArgs)
 
 	for _, b := range w.Config.Backends {
-		args := make([]interface{}, len(commonArgs))
+		args := make([]any, len(commonArgs))
 		copy(args, commonArgs)
 		args = b.appendCaCertFlag(args)
 		args = b.appendInsecureTLSFlag(args)
@@ -200,14 +200,14 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 	// first add StdinPipeCommands, then add restic command
 	commands := options.StdinPipeCommands
 
-	commonArgs := []interface{}{"backup", "--stdin", "--quiet", "--json"}
+	commonArgs := []any{"backup", "--stdin", "--quiet", "--json"}
 	commonArgs = options.appendHost(commonArgs)
 	commonArgs = options.appendStdinFileName(commonArgs)
 	commonArgs = w.appendCacheDirFlag(commonArgs)
 	commonArgs = w.appendCleanupCacheFlag(commonArgs)
 
 	for _, b := range w.Config.Backends {
-		args := make([]interface{}, len(commonArgs))
+		args := make([]any, len(commonArgs))
 		copy(args, commonArgs)
 		args = b.appendCaCertFlag(args)
 		args = b.appendInsecureTLSFlag(args)
@@ -222,7 +222,7 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 func (w *ResticWrapper) restore(repository string, params restoreParams) ([]byte, error) {
 	klog.Infoln("Restoring backed up data")
 
-	args := []interface{}{"restore"}
+	args := []any{"restore"}
 	if params.snapshotId != "" {
 		args = append(args, params.snapshotId)
 	} else {
@@ -270,7 +270,7 @@ func (w *ResticWrapper) restore(repository string, params restoreParams) ([]byte
 func (w *ResticWrapper) DumpOnce(repository string, dumpOptions DumpOptions) ([]byte, error) {
 	klog.Infoln("Dumping backed up data")
 
-	args := []interface{}{"dump", "--quiet"}
+	args := []any{"dump", "--quiet"}
 	if dumpOptions.Snapshot != "" {
 		args = append(args, dumpOptions.Snapshot)
 	} else {
@@ -306,7 +306,7 @@ func (w *ResticWrapper) DumpOnce(repository string, dumpOptions DumpOptions) ([]
 
 func (w *ResticWrapper) check(repository string) ([]byte, error) {
 	klog.Infoln("Checking integrity of repository")
-	args := w.appendCacheDirFlag([]interface{}{"check", "--no-lock"})
+	args := w.appendCacheDirFlag([]any{"check", "--no-lock"})
 	b := w.getMatchedBackend(repository)
 	args = b.appendCaCertFlag(args)
 	args = b.appendMaxConnectionsFlag(args)
@@ -317,7 +317,7 @@ func (w *ResticWrapper) check(repository string) ([]byte, error) {
 
 func (w *ResticWrapper) stats(repository string, snapshotID string) ([]byte, error) {
 	klog.Infoln("Reading repository status")
-	args := w.appendCacheDirFlag([]interface{}{"stats"})
+	args := w.appendCacheDirFlag([]any{"stats"})
 	if snapshotID != "" {
 		args = append(args, snapshotID)
 	}
@@ -333,7 +333,7 @@ func (w *ResticWrapper) stats(repository string, snapshotID string) ([]byte, err
 
 func (w *ResticWrapper) unlock(repository string) ([]byte, error) {
 	klog.Infoln("Unlocking restic repository")
-	args := w.appendCacheDirFlag([]interface{}{"unlock", "--remove-all"})
+	args := w.appendCacheDirFlag([]any{"unlock", "--remove-all"})
 	b := w.getMatchedBackend(repository)
 	args = b.appendMaxConnectionsFlag(args)
 	args = b.appendCaCertFlag(args)
@@ -342,7 +342,18 @@ func (w *ResticWrapper) unlock(repository string) ([]byte, error) {
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
 
-func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
+func (w *ResticWrapper) unlockStale(repository string) ([]byte, error) {
+	klog.Infoln("Removing stale locks from restic repository")
+	args := w.appendCacheDirFlag([]any{"unlock"})
+	b := w.getMatchedBackend(repository)
+	args = b.appendMaxConnectionsFlag(args)
+	args = b.appendCaCertFlag(args)
+	args = b.appendInsecureTLSFlag(args)
+	args = append(args, b.envs)
+	return w.run(Command{Name: ResticCMD, Args: args})
+}
+
+func (w *ResticWrapper) appendCacheDirFlag(args []any) []any {
 	if w.Config.EnableCache {
 		cacheDir := filepath.Join(w.Config.ScratchDir, resticCacheDir)
 		return append(args, "--cache-dir", cacheDir)
@@ -350,7 +361,7 @@ func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 	return append(args, "--no-cache")
 }
 
-func (opt *BackupOptions) appendStdinFileName(args []interface{}) []interface{} {
+func (opt *BackupOptions) appendStdinFileName(args []any) []any {
 	if opt.StdinFileName != "" {
 		args = append(args, "--stdin-filename")
 		args = append(args, opt.StdinFileName)
@@ -358,7 +369,7 @@ func (opt *BackupOptions) appendStdinFileName(args []interface{}) []interface{} 
 	return args
 }
 
-func (opt *BackupOptions) appendHost(args []interface{}) []interface{} {
+func (opt *BackupOptions) appendHost(args []any) []any {
 	if opt.Host != "" {
 		args = append(args, "--host")
 		args = append(args, opt.Host)
@@ -366,7 +377,7 @@ func (opt *BackupOptions) appendHost(args []interface{}) []interface{} {
 	return args
 }
 
-func (w *ResticWrapper) appendCleanupCacheFlag(args []interface{}) []interface{} {
+func (w *ResticWrapper) appendCleanupCacheFlag(args []any) []any {
 	if w.Config.EnableCache {
 		return append(args, "--cleanup-cache")
 	}
@@ -494,7 +505,7 @@ func (w *ResticWrapper) applyNiceSettings(oldCommand Command) (Command, error) {
 func (w *ResticWrapper) addKey(repository string, params keyParams) ([]byte, error) {
 	klog.Infoln("Adding new key to restic repository")
 
-	args := []interface{}{"key", "add", "--no-lock"}
+	args := []any{"key", "add", "--no-lock"}
 	if params.host != "" {
 		args = append(args, "--host", params.host)
 	}
@@ -520,7 +531,7 @@ func (w *ResticWrapper) addKey(repository string, params keyParams) ([]byte, err
 func (w *ResticWrapper) listKey(repository string) ([]byte, error) {
 	klog.Infoln("Listing restic keys")
 
-	args := []interface{}{"key", "list", "--no-lock"}
+	args := []any{"key", "list", "--no-lock"}
 
 	b := w.getMatchedBackend(repository)
 	args = w.appendCacheDirFlag(args)
@@ -535,7 +546,7 @@ func (w *ResticWrapper) listKey(repository string) ([]byte, error) {
 func (w *ResticWrapper) listLocks(repository string) ([]byte, error) {
 	klog.Infoln("Listing restic locks")
 
-	args := []interface{}{"list", "locks", "--no-lock"}
+	args := []any{"list", "locks", "--no-lock"}
 
 	b := w.getMatchedBackend(repository)
 	args = w.appendCacheDirFlag(args)
@@ -550,7 +561,7 @@ func (w *ResticWrapper) listLocks(repository string) ([]byte, error) {
 func (w *ResticWrapper) lockStats(repository, lockID string) ([]byte, error) {
 	klog.Infoln("Getting stats of restic lock")
 
-	args := []interface{}{"cat", "lock", lockID, "--no-lock"}
+	args := []any{"cat", "lock", lockID, "--no-lock"}
 
 	b := w.getMatchedBackend(repository)
 	args = w.appendCacheDirFlag(args)
@@ -565,7 +576,7 @@ func (w *ResticWrapper) lockStats(repository, lockID string) ([]byte, error) {
 func (w *ResticWrapper) updateKey(repository string, params keyParams) ([]byte, error) {
 	klog.Infoln("Updating restic key")
 
-	args := []interface{}{"key", "passwd", "--no-lock"}
+	args := []any{"key", "passwd", "--no-lock"}
 
 	if params.file != "" {
 		args = append(args, "--new-password-file", params.file)
@@ -584,7 +595,7 @@ func (w *ResticWrapper) updateKey(repository string, params keyParams) ([]byte, 
 func (w *ResticWrapper) removeKey(repository string, params keyParams) ([]byte, error) {
 	klog.Infoln("Removing restic key")
 
-	args := []interface{}{"key", "remove", params.id, "--no-lock"}
+	args := []any{"key", "remove", params.id, "--no-lock"}
 
 	b := w.getMatchedBackend(repository)
 	args = w.appendCacheDirFlag(args)

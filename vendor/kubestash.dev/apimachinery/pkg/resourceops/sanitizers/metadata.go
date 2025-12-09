@@ -22,8 +22,8 @@ func newMetadataSanitizer() Sanitizer {
 	return metadataSanitizer{}
 }
 
-func (s metadataSanitizer) Sanitize(in map[string]interface{}) (map[string]interface{}, error) {
-	meta, ok := in["metadata"].(map[string]interface{})
+func (s metadataSanitizer) Sanitize(in map[string]any) (map[string]any, error) {
+	meta, ok := in["metadata"].(map[string]any)
 	if !ok {
 		return in, nil
 	}
@@ -44,8 +44,8 @@ func (s metadataSanitizer) Sanitize(in map[string]interface{}) (map[string]inter
 	return in, nil
 }
 
-func cleanUpAnnotations(in interface{}) interface{} {
-	m, ok := in.(map[string]interface{})
+func cleanUpAnnotations(in any) any {
+	m, ok := in.(map[string]any)
 	if !ok {
 		return in
 	}

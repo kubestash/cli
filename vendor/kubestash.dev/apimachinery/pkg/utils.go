@@ -21,6 +21,11 @@ import (
 	"fmt"
 	"os"
 
+	"kubestash.dev/apimachinery/apis"
+	addonapi "kubestash.dev/apimachinery/apis/addons/v1alpha1"
+	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
+	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+
 	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
 	"gomodules.xyz/envsubst"
 	apps "k8s.io/api/apps/v1"
@@ -31,10 +36,6 @@ import (
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	cu "kmodules.xyz/client-go/client"
-	"kubestash.dev/apimachinery/apis"
-	addonapi "kubestash.dev/apimachinery/apis/addons/v1alpha1"
-	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
-	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -105,7 +106,7 @@ func NewVolumeSnapshotDataSource(snapshotName string) *core.TypedLocalObjectRefe
 	}
 }
 
-func ResolveWithInputs(obj interface{}, inputs map[string]string) error {
+func ResolveWithInputs(obj any, inputs map[string]string) error {
 	// convert to JSON, apply replacements and convert back to struct
 	jsonObj, err := json.Marshal(obj)
 	if err != nil {

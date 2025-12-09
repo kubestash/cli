@@ -18,14 +18,15 @@ package restic
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"sync"
+
 	shell "gomodules.xyz/go-sh"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
-	"os"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sort"
-	"sync"
 )
 
 const (
@@ -41,7 +42,7 @@ type ResticWrapper struct {
 
 type Command struct {
 	Name string
-	Args []interface{}
+	Args []any
 }
 
 // BackupOptions specifies backup information

@@ -36,16 +36,32 @@ const (
 	LabelRole                  = GroupName + "/role"
 	LabelPetSet                = GroupName + "/petset"
 
+	PrometheusAddressFile     = "/var/prometheus-data/address"
+	PrometheusCaFile          = "/var/prometheus-data/ca.crt"
+	PrometheusTokenFile       = "/var/prometheus-data/token.txt"
+	MonitoringAgentAnnotation = GroupName + "/monitoring-agent"
+
 	// distributed const
-	DistributedCustomConfigSecretNameSuffix = "custom-config"
-	DistributedRBACNameSuffix               = "rbac"
-	DistributedServiceExportNameSuffix      = "serviceexports"
-	DistributedTLSSecretNameSuffix          = "tls-secrets"
-	DistributedGRPCSecretNameSuffix         = "grpc-secrets"
-	DistributedAuthSecretNameSuffix         = "auth"
-	KubeSliceNSMIPKey                       = "kubeslice.io/nsmIP"
-	KubeSlicePodIPVolumeName                = "podip"
-	KubeSlicePodIPFileName                  = "podip"
+	DistributedDatabaseLabel                   = GroupName + "/distributed"
+	DistributedCustomConfigSecretNameSuffix    = "custom-config"
+	DistributedRBACNameSuffix                  = "rbac"
+	DistributedServiceExportNameSuffix         = "serviceexports"
+	DistributedTLSSecretNameSuffix             = "tls-secrets"
+	DistributedGRPCSecretNameSuffix            = "grpc-secrets"
+	DistributedAuthSecretNameSuffix            = "auth"
+	DistributedPromethuesSecretNameSuffix      = "prometheus-data"
+	DistributedPromethuesSecretVolumeName      = "prometheus-data"
+	DistributedPromethuesSecretVolumeMountPath = "/var/prometheus-data"
+	DistributedMonitoringAgentENV              = "MONITORING_AGENT"
+	DistributedMonitoringAgentPrometheus       = "prometheus"
+	DistributedDBReplicaENV                    = "DB_REPLICAS"
+	DistributedMaxVolumeUsed                   = "max_used"
+	DistributedVolumeCapacity                  = "capacity"
+
+	KubeSliceNSMIPKey         = "kubeslice.io/nsmIP"
+	KubeSlicePodIPVolumeName  = "podip"
+	KubeSlicePodIPFileName    = "podip"
+	KubeSliceNSMContainerName = "cmd-nsc"
 
 	ReplicationModeDetectorContainerName = "replication-mode-detector"
 	DatabasePodPrimary                   = "primary"
@@ -370,9 +386,16 @@ const (
 	MariaDBMetricsExporterTLSVolumeName  = "metrics-exporter-config"
 	MariaDBMetricsExporterConfigPath     = "/etc/mysql/config/exporter"
 	MariaDBDataVolumeName                = "data"
-	DatabasePodPrimaryComponent          = "Primary"
-	DatabasePodMasterComponent           = "Master"
-	DatabasePodSlaveComponent            = "Slave"
+
+	DatabasePodPrimaryComponent = "Primary"
+	DatabasePodMasterComponent  = "Master"
+	DatabasePodSlaveComponent   = "Slave"
+
+	MariaDBDistributedUpgradeCommand           = "mariadb-upgrade"
+	MariaDBDistributedPodMetricGetCommand      = "get-pod-metrics"
+	MariaDBDistributedPodGetCommand            = "get-pod"
+	MariaDBDistributedVolumeUsageGetCommand    = "get-volume-usage"
+	MariaDBDistributedVolumeCapacityGetCommand = "get-volume-capacity"
 
 	// Maxscale
 	MaxscaleCommonName            = "mx"
@@ -585,7 +608,8 @@ const (
 	ProxySQLConfigSecretKey = "proxysql.cnf"
 
 	// =========================== Redis Constants ============================
-	RedisConfigKey = "redis.conf" // RedisConfigKey is going to create for the customize redis configuration
+	RedisConfigKey      = "redis.conf"    // RedisConfigKey is going to create for the customize redis configuration
+	RedisAclUserListKey = "user_acl.conf" // RedisAclUserListKey is going to create for the redis acl user list configuration
 	// DefaultConfigKey is going to create for the default redis configuration
 	RedisContainerName             = "redis"
 	RedisSentinelContainerName     = "redissentinel"
@@ -666,6 +690,8 @@ const (
 	PgBouncerConfigSectionPeers             = "peers"
 	PgBouncerConfigSectionPgbouncer         = "pgbouncer"
 	PgBouncerConfigSectionUsers             = "users"
+	PgBouncerInitVolumePath                 = "/init-scripts"
+	PgBouncerInitVolumeName                 = "init-scripts"
 
 	// =========================== Pgpool Constants ============================
 	EnvPostgresUsername                = "POSTGRES_USERNAME"
@@ -703,6 +729,8 @@ const (
 	PgpoolCustomHBAConfigFile          = "pool_hba.conf"
 	PgpoolCustomPCPFile                = "pcp.conf"
 	PGPOOL_INSTALL_DIR                 = "/opt/pgpool-II"
+	PgpoolInitVolumePath               = "/init-scripts"
+	PgpoolInitVolumeName               = "init-scripts"
 	// ========================================== ZooKeeper Constants =================================================//
 
 	KubeDBZooKeeperRoleName         = "kubedb:zookeeper-version-reader"
@@ -925,6 +953,8 @@ const (
 	KafkaClusterID                         = "cluster.id"
 	KafkaClientID                          = "client.id"
 	KafkaDataDirName                       = "log.dirs"
+	KafkaReplicaSelectorClassKey           = "replica.selector.class"
+	KafkaReplicaSelectorClassName          = "org.apache.kafka.common.replica.RackAwareReplicaSelector"
 	KafkaMetadataDirName                   = "metadata.log.dir"
 	KafkaServerKeystoreKey                 = "server.keystore.jks"
 	KafkaServerTruststoreKey               = "server.truststore.jks"
@@ -1439,7 +1469,7 @@ const (
 	RabbitMQPeerDiscoveryKey           = "cluster_formation.peer_discovery_backend"
 	RabbitMQPeerDiscoveryVal           = "rabbit_peer_discovery_k8s"
 	RabbitMQK8sHostKey                 = "cluster_formation.k8s.host"
-	RabbitMQK8sHostVal                 = "kubernetes.default.svc.cluster.local"
+	RabbitMQK8sHostVal                 = "kubernetes.default.svc"
 	RabbitMQK8sAddressTypeKey          = "cluster_formation.k8s.address_type"
 	RabbitMQK8sAddressTypeVal          = "hostname"
 	RabbitMQNodeCleanupWarningKey      = "cluster_formation.node_cleanup.only_log_warning"
@@ -1608,10 +1638,13 @@ const (
 	ClickHouseClientKey                = "tls.key"
 	ClickHouseClientPath               = "client.key"
 
+	ClickHouseUserInitScriptVolumeName      = "initial-script"
+	ClickHouseUserInitScriptVolumeMountPath = "/docker-entrypoint-initdb.d"
+
 	// keeper
-	ClickHouseKeeperDataPath     = "/var/lib/clickhouse_keeper"
-	ClickHouseKeeperLogPath      = "/var/lib/clickhouse_keeper/coordination/logs"
-	ClickHouseKeeperSnapshotPath = "/var/lib/clickhouse_keeper/coordination/snapshots"
+	ClickHouseKeeperDataPath     = "/var/lib/clickhouse"
+	ClickHouseKeeperLogPath      = "/var/lib/clickhouse/coordination/logs"
+	ClickHouseKeeperSnapshotPath = "/var/lib/clickhouse/coordination/snapshots"
 
 	ClickHouseInternalKeeperDataPath     = "/var/lib/clickhouse/coordination/log"
 	ClickHouseInternalKeeperSnapshotPath = "/var/lib/clickhouse/coordination/snapshots"
@@ -1770,6 +1803,12 @@ const (
 	CassandraTLSStoreTypeJKSValue          = "JKS"
 )
 
+// =========================== Migration Constant  =================================
+const (
+	StorageMigration          = "StorageMigration"
+	StorageMigrationSucceeded = "StorageMigrationSucceeded"
+)
+
 // =========================== Virtual Secrets Constants ============================
 
 const (
@@ -1786,6 +1825,7 @@ const (
 const (
 	ResourceKindStatefulSet = "StatefulSet"
 	ResourceKindPetSet      = "PetSet"
+	ResourceKindSecret      = "Secret"
 )
 
 var (
@@ -1828,6 +1868,16 @@ var (
 		},
 		Limits: core.ResourceList{
 			core.ResourceMemory: resource.MustParse("4Gi"),
+		},
+	}
+
+	IgniteDefaultResources = core.ResourceRequirements{
+		Requests: core.ResourceList{
+			core.ResourceCPU:    resource.MustParse(".500"),
+			core.ResourceMemory: resource.MustParse("2Gi"),
+		},
+		Limits: core.ResourceList{
+			core.ResourceMemory: resource.MustParse("2Gi"),
 		},
 	}
 
@@ -1976,11 +2026,11 @@ func DefaultArbiter(computeOnly bool) core.ResourceRequirements {
 }
 
 const (
-	InitFromGit          = "init-from-git"
-	InitFromGitMountPath = "/git"
-	GitSecretVolume      = "git-secret"
-	GitSecretMountPath   = "/etc/git-secret"
-	GitSyncContainerName = "git-sync"
+	InitFromGit                 = "init-from-git"
+	DefaultInitFromGitMountPath = "/git"
+	GitSecretVolume             = "git-secret"
+	GitSecretMountPath          = "/etc/git-secret"
+	GitSyncContainerName        = "git-sync"
 )
 
 const (

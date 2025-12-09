@@ -17,12 +17,13 @@ limitations under the License.
 package restic
 
 import (
-	"gomodules.xyz/pointer"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/errors"
 	"math"
 	"sync"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/utils/ptr"
 )
 
 // RunBackup takes backup, cleanup old snapshots, check repository integrity etc.
@@ -140,7 +141,7 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 		mu         sync.Mutex // use lock to avoid racing condition
 	)
 
-	var multipleOutputs = make([]BackupOutput, len(w.Config.Backends))
+	multipleOutputs := make([]BackupOutput, len(w.Config.Backends))
 
 	for i := range backupOptions {
 		// try to send message in concurrencyLimiter channel.
@@ -243,5 +244,5 @@ func (w *ResticWrapper) VerifyRepositoryIntegrity(repository string) (*Repositor
 	if err != nil {
 		return nil, err
 	}
-	return &RepositoryStats{Integrity: pointer.BoolP(integrity), Size: repoSize}, nil
+	return &RepositoryStats{Integrity: ptr.To(integrity), Size: repoSize}, nil
 }

@@ -17,9 +17,10 @@ limitations under the License.
 package restic
 
 import (
-	"k8s.io/apimachinery/pkg/util/errors"
 	"sync"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/errors"
 )
 
 // RunRestore run restore process for a single host.
