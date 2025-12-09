@@ -24,14 +24,14 @@ func newPVCSanitizer() Sanitizer {
 	return pvcSanitizer{}
 }
 
-func (s pvcSanitizer) Sanitize(in map[string]interface{}) (map[string]interface{}, error) {
+func (s pvcSanitizer) Sanitize(in map[string]any) (map[string]any, error) {
 	ms := newMetadataSanitizer()
 	in, err := ms.Sanitize(in)
 	if err != nil {
 		return nil, err
 	}
 
-	spec, ok := in["spec"].(map[string]interface{})
+	spec, ok := in["spec"].(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("invalid pvc spec")
 	}

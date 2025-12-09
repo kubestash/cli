@@ -40,6 +40,7 @@ import (
 	coreutil "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/policy/secomp"
+	app_api "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v2"
@@ -300,10 +301,20 @@ func (r *Cassandra) SetDefaults(kc client.Client) {
 	if r.Spec.EnableSSL {
 		if r.Spec.KeystoreCredSecret == nil {
 			r.Spec.KeystoreCredSecret = &SecretReference{
-				LocalObjectReference: core.LocalObjectReference{
+				TypedLocalObjectReference: app_api.TypedLocalObjectReference{
+					Kind: "Secret",
 					Name: r.CassandraKeystoreCredSecretName(),
 				},
 			}
+		}
+	}
+
+	if !r.Spec.DisableSecurity {
+		if r.Spec.AuthSecret == nil {
+			r.Spec.AuthSecret = &SecretReference{}
+		}
+		if r.Spec.AuthSecret.Kind == "" {
+			r.Spec.AuthSecret.Kind = kubedb.ResourceKindSecret
 		}
 	}
 
@@ -441,14 +452,14 @@ func (r *Cassandra) GetSeed() string {
 	namespace := r.Namespace
 	name := r.Name
 	if r.Spec.Topology == nil {
-		seed = fmt.Sprintf("%s-0.%s-pods.%s.svc.cluster.local", name, name, namespace)
+		seed = fmt.Sprintf("%s-0.%s-pods.%s.svc", name, name, namespace)
 		seed = seed + " , "
 		return seed
 	}
 	for _, rack := range r.Spec.Topology.Rack {
 		rackCount := min(*rack.Replicas, 3)
 		for i := int32(0); i < rackCount; i++ {
-			current_seed := fmt.Sprintf("%s-rack-%s-%d.%s-rack-%s-pods.%s.svc.cluster.local", name, rack.Name, i, name, rack.Name, namespace)
+			current_seed := fmt.Sprintf("%s-rack-%s-%d.%s-rack-%s-pods.%s.svc", name, rack.Name, i, name, rack.Name, namespace)
 			seed += current_seed + " , "
 		}
 	}

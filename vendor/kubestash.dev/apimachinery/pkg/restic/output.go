@@ -25,6 +25,8 @@ import (
 	"io"
 	"strings"
 	"time"
+
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
 const FileModeRWXAll = 0o777
@@ -69,6 +71,9 @@ func extractBackupInfo(output []byte, path string) ([]SnapshotStats, error) {
 			continue
 		}
 		jsonOutputs = append(jsonOutputs, summary)
+	}
+	if len(errs) > 0 {
+		return nil, utilerrors.NewAggregate(errs)
 	}
 	var snapshotStatsList []SnapshotStats
 	for _, jsonOutput := range jsonOutputs {

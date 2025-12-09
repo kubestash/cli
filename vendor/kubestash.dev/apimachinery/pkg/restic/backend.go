@@ -18,11 +18,13 @@ package restic
 
 import (
 	"fmt"
+	"os"
+
+	"kubestash.dev/apimachinery/apis/storage/v1alpha1"
+
 	core "k8s.io/api/core/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	storage "kmodules.xyz/objectstore-api/api/v1"
-	"kubestash.dev/apimachinery/apis/storage/v1alpha1"
-	"os"
 )
 
 type backend struct {
@@ -57,21 +59,21 @@ func (b *Backend) createLocalDir() error {
 	return nil
 }
 
-func (b *Backend) appendInsecureTLSFlag(args []interface{}) []interface{} {
+func (b *Backend) appendInsecureTLSFlag(args []any) []any {
 	if b.insecureTLS {
 		return append(args, "--insecure-tls")
 	}
 	return args
 }
 
-func (b *Backend) appendCaCertFlag(args []interface{}) []interface{} {
+func (b *Backend) appendCaCertFlag(args []any) []any {
 	if b.CaCertFile != "" {
 		return append(args, "--cacert", b.CaCertFile)
 	}
 	return args
 }
 
-func (b *Backend) appendMaxConnectionsFlag(args []interface{}) []interface{} {
+func (b *Backend) appendMaxConnectionsFlag(args []any) []any {
 	var maxConOption string
 	if b.MaxConnections > 0 {
 		switch b.provider {

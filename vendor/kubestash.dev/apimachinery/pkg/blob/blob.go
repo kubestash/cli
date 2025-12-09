@@ -21,28 +21,28 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	aws2 "github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 
+	"kubestash.dev/apimachinery/apis"
+	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/pkg/workerpool"
+
+	aws2 "github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/azureblob"
 	_ "gocloud.dev/blob/fileblob"
 	_ "gocloud.dev/blob/gcsblob"
 	"gocloud.dev/blob/s3blob"
-	_ "gocloud.dev/blob/s3blob"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
-	"kubestash.dev/apimachinery/apis"
-	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -63,11 +63,12 @@ const (
 )
 
 type Blob struct {
-	prefix        string
-	storageURL    string
-	s3Secret      *v1.Secret
-	client        client.Client
-	backupStorage *storageapi.BackupStorage
+	prefix         string
+	storageURL     string
+	maxConnections int64
+	s3Secret       *v1.Secret
+	client         client.Client
+	backupStorage  *storageapi.BackupStorage
 }
 
 func NewBlob(ctx context.Context, c client.Client, bs *storageapi.BackupStorage) (*Blob, error) {
@@ -93,10 +94,11 @@ func s3Blob(ctx context.Context, c client.Client, bs *storageapi.BackupStorage) 
 	}
 
 	return &Blob{
-		client:        c,
-		backupStorage: bs,
-		s3Secret:      secret,
-		prefix:        bs.Spec.Storage.S3.Prefix,
+		client:         c,
+		backupStorage:  bs,
+		s3Secret:       secret,
+		maxConnections: bs.Spec.Storage.S3.MaxConnections,
+		prefix:         bs.Spec.Storage.S3.Prefix,
 	}, err
 }
 
@@ -111,9 +113,10 @@ func gcsBlob(ctx context.Context, c client.Client, bs *storageapi.BackupStorage)
 		}
 	}
 	return &Blob{
-		backupStorage: bs,
-		prefix:        bs.Spec.Storage.GCS.Prefix,
-		storageURL:    fmt.Sprintf("%s%s", gcsPrefix, bs.Spec.Storage.GCS.Bucket),
+		backupStorage:  bs,
+		prefix:         bs.Spec.Storage.GCS.Prefix,
+		maxConnections: bs.Spec.Storage.GCS.MaxConnections,
+		storageURL:     fmt.Sprintf("%s%s", gcsPrefix, bs.Spec.Storage.GCS.Bucket),
 	}, nil
 }
 
@@ -135,16 +138,18 @@ func azureBlob(ctx context.Context, c client.Client, bs *storageapi.BackupStorag
 		}
 	}
 	return &Blob{
-		backupStorage: bs,
-		prefix:        bs.Spec.Storage.Azure.Prefix,
-		storageURL:    fmt.Sprintf("%s%s", azurePrefix, bs.Spec.Storage.Azure.Container),
+		backupStorage:  bs,
+		prefix:         bs.Spec.Storage.Azure.Prefix,
+		maxConnections: bs.Spec.Storage.Azure.MaxConnections,
+		storageURL:     fmt.Sprintf("%s%s", azurePrefix, bs.Spec.Storage.Azure.Container),
 	}, nil
 }
 
 func localBlob(bs *storageapi.BackupStorage) (*Blob, error) {
 	return &Blob{
-		backupStorage: bs,
-		storageURL:    fmt.Sprintf("%s%s?no_tmp_dir=true", localPrefix, bs.Spec.Storage.Local.MountPath),
+		backupStorage:  bs,
+		maxConnections: bs.Spec.Storage.Local.MaxConnections,
+		storageURL:     fmt.Sprintf("%s%s?no_tmp_dir=true", localPrefix, bs.Spec.Storage.Local.MountPath),
 	}, nil
 }
 
@@ -329,7 +334,6 @@ func (b *Blob) List(ctx context.Context, dir string) ([][]byte, error) {
 }
 
 func (b *Blob) Delete(ctx context.Context, filepath string, isDir bool) error {
-	klog.Infof("Cleaning up data from backend...")
 	if isDir {
 		return b.deleteDir(ctx, filepath)
 	}
@@ -348,8 +352,10 @@ func (b *Blob) deleteDir(ctx context.Context, dir string) error {
 		return err
 	}
 	defer closeBucket(ctx, bucket)
-	var deleteErrs []error
 	iter := bucket.List(nil)
+
+	workerCount := max(b.maxConnections, 10) // Default workers for deleteDir is 10.
+	wp := workerpool.NewWorkerPool(ctx, workerCount)
 	for {
 		obj, err := iter.Next(ctx)
 		if err == io.EOF {
@@ -359,12 +365,19 @@ func (b *Blob) deleteDir(ctx context.Context, dir string) error {
 			return err
 		}
 		filePath := fmt.Sprintf("%s/%s", dir, obj.Key)
-		err = b.Delete(ctx, filePath, false)
-		if err != nil {
-			deleteErrs = append(deleteErrs, err)
-		}
+		wp.Run(func() error {
+			if err := b.Delete(ctx, filePath, false); err != nil {
+				return err
+			}
+			return nil
+		})
 	}
-	return errors.NewAggregate(deleteErrs)
+
+	if err = wp.Wait(); err != nil {
+		return fmt.Errorf("failed to delete directory %s. Err: %w", dir, err)
+	}
+	fmt.Println("Successfully deleted directory: ", dir)
+	return nil
 }
 
 func checkIfObjectFile(obj *blob.ListObject) bool {

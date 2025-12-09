@@ -17,9 +17,9 @@ limitations under the License.
 package filter
 
 import (
-	"gomodules.xyz/pointer"
-	"k8s.io/utils/ptr"
 	"strings"
+
+	"k8s.io/utils/ptr"
 )
 
 type IncludeExclude struct {
@@ -115,7 +115,7 @@ func NewGlobalIncludeExclude(resourceFilter, namespaceFilter *IncludeExclude, in
 	return &GlobalIncludeExclude{
 		resourceFilter:          resourceFilter,
 		namespaceFilter:         namespaceFilter,
-		includeClusterResources: pointer.BoolP(includeClusterResources),
+		includeClusterResources: ptr.To(includeClusterResources),
 	}
 }
 

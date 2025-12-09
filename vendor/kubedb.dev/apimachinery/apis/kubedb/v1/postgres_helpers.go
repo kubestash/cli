@@ -131,6 +131,10 @@ func (p Postgres) GetAuthSecretName() string {
 	return meta_util.NameWithSuffix(p.OffshootName(), "auth")
 }
 
+func (p Postgres) GetStorageClassName() string {
+	return *p.Spec.Storage.StorageClassName
+}
+
 func (p Postgres) ServiceName() string {
 	return p.OffshootName()
 }
@@ -243,6 +247,13 @@ func (p *Postgres) SetDefaults(postgresVersion *catalog.PostgresVersion) {
 	}
 	if p.Spec.DeletionPolicy == "" {
 		p.Spec.DeletionPolicy = DeletionPolicyDelete
+	}
+
+	if p.Spec.AuthSecret == nil {
+		p.Spec.AuthSecret = &SecretReference{}
+	}
+	if p.Spec.AuthSecret.Kind == "" {
+		p.Spec.AuthSecret.Kind = kubedb.ResourceKindSecret
 	}
 
 	if p.Spec.LeaderElection == nil {

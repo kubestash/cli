@@ -19,7 +19,6 @@ package restic
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/errors"
 	"os"
 	"path/filepath"
 
@@ -27,6 +26,7 @@ import (
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/errors"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	storage "kmodules.xyz/objectstore-api/api/v1"
@@ -191,6 +191,7 @@ func (w *ResticWrapper) setupEnvsForBackend(b *Backend) error {
 	return nil
 }
 
+// nolint: unused
 func (w *ResticWrapper) exportSecretKey(secret *core.Secret, key string, required bool) error {
 	if v, ok := secret.Data[key]; !ok {
 		if required {
@@ -253,6 +254,7 @@ func (w *ResticWrapper) setBackupStorageVariables(b *Backend) error {
 		b.endpoint = s3.Endpoint
 		b.path = s3.Prefix
 		b.insecureTLS = s3.InsecureTLS
+		b.MaxConnections = s3.MaxConnections
 		secret = s3.SecretName
 	}
 
@@ -277,6 +279,7 @@ func (w *ResticWrapper) setBackupStorageVariables(b *Backend) error {
 		b.provider = v1alpha1.ProviderLocal
 		b.bucket = local.MountPath
 		b.path = local.SubPath
+		b.MaxConnections = local.MaxConnections
 
 		var err error
 		b.storageSecret, err = w.getSecret(b.EncryptionSecret)
