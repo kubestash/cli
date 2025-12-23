@@ -492,10 +492,9 @@ func configureSessionFromBlueprint(bb *v1beta1.BackupBlueprint) coreapi.Session 
 		},
 		Repositories: []coreapi.RepositoryInfo{
 			{
-				Name:    fmt.Sprintf(`${repoName}`),
-				Backend: "storage",
-				Directory: filepath.Join(setValidValue("Directory"),
-					fmt.Sprintf(`${namespace}/${targetName}`)),
+				Name:      `${repoName}`,
+				Backend:   "storage",
+				Directory: filepath.Join(setValidValue("Directory"), `${namespace}/${targetName}`),
 				EncryptionSecret: &kmapi.ObjectReference{
 					Name:      setValidValue("Name"),
 					Namespace: setValidValue("Namespace"),
@@ -613,11 +612,6 @@ func configureBackupAddonInfoFromBlueprint(bb *v1beta1.BackupBlueprint) *coreapi
 		ContainerRuntimeSettings: bb.Spec.RuntimeSettings.Container,
 		JobTemplate:              podTemplateSpec,
 	}
-}
-
-func getRepoName(bb *v1beta1.BackupBlueprint) string {
-	// TODO: bb.Spec.Repository.Name
-	return bb.Name
 }
 
 func configurePodRuntimeSettings(settings *ofst.PodRuntimeSettings) ofst.PodSpec {
