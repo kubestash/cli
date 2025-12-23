@@ -278,7 +278,7 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 func createBackupBlueprint(oldBB *v1beta1.BackupBlueprint) *coreapi.BackupBlueprint {
 	return &coreapi.BackupBlueprint{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       coreapi.ResourceKindBackupConfiguration,
+			Kind:       coreapi.ResourceKindBackupBlueprint,
 			APIVersion: coreapi.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -435,8 +435,8 @@ func configureBackendFromBlueprint(bb *v1beta1.BackupBlueprint) coreapi.BackendR
 	return coreapi.BackendReference{
 		Name: "storage",
 		StorageRef: &kmapi.ObjectReference{
-			Name:      getRepoName(bb),
-			Namespace: ns,
+			Name:      setValidValue("BackupStorage"),
+			Namespace: setValidValue("Namespace"),
 		},
 		RetentionPolicy: &kmapi.ObjectReference{
 			Name:      bb.Spec.RetentionPolicy.Name,
@@ -492,9 +492,10 @@ func configureSessionFromBlueprint(bb *v1beta1.BackupBlueprint) coreapi.Session 
 		},
 		Repositories: []coreapi.RepositoryInfo{
 			{
-				Name:      getRepoName(bb),
-				Backend:   "storage",
-				Directory: setValidValue("Directory"),
+				Name:    fmt.Sprintf(`${repoName}`),
+				Backend: "storage",
+				Directory: filepath.Join(setValidValue("Directory"),
+					fmt.Sprintf(`${namespace}/${targetName}`)),
 				EncryptionSecret: &kmapi.ObjectReference{
 					Name:      setValidValue("Name"),
 					Namespace: setValidValue("Namespace"),
@@ -630,7 +631,7 @@ func configurePodRuntimeSettings(settings *ofst.PodRuntimeSettings) ofst.PodSpec
 		podSpec.NodeSelector = settings.NodeSelector
 	}
 	if settings.ServiceAccountName != "" {
-		podSpec.ServiceAccountName = settings.ServiceAccountName
+		podSpec.ServiceAccountName = setValidValue("ServiceAccountName")
 	}
 	if settings.SecurityContext != nil {
 		podSpec.SecurityContext = settings.SecurityContext
