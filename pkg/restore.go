@@ -378,7 +378,7 @@ func (opt *options) runRestoreViaDocker(destination string, args []string) error
 		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
 		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
 		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
-		imgRestic.ToContainerImage(),
+		imgRestic.Image,
 	}
 
 	restoreArgs = append(restoreArgs, args...)

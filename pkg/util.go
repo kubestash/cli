@@ -55,9 +55,7 @@ var (
 )
 
 func init() {
-	imgRestic.Registry = ResticRegistry
 	imgRestic.Image = ResticImage
-	imgRestic.Tag = ResticTag
 }
 
 func getSecret(ref kmapi.ObjectReference) (*core.Secret, error) {

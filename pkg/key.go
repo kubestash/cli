@@ -148,7 +148,7 @@ func (opt *keyOptions) runCmdViaDocker(args []string) error {
 		keyArgs = append(keyArgs, "-v", opt.File+":"+opt.File)
 	}
 
-	keyArgs = append(keyArgs, imgRestic.ToContainerImage())
+	keyArgs = append(keyArgs, imgRestic.Image)
 	keyArgs = append(keyArgs, args...)
 
 	if opt.ID != "" {
