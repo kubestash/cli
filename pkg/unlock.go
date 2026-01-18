@@ -216,7 +216,7 @@ func (opt *unlockOptions) runCmdViaDocker(args []string) error {
 		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
 		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
 		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
-		imgRestic.ToContainerImage(),
+		imgRestic.Image,
 	}
 
 	unlockArgs = append(unlockArgs, args...)

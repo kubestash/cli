@@ -212,8 +212,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 	cmd.Flags().StringSliceVar(&downloadOpt.exclude, "exclude", downloadOpt.exclude, "List of pattern for directory/file to ignore during restore")
 	cmd.Flags().StringSliceVar(&downloadOpt.include, "include", downloadOpt.include, "List of pattern for directory/file to restore")
 
-	cmd.Flags().StringVar(&imgRestic.Registry, "docker-registry", imgRestic.Registry, "Docker image registry for restic cli")
-	cmd.Flags().StringVar(&imgRestic.Tag, "image-tag", imgRestic.Tag, "Restic docker image tag")
+	cmd.Flags().StringVar(&imgRestic.Image, "image", imgRestic.Image, "Restic docker image")
 
 	cmd.MarkFlagsMutuallyExclusive("exclude", "include")
 
@@ -304,7 +303,7 @@ func (opt *downloadOptions) runRestoreViaDocker(destination string, args []strin
 		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
 		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
 		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
-		imgRestic.ToContainerImage(),
+		imgRestic.Image,
 	}
 
 	restoreArgs = append(restoreArgs, args...)

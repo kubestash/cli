@@ -29,12 +29,10 @@ const (
 	PasswordFile        = "/kubestash-tmp/password.txt"
 	ConfigDir           = "/tmp/scratch/config"
 
-	ResticEnvs     = "restic-envs"
-	ResticRegistry = "restic"
-	ResticImage    = "restic"
-	ResticTag      = "latest"
-	EnvHttpProxy   = "HTTP_PROXY"
-	EnvHttpsProxy  = "HTTPS_PROXY"
+	ResticEnvs    = "restic-envs"
+	ResticImage   = "ghcr.io/appscode-images/restic:0.18.1"
+	EnvHttpProxy  = "HTTP_PROXY"
+	EnvHttpsProxy = "HTTPS_PROXY"
 )
 
 // Constants for debugging

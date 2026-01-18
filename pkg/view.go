@@ -462,7 +462,7 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 			"--env", fmt.Sprintf("%s=%s", EnvHttpsProxy, os.Getenv(EnvHttpsProxy)),
 			"--env-file", filepath.Join(ConfigDir, ResticEnvs),
 			"--entrypoint", "sh",
-			imgRestic.ToContainerImage(),
+			imgRestic.Image,
 			"-c", "sleep infinity",
 		}
 
