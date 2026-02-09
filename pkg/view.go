@@ -27,6 +27,7 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/list"
 	"github.com/spf13/cobra"
+	"gomodules.xyz/restic"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -39,7 +40,6 @@ import (
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg"
 	"kubestash.dev/apimachinery/pkg/resourceops/filter"
-	"kubestash.dev/apimachinery/pkg/restic"
 	"kubestash.dev/cli/pkg/common/dump"
 	"sigs.k8s.io/yaml"
 )
@@ -166,14 +166,18 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 					klog.Errorf("failed to remove scratch dir. Reason: %v", err)
 				}
 			}()
+
+			encryptSecret, err := getEncryptionSecret(opt.Client, repository.Spec.EncryptionSecret)
+			if err != nil {
+				return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
+			}
+
 			setupOptions := &restic.SetupOptions{
-				Client:     klient,
 				ScratchDir: ScratchDir,
 				Backends: []*restic.Backend{
 					{
 						Repository:       repository.Name,
-						BackupStorage:    &repository.Spec.StorageRef,
-						EncryptionSecret: repository.Spec.EncryptionSecret,
+						EncryptionSecret: encryptSecret,
 					},
 				},
 			}

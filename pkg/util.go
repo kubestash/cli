@@ -215,6 +215,19 @@ func setBackupConfigurationPausedField(value bool, name string) error {
 	return err
 }
 
+func getEncryptionSecret(kbClient client.Client, secretRef *kmapi.ObjectReference) (*core.Secret, error) {
+	secret := &core.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: secretRef.Namespace,
+			Name:      secretRef.Name,
+		},
+	}
+	if err := kbClient.Get(context.Background(), client.ObjectKeyFromObject(secret), secret); err != nil {
+		return nil, err
+	}
+	return secret, nil
+}
+
 func createTable(data [][]string) error {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Item", "Reason"})

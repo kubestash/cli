@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gomodules.xyz/restic"
 	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
@@ -34,7 +35,6 @@ import (
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg"
-	"kubestash.dev/apimachinery/pkg/restic"
 )
 
 type downloadOptions struct {
@@ -139,14 +139,17 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				}
 			}()
 
+			encryptSecret, err := getEncryptionSecret(klient, repository.Spec.EncryptionSecret)
+			if err != nil {
+				return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
+			}
+
 			setupOptions := &restic.SetupOptions{
-				Client:     klient,
 				ScratchDir: ScratchDir,
 				Backends: []*restic.Backend{
 					{
 						Repository:       repository.Name,
-						BackupStorage:    &repository.Spec.StorageRef,
-						EncryptionSecret: repository.Spec.EncryptionSecret,
+						EncryptionSecret: encryptSecret,
 					},
 				},
 			}

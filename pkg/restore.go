@@ -27,12 +27,12 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gomodules.xyz/restic"
 	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
-	"kubestash.dev/apimachinery/pkg/restic"
 	"kubestash.dev/cli/pkg/common"
 	"kubestash.dev/cli/pkg/common/dump"
 )
@@ -161,14 +161,17 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				return nil
 			}
 
+			encryptSecret, err := getEncryptionSecret(klient, repository.Spec.EncryptionSecret)
+			if err != nil {
+				return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
+			}
+
 			opt.SetupOptions = restic.SetupOptions{
-				Client:     opt.Client,
 				ScratchDir: ScratchDir,
 				Backends: []*restic.Backend{
 					{
 						Repository:       repository.Name,
-						BackupStorage:    &repository.Spec.StorageRef,
-						EncryptionSecret: repository.Spec.EncryptionSecret,
+						EncryptionSecret: encryptSecret,
 					},
 				},
 			}

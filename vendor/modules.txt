@@ -993,6 +993,9 @@ gomodules.xyz/mergo
 # gomodules.xyz/pointer v0.1.0
 ## explicit; go 1.15
 gomodules.xyz/pointer
+# gomodules.xyz/restic v0.0.0-20260127113541-2bdea1940793
+## explicit; go 1.25
+gomodules.xyz/restic
 # gomodules.xyz/runtime v0.3.0
 ## explicit; go 1.17
 gomodules.xyz/runtime
