@@ -150,6 +150,7 @@ func (opt *unlockOptions) unlockRepositoryViaDocker() error {
 	setupOptions := &restic.SetupOptions{
 		Backends: []*restic.Backend{
 			{
+				ConfigResolver:   storageapi.NewBackupStorageResolver(klient, &opt.repo.Spec.StorageRef),
 				Repository:       opt.repo.Name,
 				EncryptionSecret: encryptSecret,
 			},

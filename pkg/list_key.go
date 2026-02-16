@@ -23,11 +23,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"gomodules.xyz/flags"
+	"gomodules.xyz/restic"
 	core "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
-	"kubestash.dev/apimachinery/pkg/restic"
+	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 )
 
 func NewCmdListKey(opt *keyOptions) *cobra.Command {
@@ -119,15 +120,19 @@ func (opt *keyOptions) listResticKeysViaDocker() error {
 		}
 	}()
 
+	encryptionSecret, err := getEncryptionSecret(klient, opt.repo.Spec.EncryptionSecret)
+	if err != nil {
+		return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
+	}
+
 	for _, path := range opt.paths {
 		setupOptions := &restic.SetupOptions{
-			Client: klient,
 			Backends: []*restic.Backend{
 				{
+					ConfigResolver:   storageapi.NewBackupStorageResolver(klient, &opt.repo.Spec.StorageRef),
 					Directory:        filepath.Join(opt.repo.Spec.Path, path),
 					Repository:       opt.repo.Name,
-					BackupStorage:    &opt.repo.Spec.StorageRef,
-					EncryptionSecret: opt.repo.Spec.EncryptionSecret,
+					EncryptionSecret: encryptionSecret,
 				},
 			},
 			ScratchDir: ScratchDir,

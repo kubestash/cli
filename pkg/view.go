@@ -176,6 +176,7 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 				ScratchDir: ScratchDir,
 				Backends: []*restic.Backend{
 					{
+						ConfigResolver:   storageapi.NewBackupStorageResolver(klient, &repository.Spec.StorageRef),
 						Repository:       repository.Name,
 						EncryptionSecret: encryptSecret,
 					},

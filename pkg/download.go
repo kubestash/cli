@@ -148,6 +148,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				ScratchDir: ScratchDir,
 				Backends: []*restic.Backend{
 					{
+						ConfigResolver:   storageapi.NewBackupStorageResolver(klient, &repository.Spec.StorageRef),
 						Repository:       repository.Name,
 						EncryptionSecret: encryptSecret,
 					},

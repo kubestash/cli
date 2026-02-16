@@ -28,6 +28,7 @@ import (
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
+	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 )
 
 func NewCmdAddKey(opt *keyOptions) *cobra.Command {
@@ -138,6 +139,7 @@ func (opt *keyOptions) addResticKeyViaDocker() error {
 	setupOptions := &restic.SetupOptions{
 		Backends: []*restic.Backend{
 			{
+				ConfigResolver:   storageapi.NewBackupStorageResolver(klient, &opt.repo.Spec.StorageRef),
 				Repository:       opt.repo.Name,
 				EncryptionSecret: encryptSecret,
 			},

@@ -468,6 +468,10 @@ func (b *Blob) getS3Config(ctx context.Context, debug bool) (aws2.Config, error)
 		}
 	}
 
+	// S3 client behavior is updated to always calculate a checksum by default for operations, so it's needed
+	loadOptions = append(loadOptions, config.WithRequestChecksumCalculation(aws2.RequestChecksumCalculationWhenRequired))
+	loadOptions = append(loadOptions, config.WithResponseChecksumValidation(aws2.ResponseChecksumValidationWhenRequired))
+
 	return config.LoadDefaultConfig(ctx, loadOptions...)
 }
 
