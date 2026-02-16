@@ -26,7 +26,6 @@ import (
 	shell "gomodules.xyz/go-sh"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -79,14 +78,14 @@ type DumpOptions struct {
 
 type SetupOptions struct {
 	sync.Mutex
-	Client      client.Client
+	EnableCache bool
+	ScratchDir  string
 	Nice        *ofst.NiceSettings
 	IONice      *ofst.IONiceSettings
 	Timeout     *metav1.Duration
-	ScratchDir  string
-	EnableCache bool
 
-	Backends []*Backend
+	Backends     []*Backend
+	backendIndex map[string]*Backend
 }
 
 type KeyOptions struct {
@@ -128,7 +127,35 @@ func (w *ResticWrapper) configure() error {
 	w.sh.PipeStdErrors = true
 
 	// Setup restic environments
-	return w.setupEnv()
+	if err := w.setupEnv(); err != nil {
+		return err
+	}
+
+	// Build backend index for fast lookup
+	w.Config.buildBackendIndex()
+	return nil
+}
+
+func (s *SetupOptions) buildBackendIndex() {
+	s.backendIndex = make(map[string]*Backend, len(s.Backends))
+	for _, b := range s.Backends {
+		if b.Repository != "" {
+			s.backendIndex[b.Repository] = b
+		}
+	}
+}
+
+func (s *SetupOptions) GetBackend(repository string) *Backend {
+	if s.backendIndex != nil {
+		return s.backendIndex[repository]
+	}
+	// Fallback to linear search if index not built
+	for _, b := range s.Backends {
+		if b.Repository == repository {
+			return b
+		}
+	}
+	return nil
 }
 
 func (w *ResticWrapper) SetEnv(key, value string) {
@@ -144,19 +171,25 @@ func (w *ResticWrapper) GetEnv(key string) string {
 	return ""
 }
 
+func (w *ResticWrapper) SetShowCMD(showCMD bool) {
+	if w.sh != nil {
+		w.sh.ShowCMD = showCMD
+	}
+}
+
 func (w *ResticWrapper) GetCaPath(repository string) string {
 	b := w.getMatchedBackend(repository)
 	return b.CaCertFile
 }
 
-func (w *ResticWrapper) DumpEnv(repostiroy, path string, dumpedFile string) error {
+func (w *ResticWrapper) DumpEnv(repository, path string, dumpedFile string) error {
 	if err := os.MkdirAll(path, 0o755); err != nil {
 		return err
 	}
 
 	var envs string
-	b := w.getMatchedBackend(repostiroy)
-	for key, val := range b.envs {
+	b := w.getMatchedBackend(repository)
+	for key, val := range b.Envs {
 		envs = envs + fmt.Sprintln(key+"="+val)
 	}
 

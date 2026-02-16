@@ -20,47 +20,57 @@ import (
 	"fmt"
 	"os"
 
-	"kubestash.dev/apimachinery/apis/storage/v1alpha1"
-
 	core "k8s.io/api/core/v1"
-	kmapi "kmodules.xyz/client-go/api/v1"
 	storage "kmodules.xyz/objectstore-api/api/v1"
 )
 
-type backend struct {
-	provider       v1alpha1.StorageProvider
-	bucket         string
-	endpoint       string
-	region         string
-	insecureTLS    bool
-	path           string
-	storageAccount string
-	envs           map[string]string
+// StorageConfig contains provider-agnostic storage configuration.
+// This struct decouples the restic package from specific storage CRD types.
+type StorageConfig struct {
+	Provider            string
+	Bucket              string
+	Endpoint            string
+	Region              string
+	Prefix              string
+	InsecureTLS         bool
+	MaxConnections      int64
+	AzureStorageAccount string
 }
 
-type Backend struct {
-	backend
-	storageSecret *core.Secret
+// StorageConfigResolver is a function type that resolves storage configuration.
+// This allows callers to inject their own logic for fetching storage info
+// from any storage type (e.g., BackupStorage, or custom types in other projects).
+type StorageConfigResolver func(b *Backend) error
 
-	EncryptionSecret *kmapi.ObjectReference
-	Directory        string
-	BackupStorage    *kmapi.ObjectReference
-	MountPath        string
-	MaxConnections   int64
-	CaCertFile       string
-	Repository       string
-	Error            error
+// Backend represents a backup storage backend with its configuration and runtime state
+type Backend struct {
+	*StorageConfig
+	// ConfigResolver is called during setup to populate storage configuration.
+	// Callers must provide this function to resolve storage info from their storage type.
+	ConfigResolver StorageConfigResolver
+
+	Repository string
+	Directory  string
+	MountPath  string
+
+	// Secrets for accessing the Backend Storage
+	StorageSecret    *core.Secret
+	EncryptionSecret *core.Secret
+
+	CaCertFile string
+	Envs       map[string]string
+	Error      error
 }
 
 func (b *Backend) createLocalDir() error {
-	if b.provider == v1alpha1.ProviderLocal {
-		return os.MkdirAll(b.bucket, 0o755)
+	if b.Provider == storage.ProviderLocal {
+		return os.MkdirAll(b.Bucket, 0o755)
 	}
 	return nil
 }
 
 func (b *Backend) appendInsecureTLSFlag(args []any) []any {
-	if b.insecureTLS {
+	if b.InsecureTLS {
 		return append(args, "--insecure-tls")
 	}
 	return args
@@ -76,7 +86,7 @@ func (b *Backend) appendCaCertFlag(args []any) []any {
 func (b *Backend) appendMaxConnectionsFlag(args []any) []any {
 	var maxConOption string
 	if b.MaxConnections > 0 {
-		switch b.provider {
+		switch b.Provider {
 		case storage.ProviderGCS:
 			maxConOption = fmt.Sprintf("gs.connections=%d", b.MaxConnections)
 		case storage.ProviderAzure:

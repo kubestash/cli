@@ -27,12 +27,13 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gomodules.xyz/restic"
 	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
-	"kubestash.dev/apimachinery/pkg/restic"
+	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/cli/pkg/common"
 	"kubestash.dev/cli/pkg/common/dump"
 )
@@ -63,12 +64,10 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				return err
 			}
 
-			opt.Client, err = common.NewRuntimeClient(opt.Config)
+			klient, err = common.NewRuntimeClient(opt.Config)
 			if err != nil {
 				return fmt.Errorf("failed to get kubernetes client: %w", err)
 			}
-
-			klient = opt.Client
 
 			srcNamespace = opt.Namespace
 
@@ -76,7 +75,7 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				return err
 			}
 
-			opt.Snapshot, err = opt.GetSnapshot(kmapi.ObjectReference{
+			opt.Snapshot, err = opt.GetSnapshot(klient, kmapi.ObjectReference{
 				Name:      opt.SnapshotName,
 				Namespace: srcNamespace,
 			})
@@ -161,14 +160,18 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				return nil
 			}
 
+			encryptSecret, err := getEncryptionSecret(klient, repository.Spec.EncryptionSecret)
+			if err != nil {
+				return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
+			}
+
 			opt.SetupOptions = restic.SetupOptions{
-				Client:     opt.Client,
 				ScratchDir: ScratchDir,
 				Backends: []*restic.Backend{
 					{
+						ConfigResolver:   storageapi.NewBackupStorageResolver(klient, &repository.Spec.StorageRef),
 						Repository:       repository.Name,
-						BackupStorage:    &repository.Spec.StorageRef,
-						EncryptionSecret: repository.Spec.EncryptionSecret,
+						EncryptionSecret: encryptSecret,
 					},
 				},
 			}

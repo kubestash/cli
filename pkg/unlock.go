@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gomodules.xyz/restic"
 	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
@@ -33,7 +34,6 @@ import (
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg"
-	"kubestash.dev/apimachinery/pkg/restic"
 )
 
 type unlockOptions struct {
@@ -142,19 +142,22 @@ func (opt *unlockOptions) unlockRepositoryViaPod(pod *core.Pod) error {
 }
 
 func (opt *unlockOptions) unlockRepositoryViaDocker() error {
+	encryptSecret, err := getEncryptionSecret(klient, opt.repo.Spec.EncryptionSecret)
+	if err != nil {
+		return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
+	}
+
 	setupOptions := &restic.SetupOptions{
-		Client: klient,
 		Backends: []*restic.Backend{
 			{
+				ConfigResolver:   storageapi.NewBackupStorageResolver(klient, &opt.repo.Spec.StorageRef),
 				Repository:       opt.repo.Name,
-				BackupStorage:    &opt.repo.Spec.StorageRef,
-				EncryptionSecret: opt.repo.Spec.EncryptionSecret,
+				EncryptionSecret: encryptSecret,
 			},
 		},
 	}
 
 	// apply nice, ionice settings from env
-	var err error
 	setupOptions.Nice, err = v1.NiceSettingsFromEnv()
 	if err != nil {
 		return fmt.Errorf("failed to set nice settings: %w", err)

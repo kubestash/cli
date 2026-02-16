@@ -17,14 +17,13 @@ limitations under the License.
 package common
 
 import (
+	"gomodules.xyz/restic"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	"kubestash.dev/apimachinery/apis"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
-	"kubestash.dev/apimachinery/pkg/restic"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ResourceItems struct {
@@ -51,7 +50,6 @@ type RestoredItemStatus struct {
 
 type Options struct {
 	Config          *rest.Config
-	Client          client.Client
 	DataDir         string
 	DryRunDir       string
 	MaxIterations   uint
