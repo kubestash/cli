@@ -24,7 +24,6 @@ import (
 	"k8s.io/client-go/rest"
 	"kubestash.dev/apimachinery/apis"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ResourceItems struct {
@@ -51,7 +50,6 @@ type RestoredItemStatus struct {
 
 type Options struct {
 	Config          *rest.Config
-	Client          client.Client
 	DataDir         string
 	DryRunDir       string
 	MaxIterations   uint

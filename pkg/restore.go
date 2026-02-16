@@ -64,12 +64,10 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				return err
 			}
 
-			opt.Client, err = common.NewRuntimeClient(opt.Config)
+			klient, err = common.NewRuntimeClient(opt.Config)
 			if err != nil {
 				return fmt.Errorf("failed to get kubernetes client: %w", err)
 			}
-
-			klient = opt.Client
 
 			srcNamespace = opt.Namespace
 
@@ -77,7 +75,7 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				return err
 			}
 
-			opt.Snapshot, err = opt.GetSnapshot(kmapi.ObjectReference{
+			opt.Snapshot, err = opt.GetSnapshot(klient, kmapi.ObjectReference{
 				Name:      opt.SnapshotName,
 				Namespace: srcNamespace,
 			})

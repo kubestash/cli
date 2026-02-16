@@ -167,7 +167,7 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 				}
 			}()
 
-			encryptSecret, err := getEncryptionSecret(opt.Client, repository.Spec.EncryptionSecret)
+			encryptSecret, err := getEncryptionSecret(klient, repository.Spec.EncryptionSecret)
 			if err != nil {
 				return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
 			}
