@@ -20,8 +20,9 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
-	app_api "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
+	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type InitSpec struct {
@@ -212,7 +213,7 @@ type SecretReference struct {
 	// SecretStoreName references the secret manager used for virtual secret
 	SecretStoreName string `json:"secretStoreName,omitempty"`
 
-	app_api.TypedLocalObjectReference `json:",inline,omitempty"`
+	appcat.TypedLocalObjectReference `json:",inline,omitempty"`
 	// Recommendation engine will generate RotateAuth opsReq using this field
 	// +optional
 	RotateAfter *metav1.Duration `json:"rotateAfter,omitempty"`
@@ -220,6 +221,20 @@ type SecretReference struct {
 	// +optional
 	ActiveFrom        *metav1.Time `json:"activeFrom,omitempty"`
 	ExternallyManaged bool         `json:"externallyManaged,omitempty"`
+}
+
+type ConfigurationSpec struct {
+	// SecretName is an optional field to provide custom configuration file for the database (i.e. mssql.conf).
+	// If specified, these configurations will be used with default configurations (if any) and applyConfig configurations (if any).
+	// Configurations from this secret will override default configurations.
+	// This secret must be created by user.
+	// +optional
+	SecretName string `json:"secretName,omitempty"`
+
+	// Inline contains key-value pairs of configurations to be applied to the database.
+	// These configurations will override both default configurations and configurations from the config secret (if any).
+	// +optional
+	Inline map[string]string `json:"inline,omitempty"`
 }
 
 type Age struct {
@@ -287,4 +302,33 @@ type DBBindInterface interface {
 	Ports() (int, int)              // (DBPort, UIPort)
 	SecretName() string
 	CertSecretName() string
+}
+
+type Accessor interface {
+	GetObjectMeta() metav1.ObjectMeta
+	GetConditions() []kmapi.Condition
+	SetCondition(cond kmapi.Condition)
+	RemoveCondition(typ string)
+	client.Object
+}
+
+func setCondition(conditions []kmapi.Condition, cond kmapi.Condition) []kmapi.Condition {
+	for i, c := range conditions {
+		if c.Type == cond.Type {
+			conditions[i] = cond
+			return conditions
+		}
+	}
+	conditions = append(conditions, cond)
+	return conditions
+}
+
+func removeCondition(conditions []kmapi.Condition, typ string) []kmapi.Condition {
+	for i, c := range conditions {
+		if string(c.Type) == typ {
+			conditions = append(conditions[:i], conditions[i+1:]...)
+			break
+		}
+	}
+	return conditions
 }

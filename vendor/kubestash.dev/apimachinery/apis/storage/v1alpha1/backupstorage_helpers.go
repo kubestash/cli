@@ -103,7 +103,6 @@ func (b *BackupStorage) LocalNetworkVolume() bool {
 // from a BackupStorage custom resource. This is the default resolver for the kubestash project.
 func NewBackupStorageResolver(kbClient client.Client, bsRef *kmapi.ObjectReference) restic.StorageConfigResolver {
 	return func(backend *restic.Backend) error {
-		bsRef.ObjectKey()
 		bs := &BackupStorage{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      bsRef.Name,

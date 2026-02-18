@@ -83,6 +83,13 @@ spec:
                     type: boolean
                   removeSecureCustomConfig:
                     type: boolean
+                  restart:
+                    default: auto
+                    enum:
+                    - auto
+                    - "true"
+                    - "false"
+                    type: string
                   secureConfigSecret:
                     properties:
                       name:
@@ -140,6 +147,10 @@ spec:
                         type: integer
                     type: object
                 type: object
+              maxRetries:
+                default: 1
+                format: int32
+                type: integer
               restart:
                 type: object
               timeout:

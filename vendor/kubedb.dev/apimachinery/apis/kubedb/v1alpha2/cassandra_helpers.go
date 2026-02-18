@@ -40,7 +40,6 @@ import (
 	coreutil "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/policy/secomp"
-	app_api "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v2"
@@ -166,7 +165,8 @@ func (r *Cassandra) GetAuthSecretName() string {
 }
 
 func (r *Cassandra) ConfigSecretName() string {
-	return meta_util.NameWithSuffix(r.OffshootName(), "config")
+	uid := string(r.UID)
+	return meta_util.NameWithSuffix(r.OffshootName(), uid[len(uid)-6:])
 }
 
 func (r *Cassandra) DefaultUserCredSecretName(username string) string {
@@ -254,7 +254,8 @@ func (ks CassandraStatsService) Path() string {
 }
 
 func (ks CassandraStatsService) Scheme() string {
-	return ""
+	sc := promapi.SchemeHTTP
+	return sc.String()
 }
 
 func (r *Cassandra) StatsService() mona.StatsAccessor {
@@ -301,7 +302,7 @@ func (r *Cassandra) SetDefaults(kc client.Client) {
 	if r.Spec.EnableSSL {
 		if r.Spec.KeystoreCredSecret == nil {
 			r.Spec.KeystoreCredSecret = &SecretReference{
-				TypedLocalObjectReference: app_api.TypedLocalObjectReference{
+				TypedLocalObjectReference: appcat.TypedLocalObjectReference{
 					Kind: "Secret",
 					Name: r.CassandraKeystoreCredSecretName(),
 				},

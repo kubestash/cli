@@ -133,11 +133,8 @@ func (r Redis) GoverningServiceName() string {
 }
 
 func (r Redis) ConfigSecretName() string {
-	return meta_util.NameWithSuffix(r.OffshootName(), "config")
-}
-
-func (r Redis) CustomConfigSecretName() string {
-	return meta_util.NameWithSuffix(r.OffshootName(), "custom-config")
+	uid := string(r.UID)
+	return meta_util.NameWithSuffix(r.OffshootName(), uid[len(uid)-6:])
 }
 
 func (r Redis) BaseNameForShard() string {
@@ -193,7 +190,8 @@ func (r redisStatsService) Path() string {
 }
 
 func (r redisStatsService) Scheme() string {
-	return ""
+	sc := promapi.SchemeHTTP
+	return sc.String()
 }
 
 func (r redisStatsService) TLSConfig() *promapi.TLSConfig {
@@ -235,10 +233,13 @@ func (r *Redis) SetDefaults(rdVersion *catalog.RedisVersion) error {
 		r.Spec.Replicas = pointer.Int32P(1)
 	}
 
+	r.copyRedisConfigurationField()
+
 	// perform defaulting
-	if r.Spec.Mode == "" {
+	switch r.Spec.Mode {
+	case "":
 		r.Spec.Mode = RedisModeStandalone
-	} else if r.Spec.Mode == RedisModeCluster {
+	case RedisModeCluster:
 		if r.Spec.Cluster == nil {
 			r.Spec.Cluster = &RedisClusterSpec{}
 		}
@@ -248,7 +249,7 @@ func (r *Redis) SetDefaults(rdVersion *catalog.RedisVersion) error {
 		if r.Spec.Cluster.Replicas == nil {
 			r.Spec.Cluster.Replicas = pointer.Int32P(2)
 		}
-	} else if r.Spec.Mode == RedisModeSentinel {
+	case RedisModeSentinel:
 		if r.Spec.SentinelRef != nil && r.Spec.SentinelRef.Namespace == "" {
 			r.Spec.SentinelRef.Namespace = r.Namespace
 		}
@@ -295,6 +296,31 @@ func (r *Redis) SetDefaults(rdVersion *catalog.RedisVersion) error {
 	return nil
 }
 
+func (r *Redis) copyRedisConfigurationField() {
+	// Skip if there are no deprecated fields to copy
+	if r.Spec.ConfigSecret == nil && r.Spec.Acl == nil {
+		return
+	}
+
+	// Initialize Configuration if nil
+	if r.Spec.Configuration == nil {
+		r.Spec.Configuration = &RedisConfiguration{}
+	}
+
+	// Copy deprecated ConfigSecret to Configuration.SecretName
+	cnf := r.Spec.Configuration.ConfigurationSpec
+	if cnf.SecretName == "" && cnf.Inline == nil && r.Spec.ConfigSecret != nil && r.Spec.ConfigSecret.Name != "" {
+		r.Spec.Configuration.SecretName = r.Spec.ConfigSecret.Name
+	}
+	r.Spec.ConfigSecret = nil
+
+	// Copy deprecated Acl to Configuration.Acl
+	if r.Spec.Configuration.Acl == nil && r.Spec.Acl != nil {
+		r.Spec.Configuration.Acl = r.Spec.Acl
+		r.Spec.Acl = nil
+	}
+}
+
 func (r *Redis) SetHealthCheckerDefaults() {
 	if r.Spec.HealthChecker.PeriodSeconds == nil {
 		r.Spec.HealthChecker.PeriodSeconds = pointer.Int32P(10)
@@ -322,7 +348,7 @@ func (r *RedisSpec) GetPersistentSecrets() []string {
 	}
 
 	var secrets []string
-	if r.AuthSecret != nil {
+	if !IsVirtualAuthSecretReferred(r.AuthSecret) && r.AuthSecret != nil && r.AuthSecret.Name != "" {
 		secrets = append(secrets, r.AuthSecret.Name)
 	}
 	return secrets

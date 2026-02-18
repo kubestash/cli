@@ -41,7 +41,7 @@ import (
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
-func (_ MariaDB) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (MariaDB) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralMariaDB))
 }
 
@@ -173,7 +173,8 @@ func (m mariadbStatsService) Path() string {
 }
 
 func (m mariadbStatsService) Scheme() string {
-	return ""
+	sc := promapi.SchemeHTTP
+	return sc.String()
 }
 
 func (m mariadbStatsService) TLSConfig() *promapi.TLSConfig {
