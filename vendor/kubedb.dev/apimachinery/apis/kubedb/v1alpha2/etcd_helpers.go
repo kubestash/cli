@@ -34,7 +34,7 @@ import (
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 )
 
-func (_ Etcd) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (Etcd) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralEtcd))
 }
 
@@ -154,7 +154,8 @@ func (e etcdStatsService) Path() string {
 }
 
 func (e etcdStatsService) Scheme() string {
-	return ""
+	sc := promapi.SchemeHTTP
+	return sc.String()
 }
 
 func (e etcdStatsService) TLSConfig() *promapi.TLSConfig {

@@ -41,7 +41,7 @@ import (
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
-func (_ PerconaXtraDB) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (PerconaXtraDB) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralPerconaXtraDB))
 }
 
@@ -187,7 +187,8 @@ func (p perconaXtraDBStatsService) Path() string {
 }
 
 func (p perconaXtraDBStatsService) Scheme() string {
-	return ""
+	sc := promapi.SchemeHTTP
+	return sc.String()
 }
 
 func (p perconaXtraDBStatsService) TLSConfig() *promapi.TLSConfig {

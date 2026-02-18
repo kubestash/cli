@@ -40,7 +40,6 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=rabbitmqs,singular=rabbitmq,shortName=rm,categories={datastore,kubedb,appscode,all}
-// +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".apiVersion"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -87,6 +86,9 @@ type RabbitMQSpec struct {
 	// If specified, this file will be used as configuration file otherwise default configuration file will be used.
 	// +optional
 	ConfigSecret *core.LocalObjectReference `json:"configSecret,omitempty"`
+
+	// +optional
+	Configuration *ConfigurationSpec `json:"configuration,omitempty"`
 
 	// TLS contains tls configurations
 	// +optional
@@ -164,4 +166,22 @@ type RabbitMQList struct {
 	meta.TypeMeta `json:",inline"`
 	meta.ListMeta `json:"metadata,omitempty"`
 	Items         []RabbitMQ `json:"items"`
+}
+
+var _ Accessor = &RabbitMQ{}
+
+func (m *RabbitMQ) GetObjectMeta() meta.ObjectMeta {
+	return m.ObjectMeta
+}
+
+func (m *RabbitMQ) GetConditions() []kmapi.Condition {
+	return m.Status.Conditions
+}
+
+func (m *RabbitMQ) SetCondition(cond kmapi.Condition) {
+	m.Status.Conditions = setCondition(m.Status.Conditions, cond)
+}
+
+func (m *RabbitMQ) RemoveCondition(typ string) {
+	m.Status.Conditions = removeCondition(m.Status.Conditions, typ)
 }

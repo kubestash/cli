@@ -46,7 +46,7 @@ import (
 
 func (*MySQL) Hub() {}
 
-func (_ MySQL) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (MySQL) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralMySQL))
 }
 
@@ -120,6 +120,10 @@ func (m MySQL) ServiceLabels(alias ServiceAlias, extraLabels ...map[string]strin
 func (m MySQL) offshootLabels(selector, override map[string]string) map[string]string {
 	selector[meta_util.ComponentLabelKey] = kubedb.ComponentDatabase
 	return meta_util.FilterKeys(kubedb.GroupName, selector, meta_util.OverwriteKeys(nil, m.Labels, override))
+}
+
+func (m MySQL) AddKeyPrefix(key string) string {
+	return meta_util.NameWithPrefix(kubedb.InlineConfigKeyPrefixZZ, key)
 }
 
 func (m MySQL) ResourceFQN() string {
@@ -234,7 +238,8 @@ func (m mysqlStatsService) Path() string {
 }
 
 func (m mysqlStatsService) Scheme() string {
-	return ""
+	sc := promapi.SchemeHTTP
+	return sc.String()
 }
 
 func (m mysqlStatsService) TLSConfig() *promapi.TLSConfig {
@@ -353,7 +358,7 @@ func (m *MySQL) SetDefaults(myVersion *v1alpha1.MySQLVersion) error {
 	if m.Spec.PodTemplate.Spec.ServiceAccountName == "" {
 		m.Spec.PodTemplate.Spec.ServiceAccountName = m.OffshootName()
 	}
-
+	m.Spec.Configuration = copyConfigurationField(m.Spec.Configuration, &m.Spec.ConfigSecret)
 	m.setDefaultContainerResourceLimits(&m.Spec.PodTemplate)
 	m.SetTLSDefaults()
 	m.SetHealthCheckerDefaults()
@@ -583,4 +588,9 @@ func (m *MySQL) setDefaultContainerResourceLimits(podTemplate *ofstv2.PodTemplat
 			apis.SetDefaultResourceLimits(&coordinatorContainer.Resources, kubedb.CoordinatorDefaultResources)
 		}
 	}
+}
+
+func (m *MySQL) ConfigSecretName() string {
+	uid := string(m.UID)
+	return meta_util.NameWithSuffix(m.OffshootName(), uid[len(uid)-6:])
 }

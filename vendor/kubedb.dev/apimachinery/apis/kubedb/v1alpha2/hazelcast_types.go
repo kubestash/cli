@@ -40,7 +40,6 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=hazelcasts,singular=hazelcast,shortName=hz,categories={datastore,kubedb,appscode,all}
-// +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".apiVersion"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -82,7 +81,7 @@ type HazelcastSpec struct {
 	DisableSecurity bool `json:"disableSecurity,omitempty"`
 
 	// +optional
-	ConfigSecret *core.LocalObjectReference `json:"configSecret,omitempty"`
+	Configuration *ConfigurationSpec `json:"configuration,omitempty"`
 
 	// +optional
 	AuthSecret *SecretReference `json:"authSecret,omitempty"`
@@ -153,4 +152,22 @@ type HazelcastList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Hazelcast `json:"items"`
+}
+
+var _ Accessor = &Hazelcast{}
+
+func (p *Hazelcast) GetObjectMeta() metav1.ObjectMeta {
+	return p.ObjectMeta
+}
+
+func (p *Hazelcast) GetConditions() []kmapi.Condition {
+	return p.Status.Conditions
+}
+
+func (p *Hazelcast) SetCondition(cond kmapi.Condition) {
+	p.Status.Conditions = setCondition(p.Status.Conditions, cond)
+}
+
+func (p *Hazelcast) RemoveCondition(typ string) {
+	p.Status.Conditions = removeCondition(p.Status.Conditions, typ)
 }

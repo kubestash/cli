@@ -46,7 +46,7 @@ import (
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
-func (_ Postgres) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (Postgres) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralPostgres))
 }
 
@@ -170,7 +170,8 @@ func (p postgresStatsService) Path() string {
 }
 
 func (p postgresStatsService) Scheme() string {
-	return ""
+	sc := promapi.SchemeHTTP
+	return sc.String()
 }
 
 func (p postgresStatsService) TLSConfig() *promapi.TLSConfig {

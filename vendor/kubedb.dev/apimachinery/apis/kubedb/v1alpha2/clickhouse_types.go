@@ -1,5 +1,5 @@
 /*
-Copyright 2024.
+Copyright AppsCode Inc. and Contributors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=clickhouses,singular=clickhouse,shortName=ch,categories={datastore,kubedb,appscode,all}
-// +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".apiVersion"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -90,10 +89,11 @@ type ClickHouseSpec struct {
 	// +optional
 	AuthSecret *SecretReference `json:"authSecret,omitempty"`
 
-	// ConfigSecret is an optional field to provide custom configuration file for database (i.e config.properties).
+	// Configuration is an optional field to provide custom configuration file for database (i.e config.properties).
 	// If specified, this file will be used as configuration file otherwise default configuration file will be used.
+	// You can provide custom configurations using Secret or ApplyConfig.
 	// +optional
-	ConfigSecret *core.LocalObjectReference `json:"configSecret,omitempty"`
+	Configuration *ConfigurationSpec `json:"configuration,omitempty"`
 
 	// PodTemplate is an optional configuration for pods used to expose database
 	// +optional
@@ -233,3 +233,21 @@ const (
 	SSLVerificationModeStrict  SSLVerificationMode = "strict"
 	SSLVerificationModeOnce    SSLVerificationMode = "once"
 )
+
+var _ Accessor = &ClickHouse{}
+
+func (m *ClickHouse) GetObjectMeta() metav1.ObjectMeta {
+	return m.ObjectMeta
+}
+
+func (m *ClickHouse) GetConditions() []kmapi.Condition {
+	return m.Status.Conditions
+}
+
+func (m *ClickHouse) SetCondition(cond kmapi.Condition) {
+	m.Status.Conditions = setCondition(m.Status.Conditions, cond)
+}
+
+func (m *ClickHouse) RemoveCondition(typ string) {
+	m.Status.Conditions = removeCondition(m.Status.Conditions, typ)
+}
