@@ -12,7 +12,7 @@ require (
 	gomodules.xyz/go-sh v0.2.0
 	gomodules.xyz/logs v0.0.7
 	gomodules.xyz/pointer v0.1.0
-	gomodules.xyz/restic v0.1.0
+	gomodules.xyz/restic v0.2.0
 	gomodules.xyz/runtime v0.3.0
 	gomodules.xyz/x v0.0.17
 	k8s.io/api v0.34.3
@@ -25,8 +25,8 @@ require (
 	kmodules.xyz/client-go v0.34.3
 	kmodules.xyz/offshoot-api v0.34.0
 	kmodules.xyz/prober v0.34.0
-	kubedb.dev/apimachinery v0.61.0-rc.0
-	kubestash.dev/apimachinery v0.24.0
+	kubedb.dev/apimachinery v0.61.0
+	kubestash.dev/apimachinery v0.25.0
 	sigs.k8s.io/controller-runtime v0.22.4
 	sigs.k8s.io/yaml v1.6.0
 	stash.appscode.dev/apimachinery v0.42.1
@@ -220,9 +220,10 @@ require (
 	kmodules.xyz/custom-resources v0.34.0 // indirect
 	kmodules.xyz/monitoring-agent-api v0.34.1 // indirect
 	kmodules.xyz/objectstore-api v0.34.0 // indirect
+	kubeops.dev/operator-shard-manager v0.0.5 // indirect
 	kubeops.dev/petset v0.0.15 // indirect
 	kubeops.dev/sidekick v0.0.12 // indirect
-	open-cluster-management.io/api v1.1.1-0.20251222023835-510285203ee6 // indirect
+	open-cluster-management.io/api v1.2.0 // indirect
 	sigs.k8s.io/gateway-api v1.4.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.20.1 // indirect
