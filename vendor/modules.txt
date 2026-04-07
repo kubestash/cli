@@ -56,7 +56,7 @@ cloud.google.com/go/storage/internal/apiv2/storagepb
 ## explicit; go 1.20
 filippo.io/edwards25519
 filippo.io/edwards25519/field
-# github.com/Azure/azure-sdk-for-go/sdk/azcore v1.19.1
+# github.com/Azure/azure-sdk-for-go/sdk/azcore v1.20.0
 ## explicit; go 1.23.0
 github.com/Azure/azure-sdk-for-go/sdk/azcore
 github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/internal/resource
@@ -78,10 +78,11 @@ github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime
 github.com/Azure/azure-sdk-for-go/sdk/azcore/streaming
 github.com/Azure/azure-sdk-for-go/sdk/azcore/to
 github.com/Azure/azure-sdk-for-go/sdk/azcore/tracing
-# github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.0
-## explicit; go 1.23.0
+# github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.0-beta.3
+## explicit; go 1.24.0
 github.com/Azure/azure-sdk-for-go/sdk/azidentity
 github.com/Azure/azure-sdk-for-go/sdk/azidentity/internal
+github.com/Azure/azure-sdk-for-go/sdk/azidentity/internal/customtokenproxy
 # github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.2
 ## explicit; go 1.23.0
 github.com/Azure/azure-sdk-for-go/sdk/internal/diag
@@ -116,7 +117,7 @@ github.com/Azure/go-autorest
 # github.com/Azure/go-autorest/autorest/to v0.4.1
 ## explicit; go 1.15
 github.com/Azure/go-autorest/autorest/to
-# github.com/AzureAD/microsoft-authentication-library-for-go v1.5.0
+# github.com/AzureAD/microsoft-authentication-library-for-go v1.6.0
 ## explicit; go 1.18
 github.com/AzureAD/microsoft-authentication-library-for-go/apps/cache
 github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential
@@ -349,7 +350,10 @@ github.com/beorn7/perks/quantile
 # github.com/blang/semver/v4 v4.0.0
 ## explicit; go 1.14
 github.com/blang/semver/v4
-# github.com/cert-manager/cert-manager v1.19.3
+# github.com/cenkalti/backoff/v4 v4.3.0
+## explicit; go 1.18
+github.com/cenkalti/backoff/v4
+# github.com/cert-manager/cert-manager v1.19.4
 ## explicit; go 1.25.0
 github.com/cert-manager/cert-manager/pkg/apis/acme
 github.com/cert-manager/cert-manager/pkg/apis/acme/v1
@@ -1848,7 +1852,7 @@ kmodules.xyz/offshoot-api/util
 # kmodules.xyz/prober v0.34.0
 ## explicit; go 1.24.0
 kmodules.xyz/prober/api/v1
-# kubedb.dev/apimachinery v0.61.0
+# kubedb.dev/apimachinery v0.63.0
 ## explicit; go 1.25.0
 kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/apis/catalog
@@ -1877,7 +1881,7 @@ kubeops.dev/petset/crds
 kubeops.dev/sidekick/apis/apps
 kubeops.dev/sidekick/apis/apps/v1alpha1
 kubeops.dev/sidekick/crds
-# kubestash.dev/apimachinery v0.26.0
+# kubestash.dev/apimachinery v0.26.1-0.20260407065046-0532bb60c9dd
 ## explicit; go 1.25.0
 kubestash.dev/apimachinery/apis
 kubestash.dev/apimachinery/apis/addons/v1alpha1
@@ -1887,10 +1891,13 @@ kubestash.dev/apimachinery/apis/storage/v1alpha1
 kubestash.dev/apimachinery/crds
 kubestash.dev/apimachinery/pkg
 kubestash.dev/apimachinery/pkg/blob
+kubestash.dev/apimachinery/pkg/cloud
+kubestash.dev/apimachinery/pkg/resolver
 kubestash.dev/apimachinery/pkg/resourceops/file
 kubestash.dev/apimachinery/pkg/resourceops/filter
 kubestash.dev/apimachinery/pkg/resourceops/priority
 kubestash.dev/apimachinery/pkg/resourceops/sanitizers
+kubestash.dev/apimachinery/pkg/retry
 kubestash.dev/apimachinery/pkg/workerpool
 # open-cluster-management.io/api v1.2.0
 ## explicit; go 1.25.0

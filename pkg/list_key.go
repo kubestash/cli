@@ -28,7 +28,7 @@ import (
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
-	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/pkg/resolver"
 )
 
 func NewCmdListKey(opt *keyOptions) *cobra.Command {
@@ -120,6 +120,11 @@ func (opt *keyOptions) listResticKeysViaDocker() error {
 		}
 	}()
 
+	backupStorage, err := getBackupStorage(opt.repo.Spec.StorageRef)
+	if err != nil {
+		return fmt.Errorf("failed to get backup storage. Reason: %w", err)
+	}
+
 	encryptionSecret, err := getEncryptionSecret(klient, opt.repo.Spec.EncryptionSecret)
 	if err != nil {
 		return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
@@ -129,7 +134,7 @@ func (opt *keyOptions) listResticKeysViaDocker() error {
 		setupOptions := &restic.SetupOptions{
 			Backends: []*restic.Backend{
 				{
-					ConfigResolver:   storageapi.NewBackupStorageResolver(klient, &opt.repo.Spec.StorageRef),
+					ConfigResolver:   resolver.NewBackupStorageResolver(klient, backupStorage),
 					Directory:        filepath.Join(opt.repo.Spec.Path, path),
 					Repository:       opt.repo.Name,
 					EncryptionSecret: encryptionSecret,
