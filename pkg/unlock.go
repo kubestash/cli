@@ -34,6 +34,7 @@ import (
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg"
+	"kubestash.dev/apimachinery/pkg/resolver"
 )
 
 type unlockOptions struct {
@@ -142,6 +143,11 @@ func (opt *unlockOptions) unlockRepositoryViaPod(pod *core.Pod) error {
 }
 
 func (opt *unlockOptions) unlockRepositoryViaDocker() error {
+	backupStorage, err := getBackupStorage(opt.repo.Spec.StorageRef)
+	if err != nil {
+		return fmt.Errorf("failed to get backup storage. Reason: %v", err)
+	}
+
 	encryptSecret, err := getEncryptionSecret(klient, opt.repo.Spec.EncryptionSecret)
 	if err != nil {
 		return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
@@ -150,7 +156,7 @@ func (opt *unlockOptions) unlockRepositoryViaDocker() error {
 	setupOptions := &restic.SetupOptions{
 		Backends: []*restic.Backend{
 			{
-				ConfigResolver:   storageapi.NewBackupStorageResolver(klient, &opt.repo.Spec.StorageRef),
+				ConfigResolver:   resolver.NewBackupStorageResolver(klient, backupStorage),
 				Repository:       opt.repo.Name,
 				EncryptionSecret: encryptSecret,
 			},

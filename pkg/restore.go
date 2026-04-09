@@ -33,7 +33,7 @@ import (
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
-	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"kubestash.dev/apimachinery/pkg/resolver"
 	"kubestash.dev/cli/pkg/common"
 	"kubestash.dev/cli/pkg/common/dump"
 )
@@ -169,7 +169,7 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				ScratchDir: ScratchDir,
 				Backends: []*restic.Backend{
 					{
-						ConfigResolver:   storageapi.NewBackupStorageResolver(klient, &repository.Spec.StorageRef),
+						ConfigResolver:   resolver.NewBackupStorageResolver(klient, backupStorage),
 						Repository:       repository.Name,
 						EncryptionSecret: encryptSecret,
 					},

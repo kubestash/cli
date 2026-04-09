@@ -39,6 +39,7 @@ import (
 	"kubestash.dev/apimachinery/apis"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg"
+	"kubestash.dev/apimachinery/pkg/resolver"
 	"kubestash.dev/apimachinery/pkg/resourceops/filter"
 	"kubestash.dev/cli/pkg/common/dump"
 	"sigs.k8s.io/yaml"
@@ -176,7 +177,7 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 				ScratchDir: ScratchDir,
 				Backends: []*restic.Backend{
 					{
-						ConfigResolver:   storageapi.NewBackupStorageResolver(klient, &repository.Spec.StorageRef),
+						ConfigResolver:   resolver.NewBackupStorageResolver(klient, backupStorage),
 						Repository:       repository.Name,
 						EncryptionSecret: encryptSecret,
 					},
