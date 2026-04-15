@@ -110,7 +110,7 @@ func (m *S3CredentialManager) GetWithRetry(ctx context.Context) (*aws.Credential
 	if !ok {
 		return nil, fmt.Errorf("unexpected credential type: %T", result)
 	}
-
+	klog.Infof("Successfully fetched S3 credentials for %s/%s", m.storage.Namespace, m.storage.Name)
 	return creds, nil
 }
 
