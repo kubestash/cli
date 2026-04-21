@@ -158,7 +158,7 @@ $(OUTBIN): .go/$(OUTBIN).stamp
 	        git_tag=$(git_tag)                                  \
 	        commit_hash=$(commit_hash)                          \
 	        commit_timestamp=$(commit_timestamp)                \
-	        RESTIC_VER=0.18.1-20260421
+	        RESTIC_VER=$(RESTIC_VER)                            \
 	        ./hack/build.sh                                     \
 	    "
 	@if ! cmp -s .go/bin/$(OS)_$(ARCH)/$(BIN) $(OUTBIN); then   \
