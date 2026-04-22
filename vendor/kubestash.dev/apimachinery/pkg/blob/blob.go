@@ -421,7 +421,7 @@ func (b *Blob) openBucketWithDebug(ctx context.Context, dir string, debug bool) 
 		if err != nil {
 			return nil, err
 		}
-	} else if b.backupStorage.Spec.Storage.Provider == storageapi.ProviderAzure && os.Getenv(AzureFederatedTokenFile) == "" {
+	} else if b.backupStorage.Spec.Storage.Provider == storageapi.ProviderAzure && os.Getenv(AzureFederatedTokenFile) != "" {
 		azClient, err := b.getAzureClient()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create azure container client: %w", err)
