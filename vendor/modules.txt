@@ -214,8 +214,8 @@ github.com/aws/aws-sdk-go/service/sso/ssoiface
 github.com/aws/aws-sdk-go/service/ssooidc
 github.com/aws/aws-sdk-go/service/sts
 github.com/aws/aws-sdk-go/service/sts/stsiface
-# github.com/aws/aws-sdk-go-v2 v1.39.6
-## explicit; go 1.23
+# github.com/aws/aws-sdk-go-v2 v1.41.5
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/aws
 github.com/aws/aws-sdk-go-v2/aws/arn
 github.com/aws/aws-sdk-go-v2/aws/defaults
@@ -265,36 +265,36 @@ github.com/aws/aws-sdk-go-v2/feature/ec2/imds/internal/config
 # github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.69
 ## explicit; go 1.22
 github.com/aws/aws-sdk-go-v2/feature/s3/manager
-# github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.13
-## explicit; go 1.23
+# github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.21
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/internal/configsources
-# github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.13
-## explicit; go 1.23
+# github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.21
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2
 # github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4
 ## explicit; go 1.23
 github.com/aws/aws-sdk-go-v2/internal/ini
-# github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.34
-## explicit; go 1.22
+# github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.22
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/internal/v4a
 github.com/aws/aws-sdk-go-v2/internal/v4a/internal/crypto
 github.com/aws/aws-sdk-go-v2/internal/v4a/internal/v4
-# github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.3
-## explicit; go 1.23
+# github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.7
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding
-# github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.7.0
-## explicit; go 1.22
+# github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.13
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/service/internal/checksum
-# github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.13
-## explicit; go 1.23
+# github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.21
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url
-# github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.15
-## explicit; go 1.22
+# github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.21
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/service/internal/s3shared
 github.com/aws/aws-sdk-go-v2/service/internal/s3shared/arn
 github.com/aws/aws-sdk-go-v2/service/internal/s3shared/config
-# github.com/aws/aws-sdk-go-v2/service/s3 v1.78.2
-## explicit; go 1.22
+# github.com/aws/aws-sdk-go-v2/service/s3 v1.97.3
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/service/s3
 github.com/aws/aws-sdk-go-v2/service/s3/internal/arn
 github.com/aws/aws-sdk-go-v2/service/s3/internal/customizations
@@ -1883,7 +1883,7 @@ kubeops.dev/petset/crds
 kubeops.dev/sidekick/apis/apps
 kubeops.dev/sidekick/apis/apps/v1alpha1
 kubeops.dev/sidekick/crds
-# kubestash.dev/apimachinery v0.27.0-rc.0
+# kubestash.dev/apimachinery v0.27.0
 ## explicit; go 1.25.0
 kubestash.dev/apimachinery/apis
 kubestash.dev/apimachinery/apis/addons/v1alpha1
