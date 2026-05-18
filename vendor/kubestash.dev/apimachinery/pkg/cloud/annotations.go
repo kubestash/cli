@@ -33,6 +33,7 @@ import (
 	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
 	"kmodules.xyz/client-go/meta"
+	sidekickapi "kubeops.dev/sidekick/apis/apps/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -52,6 +53,9 @@ const (
 	AzureSubscriptionIDAnnotation = "klusters.dev/azure-subscription-id"
 	AzureMIClientIDAnnotation     = "azure.workload.identity/client-id"
 	AzureMITenantIDAnnotation     = "azure.workload.identity/tenant-id"
+
+	AzureWorkloadIdentityUseLabel      = "azure.workload.identity/use"
+	AzureWorkloadIdentityUseAnnotation = "azure.workload.identity/use-identity-binding"
 )
 
 func GetCloudAnnotations(ctx context.Context, kc client.Client, storages ...storageapi.BackupStorage) (map[string]string, error) {
@@ -139,12 +143,20 @@ func setBucketAnnotations(annotations map[string]string, storages ...storageapi.
 }
 
 func AddCloudAnnotationsToSAIfNeeded(ctx context.Context, kbClient client.Client,
-	bs *storageapi.BackupStorage, saRef *kmapi.ObjectReference, invTypRef *core.TypedObjectReference,
+	bs *storageapi.BackupStorage, sidekick *sidekickapi.Sidekick, invTypRef *core.TypedObjectReference,
 ) (bool, error) {
-	sa, err := getServiceAccount(ctx, kbClient, saRef)
+	sa, err := getServiceAccount(ctx, kbClient, &kmapi.ObjectReference{
+		Name:      sidekick.Spec.ServiceAccountName,
+		Namespace: sidekick.Namespace,
+	})
 	if err != nil {
 		return true, fmt.Errorf("failed to get service account: %v", err)
 	}
+
+	if bs.IsCredentialLessModeEnabled() {
+		addSidekickAnnotationsIfNeeded(sidekick, bs)
+	}
+
 	if !isCloudAnnotationNeeded(bs, sa) { // Return if not needed
 		return false, nil
 	}
@@ -168,11 +180,28 @@ func AddCloudAnnotationsToSAIfNeeded(ctx context.Context, kbClient client.Client
 	return false, nil
 }
 
+func addSidekickAnnotationsIfNeeded(sidekick *sidekickapi.Sidekick, bs *storageapi.BackupStorage) {
+	if bs.Spec.Storage.Provider == storageapi.ProviderAzure {
+		if sidekick.Labels == nil {
+			sidekick.Labels = make(map[string]string)
+		}
+		sidekick.Labels[AzureWorkloadIdentityUseLabel] = "true"
+		if sidekick.Annotations == nil {
+			sidekick.Annotations = make(map[string]string)
+		}
+		sidekick.Annotations[AzureWorkloadIdentityUseAnnotation] = "true"
+	}
+}
+
 func hasCredLessManagerProvidedAnnotation(bs *storageapi.BackupStorage, sa *core.ServiceAccount) bool {
 	switch bs.Spec.Storage.Provider {
 	case storageapi.ProviderS3:
 		_, exists := sa.Annotations[AWSIRSARoleAnnotation]
 		return exists
+	case storageapi.ProviderAzure:
+		_, hasClientId := sa.Annotations[AzureMIClientIDAnnotation]
+		_, hasTenantId := sa.Annotations[AzureMITenantIDAnnotation]
+		return hasClientId && hasTenantId
 	default:
 		return false
 	}
@@ -184,7 +213,10 @@ func isCloudAnnotationNeeded(bs *storageapi.BackupStorage, sa *core.ServiceAccou
 		case storageapi.ProviderS3:
 			_, ok := sa.Annotations[AWSSeedRoleAnnotationName]
 			return !ok
-			// case storageapi.ProviderAzure:
+		case storageapi.ProviderAzure:
+			_, hasClientId := sa.Annotations[AzureMIClientIDAnnotation]
+			_, hasTenantId := sa.Annotations[AzureMITenantIDAnnotation]
+			return !hasTenantId || !hasClientId
 		}
 	}
 	return false
@@ -259,6 +291,10 @@ func addAnnotationsToServiceAccountForRestore(ctx context.Context, kbClient clie
 func hasRequiredCloudAnnotations(bs *storageapi.BackupStorage, sa *core.ServiceAccount) bool {
 	if bs.Spec.Storage.Provider == storageapi.ProviderS3 {
 		return sa.Annotations[AWSSeedRoleAnnotationName] != "" && sa.Annotations[BucketAnnotationKey] != ""
+	}
+	if bs.Spec.Storage.Provider == storageapi.ProviderAzure {
+		return sa.Annotations[AzureSubscriptionIDAnnotation] != "" && sa.Annotations[AzureMINameAnnotation] != "" &&
+			sa.Annotations[AzureResourceGroupAnnotation] != ""
 	}
 	return false
 }
@@ -431,12 +467,28 @@ func getAWSAnnotations(source map[string]string) (map[string]string, error) {
 	return annotations, nil
 }
 
+func getAzureAnnotations(source map[string]string) (map[string]string, error) {
+	required := map[string]string{
+		AzureSubscriptionIDAnnotation: source[AzureSubscriptionIDAnnotation],
+		AzureMINameAnnotation:         source[AzureMINameAnnotation],
+		AzureResourceGroupAnnotation:  source[AzureResourceGroupAnnotation],
+		BucketAnnotationKey:           source[BucketAnnotationKey],
+	}
+	annotations := make(map[string]string)
+	for key, val := range required {
+		annotations[key] = val
+	}
+	return annotations, nil
+}
+
 func getRequiredAnnotations(bs *storageapi.BackupStorage, annotations map[string]string) (map[string]string, error) {
 	switch bs.Spec.Storage.Provider {
 	case storageapi.ProviderS3:
 		return getAWSAnnotations(annotations)
 	// case storageapi.ProviderGCS:
 	// 	return applyGCPAnnotations(sa, annotations)
+	case storageapi.ProviderAzure:
+		return getAzureAnnotations(annotations)
 	default:
 		return nil, fmt.Errorf("unsupported storage provider: %s", bs.Spec.Storage.Provider)
 
