@@ -7,12 +7,12 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0
 	github.com/olekukonko/tablewriter v0.0.6-0.20230925090304-df64c4bbad77
 	github.com/spf13/cobra v1.10.1
-	golang.org/x/text v0.36.0
+	golang.org/x/text v0.37.0
 	gomodules.xyz/flags v0.1.3
-	gomodules.xyz/go-sh v0.2.0
+	gomodules.xyz/go-sh v0.3.0
 	gomodules.xyz/logs v0.0.7
 	gomodules.xyz/pointer v0.1.0
-	gomodules.xyz/restic v0.2.0
+	gomodules.xyz/restic v0.3.0
 	gomodules.xyz/runtime v0.3.0
 	gomodules.xyz/x v0.0.17
 	k8s.io/api v0.34.3
@@ -26,7 +26,7 @@ require (
 	kmodules.xyz/offshoot-api v0.34.0
 	kmodules.xyz/prober v0.34.0
 	kubedb.dev/apimachinery v0.63.0
-	kubestash.dev/apimachinery v0.28.0-rc.0
+	kubestash.dev/apimachinery v0.28.0-rc.2
 	sigs.k8s.io/controller-runtime v0.22.4
 	sigs.k8s.io/yaml v1.6.0
 	stash.appscode.dev/apimachinery v0.42.1
@@ -75,7 +75,6 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.51.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
-	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2 // indirect
 	github.com/aws/aws-sdk-go v1.55.6 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.41.5 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.8 // indirect
@@ -189,12 +188,12 @@ require (
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	go.virtual-secrets.dev/apimachinery v0.0.1 // indirect
 	gocloud.dev v0.41.0 // indirect
-	golang.org/x/crypto v0.50.0 // indirect
-	golang.org/x/net v0.53.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/term v0.42.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/term v0.43.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f // indirect

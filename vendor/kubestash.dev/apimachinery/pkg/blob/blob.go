@@ -17,6 +17,7 @@ limitations under the License.
 package blob
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -253,7 +254,31 @@ func (b *Blob) Get(ctx context.Context, filepath string) ([]byte, error) {
 	return io.ReadAll(r)
 }
 
+func (b *Blob) Download(ctx context.Context, filepath string) (io.ReadCloser, error) {
+	dir, fileName := path.Split(filepath)
+	bucket, err := b.openBucket(ctx, dir)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := bucket.NewReader(ctx, fileName, nil)
+	if err != nil {
+		closeBucket(ctx, bucket)
+		return nil, err
+	}
+
+	return &bucketReader{
+		Reader: r,
+		bucket: bucket,
+		ctx:    ctx,
+	}, nil
+}
+
 func (b *Blob) Upload(ctx context.Context, filepath string, data []byte, contentType string) error {
+	return b.UploadFromReader(ctx, filepath, bytes.NewReader(data), contentType)
+}
+
+func (b *Blob) UploadFromReader(ctx context.Context, filepath string, r io.Reader, contentType string) error {
 	dir, fileName := path.Split(filepath)
 	bucket, err := b.openBucket(ctx, dir)
 	if err != nil {
@@ -268,7 +293,7 @@ func (b *Blob) Upload(ctx context.Context, filepath string, data []byte, content
 	if err != nil {
 		return err
 	}
-	_, writeErr := w.Write(data)
+	_, writeErr := io.Copy(w, r)
 	closeErr := w.Close()
 	if writeErr != nil {
 		return writeErr
@@ -568,4 +593,20 @@ func (b *Blob) SetPathAsDir(ctx context.Context, path string) error {
 		return closeErr
 	}
 	return closeErr
+}
+
+type bucketReader struct {
+	*blob.Reader
+	bucket *blob.Bucket
+	ctx    context.Context
+}
+
+func (r *bucketReader) Close() error {
+	readErr := r.Reader.Close()
+	closeErr := r.bucket.Close()
+	if closeErr != nil {
+		logger := log.FromContext(r.ctx)
+		logger.Error(closeErr, "failed to close bucket")
+	}
+	return readErr
 }

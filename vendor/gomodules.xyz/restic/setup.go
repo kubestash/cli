@@ -29,9 +29,9 @@ import (
 
 func (w *ResticWrapper) setupEnv() error {
 	// Set progress report frequency.
-	// 0.016666 is for one report per minute.
+	// 0.1 is for one report per ten seconds.
 	// ref: https://restic.readthedocs.io/en/stable/manual_rest.html
-	w.sh.SetEnv(RESTIC_PROGRESS_FPS, "0.016666")
+	w.sh.SetEnv(RESTIC_PROGRESS_FPS, "0.1")
 	if w.Config.EnableCache {
 		cacheDir := filepath.Join(w.Config.ScratchDir, resticCacheDir)
 		if err := os.MkdirAll(cacheDir, 0o755); err != nil {
@@ -50,12 +50,13 @@ func (w *ResticWrapper) setupEnv() error {
 }
 
 func (w *ResticWrapper) setupEnvsForBackend(b *Backend) error {
-	// Use the injected ConfigResolver to get storage configuration
-	if b.ConfigResolver == nil {
-		return fmt.Errorf("ConfigResolver is not set for backend %s", b.Repository)
+	if b.ConfigResolver != nil {
+		if err := b.ConfigResolver(b); err != nil {
+			return fmt.Errorf("failed to resolve storage config: %w", err)
+		}
 	}
-	if err := b.ConfigResolver(b); err != nil {
-		return fmt.Errorf("failed to resolve storage config: %w", err)
+	if b.StorageConfig == nil {
+		return fmt.Errorf("storage config is not set for backend %s", b.Repository)
 	}
 
 	if b.Envs == nil {
