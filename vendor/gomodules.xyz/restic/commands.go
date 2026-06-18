@@ -17,6 +17,7 @@ limitations under the License.
 package restic
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,7 +29,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/armon/circbuf"
 	"k8s.io/klog/v2"
 )
 
@@ -202,7 +202,7 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 	// first add StdinPipeCommands, then add restic command
 	commands := options.StdinPipeCommands
 
-	commonArgs := []any{"backup", "--stdin", "--quiet", "--json"}
+	commonArgs := []any{"backup", "--stdin", "--json"}
 	commonArgs = options.appendHost(commonArgs)
 	commonArgs = options.appendStdinFileName(commonArgs)
 	commonArgs = w.appendCacheDirFlag(commonArgs)
@@ -254,6 +254,7 @@ func (w *ResticWrapper) restore(repository string, params restoreParams) ([]byte
 		args = append(args, "--exclude")
 		args = append(args, exclude)
 	}
+	args = append(args, "--json")
 	// add additional arguments passed by user to the restore process
 	for i := range params.args {
 		args = append(args, params.args[i])
@@ -388,15 +389,15 @@ func (w *ResticWrapper) appendCleanupCacheFlag(args []any) []any {
 
 func (w *ResticWrapper) run(commands ...Command) ([]byte, error) {
 	// write std errors into os.Stderr and buffer
-	errBuff, err := circbuf.NewBuffer(256)
-	if err != nil {
-		return nil, err
-	}
-
-	newSh := *w.sh // Create a new shell instance to avoid pollution from existing environment variables.
-	newSh.Stderr = io.MultiWriter(os.Stderr, errBuff)
+	var err error
+	var errBuff bytes.Buffer
+	oldStderr := w.sh.Stderr
+	defer func() {
+		w.sh.Stderr = oldStderr
+	}()
+	w.sh.Stderr = io.MultiWriter(os.Stderr, &errBuff)
 	if w.Config.Timeout != nil {
-		newSh.SetTimeout(w.Config.Timeout.Duration)
+		w.sh.SetTimeout(w.Config.Timeout.Duration)
 	}
 
 	isLeafCommandRequired := isLeafCommandNecessary(commands...)
@@ -411,17 +412,17 @@ func (w *ResticWrapper) run(commands ...Command) ([]byte, error) {
 			return nil, err
 		}
 		if useLeafCommand {
-			newSh.LeafCommand(cmd.Name, cmd.Args...)
+			w.sh.LeafCommand(cmd.Name, cmd.Args...)
 		} else {
-			newSh.Command(cmd.Name, cmd.Args...)
+			w.sh.Command(cmd.Name, cmd.Args...)
 		}
 	}
 
-	out, err := newSh.Output()
-	if err != nil {
-		return nil, formatError(err, errBuff.String())
-	}
+	out, err := w.sh.Output()
 	klog.Infoln("sh-output:", string(out))
+	if err != nil {
+		return out, formatError(err, errBuff.String())
+	}
 	return out, nil
 }
 
@@ -618,4 +619,23 @@ func isLeafCommandNecessary(commands ...Command) bool {
 	}
 
 	return resticCommandCount > 1
+}
+
+func (w *ResticWrapper) StatusSince(repository string, since int) (int, []ResticStatus, error) {
+	var idx *int
+	for i, b := range w.Config.Backends {
+		if b.Repository == repository {
+			idx = &i
+			break
+		}
+	}
+	if idx == nil {
+		return 0, nil, fmt.Errorf("repository %s not found in config", repository)
+	}
+	out, err := w.sh.CurrentOutput(*idx)
+	if err != nil {
+		return 0, nil, fmt.Errorf("error getting leaf output for repository %s: %w", repository, err)
+	}
+	cursor, status := statusSince(out, since)
+	return cursor, status, nil
 }

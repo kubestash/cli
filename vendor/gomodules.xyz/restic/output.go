@@ -27,6 +27,7 @@ import (
 	"time"
 
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/klog/v2"
 )
 
 const FileModeRWXAll = 0o777
@@ -133,6 +134,18 @@ type BackupSummary struct {
 	SnapshotID          string  `json:"snapshot_id"`
 }
 
+type ResticStatus struct {
+	MessageType      string   `json:"message_type"`
+	SecondsElapsed   int64    `json:"seconds_elapsed"`
+	SecondsRemaining int64    `json:"seconds_remaining"`
+	PercentDone      float64  `json:"percent_done"`
+	TotalFiles       int      `json:"total_files"`
+	TotalBytes       uint64   `json:"total_bytes"`
+	BytesRestored    uint64   `json:"bytes_restored"`
+	BytesDone        int64    `json:"bytes_done"`
+	CurrentFiles     []string `json:"current_files"`
+}
+
 type ForgetGroup struct {
 	Keep   []json.RawMessage `json:"keep"`
 	Remove []json.RawMessage `json:"remove"`
@@ -171,4 +184,76 @@ func extractLockIDs(r io.Reader) ([]string, error) {
 		}
 	}
 	return ids, sc.Err()
+}
+
+func extractStatus(output []byte) []ResticStatus {
+	data := sanitizeFromStart(output)
+	if data == nil {
+		klog.Infoln("status cannot be sanitized from start, data is not valid, ignoring it...")
+		return nil
+	}
+
+	data = sanitizeFromEnd(data)
+	if data == nil {
+		klog.Infoln("status cannot be sanitized from end, data is not valid, ignoring it...")
+		return nil
+	}
+	var results []ResticStatus
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	for {
+		var raw json.RawMessage
+		if err := decoder.Decode(&raw); err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			klog.Infoln("cannot decode status JSON", "error", err)
+			continue
+		}
+		var s ResticStatus
+		if err := json.Unmarshal(raw, &s); err != nil {
+			klog.Infoln("cannot decode status JSON", "error", err)
+			continue
+		}
+		results = append(results, s)
+	}
+	return results
+}
+
+func statusSince(output []byte, since int) (int, []ResticStatus) {
+	start := since
+	if start < 0 {
+		start = 0
+	}
+	if start > len(output) {
+		start = len(output)
+	}
+
+	data := output[start:]
+	if len(data) == 0 {
+		return start, nil
+	}
+
+	end := bytes.LastIndexByte(data, '}')
+	if end == -1 {
+		return start, nil
+	}
+
+	cursor := start + end + 1
+	return cursor, extractStatus(data[:end+1])
+}
+
+func sanitizeFromStart(data []byte) []byte {
+	start := bytes.IndexByte(data, '{')
+	if start == -1 {
+		return nil
+	}
+	return data[start:]
+}
+
+func sanitizeFromEnd(data []byte) []byte {
+	end := bytes.LastIndexByte(data, '}')
+	if end == -1 {
+		return nil
+	}
+	return data[:end+1]
 }

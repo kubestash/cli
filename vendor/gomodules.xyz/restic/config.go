@@ -54,6 +54,9 @@ type BackupOptions struct {
 	StdinFileName     string // default "stdin"
 	Exclude           []string
 	Args              []string
+
+	OnComplete      func()
+	OverrideWrapper *ResticWrapper
 }
 
 // RestoreOptions specifies restore information
@@ -224,7 +227,7 @@ func (w *ResticWrapper) GetRepo() string {
 	return ""
 }
 
-// Copy function copy input ResticWrapper and returns a new wrapper with copy of its content.
+// Copy returns a deep copy of the ResticWrapper.
 func (w *ResticWrapper) Copy() *ResticWrapper {
 	if w == nil {
 		return nil
@@ -243,8 +246,61 @@ func (w *ResticWrapper) Copy() *ResticWrapper {
 		out.sh.ShowCMD = w.sh.ShowCMD
 		out.sh.PipeFail = w.sh.PipeFail
 		out.sh.PipeStdErrors = w.sh.PipeStdErrors
-
+		out.sh.SetDir(w.Config.ScratchDir)
 	}
-	out.Config = w.Config
+	out.Config = copySetupOptions(w.Config)
 	return out
+}
+
+func copySetupOptions(in *SetupOptions) *SetupOptions {
+	if in == nil {
+		return nil
+	}
+
+	out := &SetupOptions{
+		EnableCache: in.EnableCache,
+		ScratchDir:  in.ScratchDir,
+	}
+	if in.Nice != nil {
+		nice := *in.Nice
+		out.Nice = &nice
+	}
+	if in.IONice != nil {
+		ionice := *in.IONice
+		out.IONice = &ionice
+	}
+	if in.Timeout != nil {
+		timeout := *in.Timeout
+		out.Timeout = &timeout
+	}
+	if len(in.Backends) != 0 {
+		out.Backends = make([]*Backend, 0, len(in.Backends))
+		for _, backend := range in.Backends {
+			out.Backends = append(out.Backends, copyBackend(backend))
+		}
+	}
+	out.buildBackendIndex()
+	return out
+}
+
+func copyBackend(in *Backend) *Backend {
+	if in == nil {
+		return nil
+	}
+
+	out := *in
+	if in.StorageConfig != nil {
+		cfg := *in.StorageConfig
+		out.StorageConfig = &cfg
+	}
+	if in.StorageSecret != nil {
+		out.StorageSecret = in.StorageSecret.DeepCopy()
+	}
+	if in.EncryptionSecret != nil {
+		out.EncryptionSecret = in.EncryptionSecret.DeepCopy()
+	}
+	if in.Envs != nil {
+		out.Envs = maps.Clone(in.Envs)
+	}
+	return &out
 }
