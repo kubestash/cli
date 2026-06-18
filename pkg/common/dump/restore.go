@@ -430,7 +430,7 @@ func (m *ResourceManager) parseItems() (map[string]*common.ResourceItems, error)
 		klog.Errorf("Failed to get restic stats: %v", err)
 	} else {
 		for _, resticStat := range manifestResticStats {
-			baseDir := filepath.Join(m.DataDir, m.SnapshotName, apis.ComponentManifest, resticStat.HostPath)
+			baseDir := filepath.Join(m.DataDir, m.SnapshotName, apis.ComponentManifest, resticStat.Summary.HostPath)
 			entries, err := m.reader.ReadDir(baseDir)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read backup directory: %w", err)
@@ -498,7 +498,7 @@ func (m *ResourceManager) getRestoreableItems(r *common.ResourceItems) map[strin
 		klog.Errorf("Failed to get restic stats: %v", err)
 	} else {
 		for _, resticStat := range manifestResticStats {
-			baseDir := filepath.Join(m.DataDir, m.SnapshotName, apis.ComponentManifest, resticStat.HostPath)
+			baseDir := filepath.Join(m.DataDir, m.SnapshotName, apis.ComponentManifest, resticStat.Summary.HostPath)
 			resourceForPath := filepath.Join(baseDir, r.GroupResource)
 			for namespace, items := range r.ItemsByNamespace {
 				identifier := apis.NamespaceScopedDir

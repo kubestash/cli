@@ -397,7 +397,7 @@ func (opt *options) runRestoreViaDocker(destination string, args []string) error
 	}
 
 	for _, resticStat := range opt.ResticStats {
-		rargs := append(restoreArgs, resticStat.Id, "--target", destination)
+		rargs := append(restoreArgs, resticStat.Summary.Id, "--target", destination)
 		klog.Infoln("Running docker with args:", rargs)
 		out, err := exec.Command(CmdDocker, rargs...).CombinedOutput()
 		klog.Infoln("Output:", string(out))
