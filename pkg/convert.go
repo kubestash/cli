@@ -72,6 +72,8 @@ func convertResources(ri parser.ResourceInfo) error {
 		return convertRepository(ri)
 	case v1beta1.ResourceKindBackupConfiguration:
 		return convertBackupConfiguration(ri)
+	case v1beta1.ResourceKindBackupBlueprint:
+		return convertBackupBlueprint(ri)
 	case v1beta1.ResourceKindRestoreSession:
 		return convertRestoreSession(ri)
 	default:
@@ -188,7 +190,11 @@ func convertBackupConfiguration(ri parser.ResourceInfo) error {
 		}
 	}
 
-	rp := createRetentionPolicy(oldBC)
+	ns := oldBC.Spec.Repository.Namespace
+	if ns == "" {
+		ns = oldBC.Namespace
+	}
+	rp := createRetentionPolicy(oldBC.Spec.RetentionPolicy, ns)
 	if err := writeToTargetDir(ri.Filename, true, rp); err != nil {
 		return err
 	}
@@ -224,6 +230,72 @@ func createBackupConfiguration(oldBC *v1beta1.BackupConfiguration) *coreapi.Back
 	}
 }
 
+func convertBackupBlueprint(ri parser.ResourceInfo) error {
+	oldBB := &v1beta1.BackupBlueprint{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(ri.Object.Object, oldBB); err != nil {
+		return err
+	}
+
+	newBC := createBackupBlueprint(oldBB)
+	if err := writeToTargetDir(ri.Filename, false, newBC); err != nil {
+		return err
+	}
+
+	if oldBB.Spec.Hooks != nil {
+		if oldBB.Spec.Hooks.PreBackup != nil {
+			ht := createHookTemplate(kmapi.ObjectReference{
+				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBB.Name, "prebackup", "hook"),
+				Namespace: oldBB.Namespace,
+			}, oldBB.Spec.Hooks.PreBackup)
+			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+				return err
+			}
+		}
+
+		if oldBB.Spec.Hooks.PostBackup != nil {
+			ht := createHookTemplate(kmapi.ObjectReference{
+				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBB.Name, "postbackup", "hook"),
+				Namespace: oldBB.Namespace,
+			}, oldBB.Spec.Hooks.PostBackup.Handler)
+			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+				return err
+			}
+		}
+	}
+
+	ns := oldBB.Spec.RepoNamespace
+	if ns == "" {
+		ns = oldBB.Namespace
+	}
+	rp := createRetentionPolicy(oldBB.Spec.RetentionPolicy, ns)
+	if err := writeToTargetDir(ri.Filename, true, rp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createBackupBlueprint(oldBB *v1beta1.BackupBlueprint) *coreapi.BackupBlueprint {
+	return &coreapi.BackupBlueprint{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       coreapi.ResourceKindBackupBlueprint,
+			APIVersion: coreapi.GroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      oldBB.Name,
+			Namespace: oldBB.Namespace,
+		},
+		Spec: coreapi.BackupBlueprintSpec{
+			BackupConfigurationTemplate: &coreapi.BackupConfigurationTemplate{
+				Namespace:      "",
+				DeletionPolicy: "",
+				Backends:       []coreapi.BackendReference{configureBackendFromBlueprint(oldBB)},
+				Sessions:       []coreapi.Session{configureSessionFromBlueprint(oldBB)},
+			},
+		},
+	}
+}
+
 func createHookTemplate(objRef kmapi.ObjectReference, handler *prober.Handler) *coreapi.HookTemplate {
 	if handler == nil {
 		return nil
@@ -255,12 +327,7 @@ func createHookTemplate(objRef kmapi.ObjectReference, handler *prober.Handler) *
 	}
 }
 
-func createRetentionPolicy(bc *v1beta1.BackupConfiguration) *storageapi.RetentionPolicy {
-	namespace := bc.Namespace
-	if bc.Spec.Repository.Namespace != "" {
-		namespace = bc.Spec.Repository.Namespace
-	}
-
+func createRetentionPolicy(rp v1alpha1.RetentionPolicy, ns string) *storageapi.RetentionPolicy {
 	convertInt64ToInt32P := func(i int64) *int32 {
 		if i <= 0 {
 			return nil
@@ -274,17 +341,17 @@ func createRetentionPolicy(bc *v1beta1.BackupConfiguration) *storageapi.Retentio
 			APIVersion: storageapi.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      bc.Spec.RetentionPolicy.Name,
-			Namespace: namespace,
+			Name:      rp.Name,
+			Namespace: ns,
 		},
 		Spec: storageapi.RetentionPolicySpec{
 			SuccessfulSnapshots: &storageapi.SuccessfulSnapshotsKeepPolicy{
-				Last:    convertInt64ToInt32P(bc.Spec.RetentionPolicy.KeepLast),
-				Hourly:  convertInt64ToInt32P(bc.Spec.RetentionPolicy.KeepHourly),
-				Daily:   convertInt64ToInt32P(bc.Spec.RetentionPolicy.KeepDaily),
-				Weekly:  convertInt64ToInt32P(bc.Spec.RetentionPolicy.KeepWeekly),
-				Monthly: convertInt64ToInt32P(bc.Spec.RetentionPolicy.KeepMonthly),
-				Yearly:  convertInt64ToInt32P(bc.Spec.RetentionPolicy.KeepYearly),
+				Last:    convertInt64ToInt32P(rp.KeepLast),
+				Hourly:  convertInt64ToInt32P(rp.KeepHourly),
+				Daily:   convertInt64ToInt32P(rp.KeepDaily),
+				Weekly:  convertInt64ToInt32P(rp.KeepWeekly),
+				Monthly: convertInt64ToInt32P(rp.KeepMonthly),
+				Yearly:  convertInt64ToInt32P(rp.KeepYearly),
 			},
 		},
 	}
@@ -360,13 +427,31 @@ func configureBackend(bc *v1beta1.BackupConfiguration) coreapi.BackendReference 
 	}
 }
 
+func configureBackendFromBlueprint(bb *v1beta1.BackupBlueprint) coreapi.BackendReference {
+	ns := bb.Spec.RepoNamespace
+	if ns == "" {
+		ns = bb.Namespace
+	}
+	return coreapi.BackendReference{
+		Name: "storage",
+		StorageRef: &kmapi.ObjectReference{
+			Name:      setValidValue("BackupStorage"),
+			Namespace: setValidValue("Namespace"),
+		},
+		RetentionPolicy: &kmapi.ObjectReference{
+			Name:      bb.Spec.RetentionPolicy.Name,
+			Namespace: ns,
+		},
+	}
+}
+
 func configureSession(bc *v1beta1.BackupConfiguration) coreapi.Session {
 	return coreapi.Session{
 		SessionConfig: &coreapi.SessionConfig{
 			Name:                "backup",
 			SessionHistoryLimit: pointer.Int32(bc.Spec.BackupHistoryLimit),
 			BackupTimeout:       bc.Spec.TimeOut,
-			Hooks:               configureBackupHooks(bc),
+			Hooks:               configureBackupHooks(bc.GetName(), bc.GetNamespace(), bc.Spec.Hooks),
 			Scheduler: &coreapi.SchedulerSpec{
 				Schedule: bc.Spec.Schedule,
 				JobTemplate: coreapi.JobTemplate{
@@ -390,29 +475,59 @@ func configureSession(bc *v1beta1.BackupConfiguration) coreapi.Session {
 	}
 }
 
-func configureBackupHooks(bc *v1beta1.BackupConfiguration) *coreapi.BackupHooks {
-	if bc.Spec.Hooks == nil {
+func configureSessionFromBlueprint(bb *v1beta1.BackupBlueprint) coreapi.Session {
+	return coreapi.Session{
+		SessionConfig: &coreapi.SessionConfig{
+			Name:                "backup",
+			SessionHistoryLimit: pointer.Int32(bb.Spec.BackupHistoryLimit),
+			BackupTimeout:       bb.Spec.TimeOut,
+			Hooks:               configureBackupHooks(bb.GetName(), bb.GetNamespace(), bb.Spec.Hooks),
+			Scheduler: &coreapi.SchedulerSpec{
+				Schedule: bb.Spec.Schedule,
+				JobTemplate: coreapi.JobTemplate{
+					BackoffLimit: pointer.Int32P(1),
+				},
+			},
+			RetryConfig: (*coreapi.RetryConfig)(bb.Spec.RetryConfig),
+		},
+		Repositories: []coreapi.RepositoryInfo{
+			{
+				Name:      `${repoName}`,
+				Backend:   "storage",
+				Directory: filepath.Join(setValidValue("Directory"), `${namespace}/${targetName}`),
+				EncryptionSecret: &kmapi.ObjectReference{
+					Name:      setValidValue("Name"),
+					Namespace: setValidValue("Namespace"),
+				},
+			},
+		},
+		Addon: configureBackupAddonInfoFromBlueprint(bb),
+	}
+}
+
+func configureBackupHooks(configName, configNs string, hooks *v1beta1.BackupHooks) *coreapi.BackupHooks {
+	if hooks == nil {
 		return nil
 	}
 
 	var preHook, postHook []coreapi.HookInfo
-	if bc.Spec.Hooks.PreBackup != nil {
+	if hooks.PreBackup != nil {
 		preHook = append(preHook, coreapi.HookInfo{
 			Name: "prebackup-hook",
 			HookTemplate: &kmapi.ObjectReference{
-				Name:      meta_util.ValidNameWithPrefixNSuffix(bc.Name, "prebackup", "hook"),
-				Namespace: bc.Namespace,
+				Name:      meta_util.ValidNameWithPrefixNSuffix(configName, "prebackup", "hook"),
+				Namespace: configNs,
 			},
 		})
 	}
-	if bc.Spec.Hooks.PostBackup != nil {
+	if hooks.PostBackup != nil {
 		postHook = append(postHook, coreapi.HookInfo{
 			Name: "postbackup-hook",
 			HookTemplate: &kmapi.ObjectReference{
-				Name:      meta_util.ValidNameWithPrefixNSuffix(bc.Name, "postbackup", "hook"),
-				Namespace: bc.Namespace,
+				Name:      meta_util.ValidNameWithPrefixNSuffix(configName, "postbackup", "hook"),
+				Namespace: configName,
 			},
-			ExecutionPolicy: configureHookExecutionPolicy(bc.Spec.Hooks.PostBackup.ExecutionPolicy),
+			ExecutionPolicy: configureHookExecutionPolicy(hooks.PostBackup.ExecutionPolicy),
 		})
 	}
 	return &coreapi.BackupHooks{
@@ -480,6 +595,25 @@ func configureBackupAddonInfo(bc *v1beta1.BackupConfiguration) *coreapi.AddonInf
 	}
 }
 
+func configureBackupAddonInfoFromBlueprint(bb *v1beta1.BackupBlueprint) *coreapi.AddonInfo {
+	var podTemplateSpec *ofst.PodTemplateSpec
+	if bb.Spec.RuntimeSettings.Pod != nil {
+		podTemplateSpec = &ofst.PodTemplateSpec{
+			Spec: configurePodRuntimeSettings(bb.Spec.RuntimeSettings.Pod),
+		}
+	}
+	return &coreapi.AddonInfo{
+		Name: setValidValue("Name"),
+		Tasks: []coreapi.TaskReference{
+			{
+				Name: setValidValue("Name"),
+			},
+		},
+		ContainerRuntimeSettings: bb.Spec.RuntimeSettings.Container,
+		JobTemplate:              podTemplateSpec,
+	}
+}
+
 func configurePodRuntimeSettings(settings *ofst.PodRuntimeSettings) ofst.PodSpec {
 	if settings == nil {
 		return ofst.PodSpec{}
@@ -491,7 +625,7 @@ func configurePodRuntimeSettings(settings *ofst.PodRuntimeSettings) ofst.PodSpec
 		podSpec.NodeSelector = settings.NodeSelector
 	}
 	if settings.ServiceAccountName != "" {
-		podSpec.ServiceAccountName = settings.ServiceAccountName
+		podSpec.ServiceAccountName = setValidValue("ServiceAccountName")
 	}
 	if settings.SecurityContext != nil {
 		podSpec.SecurityContext = settings.SecurityContext
