@@ -43,7 +43,7 @@ import (
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
-func (_ MongoDB) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (MongoDB) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralMongoDB))
 }
 
@@ -580,7 +580,8 @@ func (m mongoDBStatsService) Path() string {
 }
 
 func (m mongoDBStatsService) Scheme() string {
-	return ""
+	sc := promapi.SchemeHTTP
+	return sc.String()
 }
 
 func (m mongoDBStatsService) TLSConfig() *promapi.TLSConfig {

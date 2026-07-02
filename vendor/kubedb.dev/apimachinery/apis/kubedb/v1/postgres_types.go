@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
+	ofstv1 "kmodules.xyz/offshoot-api/api/v1"
 	ofstv2 "kmodules.xyz/offshoot-api/api/v2"
 )
 
@@ -117,6 +118,8 @@ type PostgresSpec struct {
 	// If specified, this file will be used as configuration file otherwise default configuration file will be used.
 	ConfigSecret *core.LocalObjectReference `json:"configSecret,omitempty"`
 
+	Configuration *PostgresConfiguration `json:"configuration,omitempty"`
+
 	// PodTemplate is an optional configuration for pods used to expose database
 	// +optional
 	PodTemplate ofstv2.PodTemplateSpec `json:"podTemplate,omitempty"`
@@ -167,6 +170,15 @@ type PostgresSpec struct {
 
 	// +optional
 	Replication *PostgresReplication `json:"replication,omitempty"`
+
+	// +optional
+	ReadReplicas []ReadReplicaSpec `json:"readReplicas,omitempty"`
+}
+
+type PostgresConfiguration struct {
+	ConfigurationSpec `json:",inline,omitempty"`
+	// +optional
+	Tuning *PostgresTuningConfig `json:"tuning,omitempty"`
 }
 
 type WALLimitPolicy string
@@ -178,6 +190,7 @@ const (
 )
 
 type PostgresReplication struct {
+	// WALimitPolicy defines which WAL retention policy to use.
 	WALLimitPolicy WALLimitPolicy `json:"walLimitPolicy"`
 
 	// +optional
@@ -186,6 +199,13 @@ type PostgresReplication struct {
 	WalKeepSegment *int32 `json:"walKeepSegment,omitempty"`
 	// +optional
 	MaxSlotWALKeepSizeInMegaBytes *int32 `json:"maxSlotWALKeepSize,omitempty"`
+
+	// ForceFailoverAcceptingDataLossAfter is the maximum time to wait before running a force failover process
+	// This is helpful for a scenario where the old primary is not available and it has the most updated wal lsn
+	// Doing force failover may or may not end up loosing data depending on any wrtie transaction
+	// in the range lagged lsn between the new primary and the old primary
+	// +optional
+	ForceFailoverAcceptingDataLossAfter *metav1.Duration `json:"forceFailoverAcceptingDataLossAfter,omitempty"`
 }
 
 type ArbiterSpec struct {
@@ -201,6 +221,36 @@ type ArbiterSpec struct {
 	// If specified, the pod's tolerations.
 	// +optional
 	Tolerations []core.Toleration `json:"tolerations,omitempty"`
+}
+
+type ReadReplicaSpec struct {
+	// Name specifies the name of the read replica
+	Name string `json:"name"`
+	// Number of instances to deploy for a Postgres database.
+	Replicas *int32 `json:"replicas,omitempty"`
+	// Compute Resources required by the sidecar container.
+	// +optional
+	Resources core.ResourceRequirements `json:"resources,omitempty"`
+	// NodeSelector is a selector which must be true for the pod to fit on a node.
+	// Selector which must match a node's labels for the pod to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	// +optional
+	// +mapType=atomic
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// If specified, the pod's tolerations.
+	// +optional
+	Tolerations []core.Toleration `json:"tolerations,omitempty"`
+	// StorageType can be durable (default) or ephemeral
+	StorageType StorageType `json:"storageType,omitempty"`
+	// Storage to specify how storage shall be used.
+	Storage *core.PersistentVolumeClaimSpec `json:"storage,omitempty"`
+	// PodPlacementPolicy is the reference of the podPlacementPolicy
+	// +kubebuilder:default={name:"default"}
+	// +optional
+	PodPlacementPolicy *core.LocalObjectReference `json:"podPlacementPolicy,omitempty"`
+	// ServiceTemplate is an optional configuration for services used to expose database
+	// +optional
+	ServiceTemplate *ofstv1.ServiceTemplateSpec `json:"serviceTemplate,omitempty"`
 }
 
 // PostgreLeaderElectionConfig contains essential attributes of leader election.
@@ -383,3 +433,75 @@ const (
 	// to Send the client cert and client key certificate for authentication.
 	ClientAuthModeCert PostgresClientAuthMode = "cert"
 )
+
+// PostgresTuningConfig defines configuration for PostgreSQL performance tuning
+type PostgresTuningConfig struct {
+	// Profile defines a predefined tuning profile for different workload types.
+	// If specified, other tuning parameters will be calculated based on this profile.
+	// +optional
+	Profile *PostgresProfile `json:"profile,omitempty"`
+
+	// MaxConnections defines the maximum number of concurrent connections.
+	// If not specified, it will be calculated based on available memory and tuning profile.
+	// +optional
+	MaxConnections *int32 `json:"maxConnections,omitempty"`
+
+	// StorageType defines the type of storage for tuning purposes.
+	// If not specified, it will be inferred from StorageClass or default to HDD.
+	// +optional
+	StorageType *PostgresStorageType `json:"storageType,omitempty"`
+
+	// DisableAutoTune disables automatic tuning entirely.
+	// If set to true, no tuning will be applied.
+	// +optional
+	DisableAutoTune bool `json:"disableAutoTune,omitempty"`
+}
+
+// PostgresProfile defines predefined tuning profiles
+// +kubebuilder:validation:Enum=web;oltp;dw;mixed;desktop
+type PostgresProfile string
+
+const (
+	// PostgresTuningProfileWeb optimizes for web applications with many simple queries
+	PostgresTuningProfileWeb PostgresProfile = "web"
+
+	// PostgresTuningProfileOLTP optimizes for OLTP workloads with many short transactions
+	PostgresTuningProfileOLTP PostgresProfile = "oltp"
+
+	// PostgresTuningProfileDW optimizes for data warehousing with complex analytical queries
+	PostgresTuningProfileDW PostgresProfile = "dw"
+
+	// PostgresTuningProfileMixed optimizes for mixed workloads
+	PostgresTuningProfileMixed PostgresProfile = "mixed"
+
+	// PostgresTuningProfileDesktop optimizes for desktop or development environments
+	PostgresTuningProfileDesktop PostgresProfile = "desktop"
+)
+
+// PostgresStorageType defines storage types for tuning purposes
+// +kubebuilder:validation:Enum=ssd;hdd;san
+type PostgresStorageType string
+
+const (
+	PostgresStorageTypeSSD PostgresStorageType = "ssd"
+	PostgresStorageTypeHDD PostgresStorageType = "hdd"
+	PostgresStorageTypeSAN PostgresStorageType = "san"
+)
+
+var _ Accessor = &Postgres{}
+
+func (m *Postgres) GetObjectMeta() metav1.ObjectMeta {
+	return m.ObjectMeta
+}
+
+func (m *Postgres) GetConditions() []kmapi.Condition {
+	return m.Status.Conditions
+}
+
+func (m *Postgres) SetCondition(cond kmapi.Condition) {
+	m.Status.Conditions = setCondition(m.Status.Conditions, cond)
+}
+
+func (m *Postgres) RemoveCondition(typ string) {
+	m.Status.Conditions = removeCondition(m.Status.Conditions, typ)
+}

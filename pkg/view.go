@@ -27,6 +27,7 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/list"
 	"github.com/spf13/cobra"
+	"gomodules.xyz/restic"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -38,8 +39,8 @@ import (
 	"kubestash.dev/apimachinery/apis"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg"
+	"kubestash.dev/apimachinery/pkg/resolver"
 	"kubestash.dev/apimachinery/pkg/resourceops/filter"
-	"kubestash.dev/apimachinery/pkg/restic"
 	"kubestash.dev/cli/pkg/common/dump"
 	"sigs.k8s.io/yaml"
 )
@@ -166,14 +167,19 @@ func NewCmdManifestView(clientGetter genericclioptions.RESTClientGetter) *cobra.
 					klog.Errorf("failed to remove scratch dir. Reason: %v", err)
 				}
 			}()
+
+			encryptSecret, err := getEncryptionSecret(klient, repository.Spec.EncryptionSecret)
+			if err != nil {
+				return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
+			}
+
 			setupOptions := &restic.SetupOptions{
-				Client:     klient,
 				ScratchDir: ScratchDir,
 				Backends: []*restic.Backend{
 					{
+						ConfigResolver:   resolver.NewBackupStorageResolver(klient, backupStorage),
 						Repository:       repository.Name,
-						BackupStorage:    &repository.Spec.StorageRef,
-						EncryptionSecret: repository.Spec.EncryptionSecret,
+						EncryptionSecret: encryptSecret,
 					},
 				},
 			}
@@ -301,7 +307,7 @@ func (opt *viewOptions) listFilesViaPodThenFilter(pod *core.Pod, snapshot *stora
 		for _, resticStat := range component.ResticStats {
 
 			findCmd := []string{
-				"find", filepath.Join(SnapshotDownloadDir, snapshot.Name, componentName, resticStat.HostPath), "-type", "f", "-name", "*.yaml",
+				"find", filepath.Join(SnapshotDownloadDir, snapshot.Name, componentName, resticStat.Summary.HostPath), "-type", "f", "-name", "*.yaml",
 			}
 			out, err := execOnPod(opt.restConfig, pod, findCmd)
 			if err != nil {
@@ -328,9 +334,9 @@ func (opt *viewOptions) listFilesViaPodThenFilter(pod *core.Pod, snapshot *stora
 
 				labels := dump.LabelsToStrings(unstructuredObject.GetLabels())
 				if opt.matchLabels(labels) {
-					relativePath := strings.TrimPrefix(fullPath, filepath.Join(SnapshotDownloadDir, snapshot.Name, componentName, resticStat.HostPath))
+					relativePath := strings.TrimPrefix(fullPath, filepath.Join(SnapshotDownloadDir, snapshot.Name, componentName, resticStat.Summary.HostPath))
 					if opt.shouldShow(relativePath) {
-						filteredFiles = append(filteredFiles, filepath.Join(resticStat.HostPath, relativePath))
+						filteredFiles = append(filteredFiles, filepath.Join(resticStat.Summary.HostPath, relativePath))
 					}
 				}
 			}
@@ -462,7 +468,7 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 			"--env", fmt.Sprintf("%s=%s", EnvHttpsProxy, os.Getenv(EnvHttpsProxy)),
 			"--env-file", filepath.Join(ConfigDir, ResticEnvs),
 			"--entrypoint", "sh",
-			imgRestic.ToContainerImage(),
+			imgRestic.Image,
 			"-c", "sleep infinity",
 		}
 
@@ -484,7 +490,7 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 			"restic",
 		}
 		restoreCmd = append(restoreCmd, args...)
-		restoreCmd = append(restoreCmd, resticStat.Id)
+		restoreCmd = append(restoreCmd, resticStat.Summary.Id)
 		for _, include := range opt.include {
 			restoreCmd = append(restoreCmd, "--include", include)
 		}
@@ -504,7 +510,7 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 		findFilePathsCmd := exec.Command(
 			CmdDocker, "exec", "-u", currentUser.Uid,
 			containerName,
-			"find", filepath.Join(restoreDir, resticStat.HostPath), "-type", "f", "-name", "*.yaml",
+			"find", filepath.Join(restoreDir, resticStat.Summary.HostPath), "-type", "f", "-name", "*.yaml",
 		)
 		findOutput, err := findFilePathsCmd.CombinedOutput()
 		if err != nil {
@@ -534,9 +540,9 @@ func (opt *viewOptions) listFilesViaDockerThenFilter(args []string) ([]string, e
 
 			labels := dump.LabelsToStrings(unstructuredObject.GetLabels())
 			if opt.matchLabels(labels) {
-				relativePath := strings.TrimPrefix(fullPath, filepath.Join(restoreDir, resticStat.HostPath))
+				relativePath := strings.TrimPrefix(fullPath, filepath.Join(restoreDir, resticStat.Summary.HostPath))
 				if opt.shouldShow(relativePath) {
-					filteredFiles = append(filteredFiles, filepath.Join(resticStat.HostPath, relativePath))
+					filteredFiles = append(filteredFiles, filepath.Join(resticStat.Summary.HostPath, relativePath))
 				}
 			}
 		}

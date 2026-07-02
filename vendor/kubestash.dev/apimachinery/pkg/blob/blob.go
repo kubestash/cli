@@ -17,6 +17,7 @@ limitations under the License.
 package blob
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -31,12 +32,14 @@ import (
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg/workerpool"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
 	aws2 "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"gocloud.dev/blob"
-	_ "gocloud.dev/blob/azureblob"
+	"gocloud.dev/blob/azureblob"
 	_ "gocloud.dev/blob/fileblob"
 	_ "gocloud.dev/blob/gcsblob"
 	"gocloud.dev/blob/s3blob"
@@ -54,12 +57,14 @@ const (
 	credentialsDir               = apis.TempDirMountPath + "/credentials"
 	azureStorageAccount          = "AZURE_STORAGE_ACCOUNT"
 	azureStorageKey              = "AZURE_STORAGE_KEY"
+	AzureFederatedTokenFile      = "AZURE_FEDERATED_TOKEN_FILE"
 	googleServiceAccountJsonKey  = "GOOGLE_SERVICE_ACCOUNT_JSON_KEY"
 	googleApplicationCredentials = "GOOGLE_APPLICATION_CREDENTIALS"
 	azureAccountKey              = "AZURE_ACCOUNT_KEY"
 	caCertData                   = "CA_CERT_DATA"
-	awsAccessKeyId               = "AWS_ACCESS_KEY_ID"
-	awsSecretAccessKey           = "AWS_SECRET_ACCESS_KEY"
+	AWSAccessKeyId               = "AWS_ACCESS_KEY_ID"
+	AWSSecretAccessKey           = "AWS_SECRET_ACCESS_KEY"
+	AWSSessionToken              = "AWS_SESSION_TOKEN"
 )
 
 type Blob struct {
@@ -249,7 +254,31 @@ func (b *Blob) Get(ctx context.Context, filepath string) ([]byte, error) {
 	return io.ReadAll(r)
 }
 
+func (b *Blob) Download(ctx context.Context, filepath string) (io.ReadCloser, error) {
+	dir, fileName := path.Split(filepath)
+	bucket, err := b.openBucket(ctx, dir)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := bucket.NewReader(ctx, fileName, nil)
+	if err != nil {
+		closeBucket(ctx, bucket)
+		return nil, err
+	}
+
+	return &bucketReader{
+		Reader: r,
+		bucket: bucket,
+		ctx:    ctx,
+	}, nil
+}
+
 func (b *Blob) Upload(ctx context.Context, filepath string, data []byte, contentType string) error {
+	return b.UploadFromReader(ctx, filepath, bytes.NewReader(data), contentType)
+}
+
+func (b *Blob) UploadFromReader(ctx context.Context, filepath string, r io.Reader, contentType string) error {
 	dir, fileName := path.Split(filepath)
 	bucket, err := b.openBucket(ctx, dir)
 	if err != nil {
@@ -264,7 +293,7 @@ func (b *Blob) Upload(ctx context.Context, filepath string, data []byte, content
 	if err != nil {
 		return err
 	}
-	_, writeErr := w.Write(data)
+	_, writeErr := io.Copy(w, r)
 	closeErr := w.Close()
 	if writeErr != nil {
 		return writeErr
@@ -331,6 +360,18 @@ func (b *Blob) List(ctx context.Context, dir string) ([][]byte, error) {
 		}
 	}
 	return objects, nil
+}
+
+func (b *Blob) ListIterator(ctx context.Context, dir string) (*blob.ListIterator, func(), error) {
+	bucket, err := b.openBucket(ctx, dir)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	iter := bucket.List(nil)
+	return iter, func() {
+		closeBucket(ctx, bucket)
+	}, nil
 }
 
 func (b *Blob) Delete(ctx context.Context, filepath string, isDir bool) error {
@@ -405,6 +446,15 @@ func (b *Blob) openBucketWithDebug(ctx context.Context, dir string, debug bool) 
 		if err != nil {
 			return nil, err
 		}
+	} else if b.backupStorage.Spec.Storage.Provider == storageapi.ProviderAzure && os.Getenv(AzureFederatedTokenFile) != "" {
+		azClient, err := b.getAzureClient()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create azure container client: %w", err)
+		}
+		bucket, err = azureblob.OpenBucket(ctx, azClient, nil)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		bucket, err = blob.OpenBucket(ctx, b.storageURL)
 		if err != nil {
@@ -444,13 +494,13 @@ func (b *Blob) getS3Config(ctx context.Context, debug bool) (aws2.Config, error)
 	}
 
 	if b.backupStorage.Spec.Storage.S3.SecretName != "" {
-		id, ok := b.s3Secret.Data[awsAccessKeyId]
+		id, ok := b.s3Secret.Data[AWSAccessKeyId]
 		if !ok {
-			return aws2.Config{}, fmt.Errorf("storage secret %s/%s missing %s key", b.s3Secret.Namespace, b.s3Secret.Name, awsAccessKeyId)
+			return aws2.Config{}, fmt.Errorf("storage secret %s/%s missing %s key", b.s3Secret.Namespace, b.s3Secret.Name, AWSAccessKeyId)
 		}
-		key, ok := b.s3Secret.Data[awsSecretAccessKey]
+		key, ok := b.s3Secret.Data[AWSSecretAccessKey]
 		if !ok {
-			return aws2.Config{}, fmt.Errorf("storage Secret %s/%s missing %s key", b.s3Secret.Namespace, b.s3Secret.Name, awsSecretAccessKey)
+			return aws2.Config{}, fmt.Errorf("storage Secret %s/%s missing %s key", b.s3Secret.Namespace, b.s3Secret.Name, AWSSecretAccessKey)
 		}
 
 		loadOptions = append(loadOptions, config.WithCredentialsProvider(
@@ -468,7 +518,39 @@ func (b *Blob) getS3Config(ctx context.Context, debug bool) (aws2.Config, error)
 		}
 	}
 
+	// S3 client behavior is updated to always calculate a checksum by default for operations, so it's needed
+	loadOptions = append(loadOptions, config.WithRequestChecksumCalculation(aws2.RequestChecksumCalculationWhenRequired))
+	loadOptions = append(loadOptions, config.WithResponseChecksumValidation(aws2.ResponseChecksumValidationWhenRequired))
+
 	return config.LoadDefaultConfig(ctx, loadOptions...)
+}
+
+func (b *Blob) getAzureClient() (*container.Client, error) {
+	storageAccountName := b.backupStorage.Spec.Storage.Azure.StorageAccount
+	containerName := b.backupStorage.Spec.Storage.Azure.Container
+	accountURL := fmt.Sprintf("https://%s.blob.core.windows.net", storageAccountName)
+
+	cred, err := azidentity.NewWorkloadIdentityCredential(&azidentity.WorkloadIdentityCredentialOptions{
+		EnableAzureProxy: true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create workload identity credential: %w", err)
+	}
+
+	return container.NewClient(accountURL+"/"+containerName, cred, nil)
+}
+
+func (b *Blob) GetS3Credentials(ctx context.Context, debug bool) (*aws2.Credentials, error) {
+	cfg, err := b.getS3Config(ctx, debug)
+	if err != nil {
+		return nil, err
+	}
+
+	creds, err := cfg.Credentials.Retrieve(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &creds, nil
 }
 
 func configureTLS(caCert []byte, insecureTLS bool) (*http.Client, error) {
@@ -511,4 +593,20 @@ func (b *Blob) SetPathAsDir(ctx context.Context, path string) error {
 		return closeErr
 	}
 	return closeErr
+}
+
+type bucketReader struct {
+	*blob.Reader
+	bucket *blob.Bucket
+	ctx    context.Context
+}
+
+func (r *bucketReader) Close() error {
+	readErr := r.Reader.Close()
+	closeErr := r.bucket.Close()
+	if closeErr != nil {
+		logger := log.FromContext(r.ctx)
+		logger.Error(closeErr, "failed to close bucket")
+	}
+	return readErr
 }

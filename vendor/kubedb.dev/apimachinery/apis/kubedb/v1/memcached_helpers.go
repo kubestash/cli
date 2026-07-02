@@ -27,7 +27,6 @@ import (
 	promapi "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -43,7 +42,7 @@ import (
 
 func (*Memcached) Hub() {}
 
-func (_ Memcached) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (Memcached) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralMemcached))
 }
 
@@ -127,12 +126,9 @@ func (m Memcached) GoverningServiceName() string {
 	return meta_util.NameWithSuffix(m.ServiceName(), "pods")
 }
 
-func (m Memcached) ConfigSecretName() string {
-	return meta_util.NameWithSuffix(m.OffshootName(), "config")
-}
-
-func (m Memcached) CustomConfigSecretName() string {
-	return meta_util.NameWithSuffix(m.OffshootName(), "custom-config")
+func (m *Memcached) ConfigSecretName() string {
+	uid := string(m.UID)
+	return meta_util.NameWithSuffix(m.OffshootName(), uid[len(uid)-6:])
 }
 
 type memcachedApp struct {
@@ -180,7 +176,8 @@ func (m memcachedStatsService) Path() string {
 }
 
 func (m memcachedStatsService) Scheme() string {
-	return ""
+	sc := promapi.SchemeHTTP
+	return sc.String()
 }
 
 func (m memcachedStatsService) TLSConfig() *promapi.TLSConfig {
@@ -217,6 +214,8 @@ func (m *Memcached) SetDefaults(mcVersion *catalog.MemcachedVersion) {
 			m.Spec.AuthSecret.Kind = kubedb.ResourceKindSecret
 		}
 	}
+
+	m.Spec.Configuration = copyConfigurationField(m.Spec.Configuration, &m.Spec.ConfigSecret)
 
 	m.setDefaultContainerSecurityContext(mcVersion, &m.Spec.PodTemplate)
 	m.setDefaultContainerResourceLimits(&m.Spec.PodTemplate)
@@ -276,8 +275,8 @@ func (m *Memcached) assignDefaultContainerSecurityContext(mcVersion *catalog.Mem
 		sc.AllowPrivilegeEscalation = pointer.BoolP(false)
 	}
 	if sc.Capabilities == nil {
-		sc.Capabilities = &corev1.Capabilities{
-			Drop: []corev1.Capability{"ALL"},
+		sc.Capabilities = &core.Capabilities{
+			Drop: []core.Capability{"ALL"},
 		}
 	}
 	if sc.RunAsNonRoot == nil {

@@ -55,9 +55,7 @@ var (
 )
 
 func init() {
-	imgRestic.Registry = ResticRegistry
 	imgRestic.Image = ResticImage
-	imgRestic.Tag = ResticTag
 }
 
 func getSecret(ref kmapi.ObjectReference) (*core.Secret, error) {
@@ -215,6 +213,19 @@ func setBackupConfigurationPausedField(value bool, name string) error {
 		},
 	)
 	return err
+}
+
+func getEncryptionSecret(kbClient client.Client, secretRef *kmapi.ObjectReference) (*core.Secret, error) {
+	secret := &core.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: secretRef.Namespace,
+			Name:      secretRef.Name,
+		},
+	}
+	if err := kbClient.Get(context.Background(), client.ObjectKeyFromObject(secret), secret); err != nil {
+		return nil, err
+	}
+	return secret, nil
 }
 
 func createTable(data [][]string) error {

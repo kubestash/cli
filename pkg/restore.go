@@ -27,12 +27,13 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gomodules.xyz/restic"
 	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
-	"kubestash.dev/apimachinery/pkg/restic"
+	"kubestash.dev/apimachinery/pkg/resolver"
 	"kubestash.dev/cli/pkg/common"
 	"kubestash.dev/cli/pkg/common/dump"
 )
@@ -63,12 +64,10 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				return err
 			}
 
-			opt.Client, err = common.NewRuntimeClient(opt.Config)
+			klient, err = common.NewRuntimeClient(opt.Config)
 			if err != nil {
 				return fmt.Errorf("failed to get kubernetes client: %w", err)
 			}
-
-			klient = opt.Client
 
 			srcNamespace = opt.Namespace
 
@@ -76,7 +75,7 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				return err
 			}
 
-			opt.Snapshot, err = opt.GetSnapshot(kmapi.ObjectReference{
+			opt.Snapshot, err = opt.GetSnapshot(klient, kmapi.ObjectReference{
 				Name:      opt.SnapshotName,
 				Namespace: srcNamespace,
 			})
@@ -161,14 +160,18 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 				return nil
 			}
 
+			encryptSecret, err := getEncryptionSecret(klient, repository.Spec.EncryptionSecret)
+			if err != nil {
+				return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
+			}
+
 			opt.SetupOptions = restic.SetupOptions{
-				Client:     opt.Client,
 				ScratchDir: ScratchDir,
 				Backends: []*restic.Backend{
 					{
+						ConfigResolver:   resolver.NewBackupStorageResolver(klient, backupStorage),
 						Repository:       repository.Name,
-						BackupStorage:    &repository.Spec.StorageRef,
-						EncryptionSecret: repository.Spec.EncryptionSecret,
+						EncryptionSecret: encryptSecret,
 					},
 				},
 			}
@@ -378,7 +381,7 @@ func (opt *options) runRestoreViaDocker(destination string, args []string) error
 		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
 		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
 		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
-		imgRestic.ToContainerImage(),
+		imgRestic.Image,
 	}
 
 	restoreArgs = append(restoreArgs, args...)
@@ -394,7 +397,7 @@ func (opt *options) runRestoreViaDocker(destination string, args []string) error
 	}
 
 	for _, resticStat := range opt.ResticStats {
-		rargs := append(restoreArgs, resticStat.Id, "--target", destination)
+		rargs := append(restoreArgs, resticStat.Summary.Id, "--target", destination)
 		klog.Infoln("Running docker with args:", rargs)
 		out, err := exec.Command(CmdDocker, rargs...).CombinedOutput()
 		klog.Infoln("Output:", string(out))

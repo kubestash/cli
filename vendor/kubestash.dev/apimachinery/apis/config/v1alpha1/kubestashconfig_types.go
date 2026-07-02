@@ -70,14 +70,8 @@ type GenericWebhookInfo struct {
 }
 
 type Docker struct {
-	// Registry specifies the name of a Docker registry
-	Registry string `json:"registry,omitempty"`
-
 	// Image specifies the name of a Docker image
-	Image string `json:"image,omitempty"`
-
-	// Tag specifies the Docker image tag
-	Tag string `json:"tag,omitempty"`
+	Image string `json:"image"`
 }
 
 type NetVolAccessor struct {
@@ -92,10 +86,6 @@ type NetVolAccessor struct {
 
 	// PrivilegedMode specifies whether each network volume accessor deployment should run in privileged mode or not
 	PrivilegedMode bool `json:"privilegedMode,omitempty"`
-}
-
-func (docker Docker) ToContainerImage() string {
-	return docker.Registry + "/" + docker.Image + ":" + docker.Tag
 }
 
 func init() {

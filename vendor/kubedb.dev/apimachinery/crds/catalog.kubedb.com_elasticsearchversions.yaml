@@ -86,14 +86,9 @@ spec:
                 - OpenSearch
                 - KubeDB
                 type: string
+              endOfLife:
+                type: boolean
               exporter:
-                properties:
-                  image:
-                    type: string
-                required:
-                - image
-                type: object
-              gitSyncer:
                 properties:
                   image:
                     type: string

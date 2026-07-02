@@ -25,13 +25,13 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gomodules.xyz/restic"
 	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg"
-	"kubestash.dev/apimachinery/pkg/restic"
 )
 
 type keyOptions struct {
@@ -148,7 +148,7 @@ func (opt *keyOptions) runCmdViaDocker(args []string) error {
 		keyArgs = append(keyArgs, "-v", opt.File+":"+opt.File)
 	}
 
-	keyArgs = append(keyArgs, imgRestic.ToContainerImage())
+	keyArgs = append(keyArgs, imgRestic.Image)
 	keyArgs = append(keyArgs, args...)
 
 	if opt.ID != "" {

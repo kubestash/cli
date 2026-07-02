@@ -168,7 +168,8 @@ func (rs redisSentinelStatsService) Path() string {
 }
 
 func (r redisSentinelStatsService) Scheme() string {
-	return ""
+	sc := promapi.SchemeHTTP
+	return sc.String()
 }
 
 func (r redisSentinelStatsService) TLSConfig() *promapi.TLSConfig {
@@ -271,7 +272,7 @@ func (rs *RedisSentinel) GetPersistentSecrets() []string {
 	}
 
 	var secrets []string
-	if rs.Spec.AuthSecret != nil {
+	if !IsVirtualAuthSecretReferred(rs.Spec.AuthSecret) && rs.Spec.AuthSecret != nil && rs.Spec.AuthSecret.Name != "" {
 		secrets = append(secrets, rs.Spec.AuthSecret.Name)
 	}
 	return secrets

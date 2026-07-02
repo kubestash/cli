@@ -52,12 +52,17 @@ type PerconaXtraDBVersion struct {
 type PerconaXtraDBVersionSpec struct {
 	// Version
 	Version string `json:"version"`
+
+	// EndOfLife refers if this version reached into its end of the life or not, based on https://endoflife.date/
+	// +optional
+	EndOfLife bool `json:"endOfLife"`
+
 	// Database Image
 	DB PerconaXtraDBVersionDatabase `json:"db"`
 	// Exporter Image
 	Exporter PerconaXtraDBVersionExporter `json:"exporter"`
 	// Coordinator Image
-	Coordinator PerconaXtraDBVersionCoordinator `json:"coordinator,omitempty"`
+	Coordinator PerconaXtraDBVersionCoordinator `json:"coordinator"`
 	// Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.
 	// +optional
 	Deprecated bool `json:"deprecated,omitempty"`

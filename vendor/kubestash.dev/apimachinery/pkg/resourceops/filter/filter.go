@@ -17,6 +17,7 @@ limitations under the License.
 package filter
 
 import (
+	"slices"
 	"strings"
 
 	"k8s.io/utils/ptr"
@@ -125,10 +126,8 @@ func (g *GlobalIncludeExclude) ShouldIncludeResource(groupResource string, names
 		return false
 	}
 	// Exclude default cluster-managed or ephemeral resources.
-	for _, excluded := range DefaultExcludeResources {
-		if groupResource == excluded {
-			return false
-		}
+	if slices.Contains(DefaultExcludeResources, groupResource) {
+		return false
 	}
 	// User-defined includes/excludes.
 	return g.resourceFilter.ShouldInclude(groupResource)

@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gomodules.xyz/restic"
 	core "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
@@ -34,7 +35,7 @@ import (
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
 	"kubestash.dev/apimachinery/pkg"
-	"kubestash.dev/apimachinery/pkg/restic"
+	"kubestash.dev/apimachinery/pkg/resolver"
 )
 
 type downloadOptions struct {
@@ -139,14 +140,18 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				}
 			}()
 
+			encryptSecret, err := getEncryptionSecret(klient, repository.Spec.EncryptionSecret)
+			if err != nil {
+				return fmt.Errorf("failed to get encryption secret. Reason: %w", err)
+			}
+
 			setupOptions := &restic.SetupOptions{
-				Client:     klient,
 				ScratchDir: ScratchDir,
 				Backends: []*restic.Backend{
 					{
+						ConfigResolver:   resolver.NewBackupStorageResolver(klient, backupStorage),
 						Repository:       repository.Name,
-						BackupStorage:    &repository.Spec.StorageRef,
-						EncryptionSecret: repository.Spec.EncryptionSecret,
+						EncryptionSecret: encryptSecret,
 					},
 				},
 			}
@@ -212,8 +217,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 	cmd.Flags().StringSliceVar(&downloadOpt.exclude, "exclude", downloadOpt.exclude, "List of pattern for directory/file to ignore during restore")
 	cmd.Flags().StringSliceVar(&downloadOpt.include, "include", downloadOpt.include, "List of pattern for directory/file to restore")
 
-	cmd.Flags().StringVar(&imgRestic.Registry, "docker-registry", imgRestic.Registry, "Docker image registry for restic cli")
-	cmd.Flags().StringVar(&imgRestic.Tag, "image-tag", imgRestic.Tag, "Restic docker image tag")
+	cmd.Flags().StringVar(&imgRestic.Image, "image", imgRestic.Image, "Restic docker image")
 
 	cmd.MarkFlagsMutuallyExclusive("exclude", "include")
 
@@ -304,7 +308,7 @@ func (opt *downloadOptions) runRestoreViaDocker(destination string, args []strin
 		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
 		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
 		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
-		imgRestic.ToContainerImage(),
+		imgRestic.Image,
 	}
 
 	restoreArgs = append(restoreArgs, args...)
@@ -320,7 +324,7 @@ func (opt *downloadOptions) runRestoreViaDocker(destination string, args []strin
 	}
 
 	for _, resticStat := range opt.resticStats {
-		rargs := append(restoreArgs, resticStat.Id, "--target", destination)
+		rargs := append(restoreArgs, resticStat.Summary.Id, "--target", destination)
 		klog.Infoln("Running docker with args:", rargs)
 		out, err := exec.Command(CmdDocker, rargs...).CombinedOutput()
 		klog.Infoln("Output:", string(out))

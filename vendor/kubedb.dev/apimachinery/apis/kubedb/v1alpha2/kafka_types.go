@@ -40,7 +40,6 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=kafkas,singular=kafka,shortName=kf,categories={datastore,kubedb,appscode,all}
-// +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".apiVersion"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -191,7 +190,7 @@ type KafkaStatus struct {
 type KafkaCruiseControl struct {
 	// Configuration for cruise-control
 	// +optional
-	ConfigSecret *SecretReference `json:"configSecret,omitempty"`
+	ConfigSecret *core.LocalObjectReference `json:"configSecret,omitempty"`
 
 	// Replicas represents number of replica for this specific type of node
 	// +optional

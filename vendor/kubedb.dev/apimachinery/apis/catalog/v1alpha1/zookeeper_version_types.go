@@ -18,7 +18,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
 const (
@@ -52,33 +51,32 @@ type ZooKeeperVersion struct {
 type ZooKeeperVersionSpec struct {
 	// Version
 	Version string `json:"version"`
-	// init container image
+
+	// EndOfLife refers if this version reached into its end of the life or not, based on https://endoflife.date/
 	// +optional
-	InitContainer ZooKeeperVersionInitContainer `json:"initContainer,omitempty"`
+	EndOfLife bool `json:"endOfLife"`
+
+	// init container image
+	InitContainer ZooKeeperVersionInitContainer `json:"initContainer"`
+
 	// Database Image
 	DB ZooKeeperVersionDatabase `json:"db"`
-	// Exporter Image
-	// +optional
-	Exporter ZooKeeperVersionExporter `json:"exporter"`
-	// Coordinator Image
-	Coordinator ZooKeeperVersionCoordinator `json:"coordinator,omitempty"`
+
 	// Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.
 	// +optional
 	Deprecated bool `json:"deprecated,omitempty"`
+
 	// PSP names
 	// +optional
 	PodSecurityPolicies ZooKeeperVersionPodSecurityPolicy `json:"podSecurityPolicies"`
-	// Stash defines backup and restore task definitions.
-	// +optional
-	Stash appcat.StashAddonSpec `json:"stash,omitempty"`
+
 	// update constraints
 	// +optional
 	UpdateConstraints UpdateConstraints `json:"updateConstraints,omitempty"`
+
 	// SecurityContext is for the additional config for the DB container
 	// +optional
 	SecurityContext SecurityContext `json:"securityContext"`
-	// +optional
-	GitSyncer GitSyncer `json:"gitSyncer,omitempty"`
 }
 
 // ZooKeeperVersionInitContainer is the ZooKeeper init container image

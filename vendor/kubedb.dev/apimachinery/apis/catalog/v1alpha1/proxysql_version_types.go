@@ -48,20 +48,31 @@ type ProxySQLVersion struct {
 type ProxySQLVersionSpec struct {
 	// Version
 	Version string `json:"version"`
+
+	// EndOfLife refers if this version reached into its end of the life or not, based on https://endoflife.date/
+	// +optional
+	EndOfLife bool `json:"endOfLife"`
+
 	// Proxysql Image
 	Proxysql ProxySQLVersionProxysql `json:"proxysql"`
+
 	// Exporter Image
 	Exporter *ProxySQLVersionExporter `json:"exporter,omitempty"`
+
 	// Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.
 	// +optional
 	Deprecated bool `json:"deprecated,omitempty"`
+
 	// PSP names
 	PodSecurityPolicies ProxySQLVersionPodSecurityPolicy `json:"podSecurityPolicies"`
+
 	// update constraints
 	UpdateConstraints UpdateConstraints `json:"updateConstraints,omitempty"`
+
 	// SecurityContext is for the additional config for the DB container
 	// +optional
 	SecurityContext SecurityContext `json:"securityContext"`
+
 	// +optional
 	UI []ChartInfo `json:"ui,omitempty"`
 }

@@ -66,6 +66,8 @@ spec:
                 - Official
                 - Valkey
                 type: string
+              endOfLife:
+                type: boolean
               exporter:
                 properties:
                   image:
@@ -176,6 +178,7 @@ spec:
               version:
                 type: string
             required:
+            - coordinator
             - db
             - exporter
             - podSecurityPolicies

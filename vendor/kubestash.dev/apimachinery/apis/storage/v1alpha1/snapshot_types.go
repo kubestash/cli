@@ -215,6 +215,25 @@ type Component struct {
 	VolumeSnapshotterStats []VolumeSnapshotterStats `json:"volumeSnapshotterStats,omitempty"`
 
 	LogStats *LogStats `json:"logStats,omitempty"`
+
+	// ClickHouseStats specifies the ClickHouse Backup specific information
+	ClickHouseStats []ClickHouseStats `json:"clickHouseStats,omitempty"`
+
+	// Neo4jStats specifies the Neo4j Admin specific information
+	Neo4jStats []Neo4jStats `json:"neo4jStats,omitempty"`
+}
+
+type Neo4jStats struct {
+	File        string `json:"file,omitempty"`
+	Database    string `json:"database,omitempty"`
+	DatabaseID  string `json:"databaseID,omitempty"`
+	Time        string `json:"time,omitempty"`
+	Full        bool   `json:"full,omitempty"`
+	Compressed  bool   `json:"compressed,omitempty"`
+	LowestTX    int64  `json:"lowestTX,omitempty"`
+	HighestTX   int64  `json:"highestTX,omitempty"`
+	StoreIDHash string `json:"storeIDHash,omitempty"`
+	Recovered   bool   `json:"recovered,omitempty"`
 }
 
 type LogStats struct {
@@ -233,6 +252,27 @@ type LogStats struct {
 
 	TotalSucceededCount int64 `json:"totalSucceededCount,omitempty"`
 	LastSucceededStats  []Log `json:"lastSucceededStats,omitempty"`
+
+	LastLogRetentionStats []LogRetentionStatus `json:"lastLogRetentionStats,omitempty"`
+}
+
+type LogRetentionStatus struct {
+	// LastExecutionTime is when the retention cleanup process last ran
+	// (RFC3339 format string).
+	// +optional
+	LastExecutionTime *string `json:"lastExecutionTime,omitempty"`
+
+	// RetentionPeriodApplied is the actual retention period used for this cleanup.
+	// +optional
+	RetentionPeriodApplied string `json:"retentionPeriodApplied,omitempty"`
+
+	// DeletedLogCount indicates how many logs were successfully deleted
+	// +optional
+	DeletedLogCount int64 `json:"deletedLogCount,omitempty"`
+
+	// Error message if this cleanup event failed, empty if succeeded.
+	// +optional
+	Error string `json:"error,omitempty"`
 }
 
 type Log struct {
@@ -254,6 +294,17 @@ const (
 
 // ResticStats specifies the "Restic" driver specific information
 type ResticStats struct {
+	// Summary specifies the summary of the restic backup
+	// +optional
+	Summary *ResticSummary `json:"summary,omitempty"`
+
+	// Progress specifies the progress of the restic backup
+	// +optional
+	Progress *BackupProgress `json:"progress,omitempty"`
+}
+
+// ResticSummary specifies the summary of the Restic backup
+type ResticSummary struct {
 	// Id represents the restic snapshot id
 	Id string `json:"id,omitempty"`
 
@@ -276,6 +327,37 @@ type ResticStats struct {
 	// EndTime represents the timestamp at which the restic command successfully executed
 	// +optional
 	EndTime *metav1.Time `json:"endTime,omitempty"`
+}
+
+// BackupProgress specifies the progress of the Restic backup
+type BackupProgress struct {
+	// SecondsElapsed represents the seconds elapsed during the backup
+	// +optional
+	SecondsElapsed int64 `json:"secondsElapsed,omitempty"`
+
+	// PercentDone represents the percentage of the backup that has been completed
+	// +optional
+	PercentDone string `json:"percentDone,omitempty"`
+
+	// TotalFiles represents the total number of files to backup
+	// +optional
+	TotalFiles int64 `json:"totalFiles,omitempty"`
+
+	// FilesDone represents the number of files done
+	// +optional
+	FilesDone int64 `json:"filesDone,omitempty"`
+
+	// BackupDone represents the amount of data that has been backup so far
+	// +optional
+	BackupDone string `json:"backupDone,omitempty"`
+
+	// Total represents the total amount of data that needs to be transferred during the backup
+	// +optional
+	Total string `json:"total,omitempty"`
+
+	// Speed represents the transfer speed during the backup
+	// +optional
+	Speed string `json:"speed,omitempty"`
 }
 
 // VolumeSnapshotterStats specifies the "VolumeSnapshotter" driver specific information
@@ -355,6 +437,23 @@ type SolrStats struct {
 
 	// Finishing time of the backup
 	UploadedIndexFileMB float64 `json:"uploadedIndexFileMB,omitempty"`
+}
+
+type ClickHouseStats struct {
+	// Id represents the backup id
+	Id string `json:"id,omitempty"`
+
+	// StatusType represents the status of Backup. This can be "IN_PROGRESS","SUCCESS","FAILED" or "UNKNOWN"
+	StatusType string `json:"status,omitempty"`
+
+	// host represents the host for which backup has been taken
+	Host string `json:"host,omitempty"`
+
+	// Starting time of the backup
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+
+	// Finishing time of the backup
+	FinishTime *metav1.Time `json:"finishTime,omitempty"`
 }
 
 const (

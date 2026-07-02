@@ -54,9 +54,9 @@ func NewRuntimeClient(cfg *restclient.Config) (client.Client, error) {
 	})
 }
 
-func (opt *Options) GetSnapshot(ref kmapi.ObjectReference) (*storageapi.Snapshot, error) {
+func (opt *Options) GetSnapshot(kbClient client.Client, ref kmapi.ObjectReference) (*storageapi.Snapshot, error) {
 	snap := &storageapi.Snapshot{}
-	if err := opt.Client.Get(context.Background(), ref.ObjectKey(), snap); err != nil {
+	if err := kbClient.Get(context.Background(), ref.ObjectKey(), snap); err != nil {
 		return nil, err
 	}
 	return snap, nil

@@ -52,6 +52,11 @@ type RedisVersion struct {
 type RedisVersionSpec struct {
 	// Version
 	Version string `json:"version"`
+
+	// EndOfLife refers if this version reached into its end of the life or not, based on https://endoflife.date/
+	// +optional
+	EndOfLife bool `json:"endOfLife"`
+
 	// Distribution determines the type of the database(Valkey or Redis)
 	Distribution RedisDistro `json:"distribution,omitempty"`
 	// init container image
@@ -61,7 +66,7 @@ type RedisVersionSpec struct {
 	// Exporter Image
 	Exporter RedisVersionExporter `json:"exporter"`
 	// Coordinator Image
-	Coordinator RedisVersionCoordinator `json:"coordinator,omitempty"`
+	Coordinator RedisVersionCoordinator `json:"coordinator"`
 	// Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.
 	// +optional
 	Deprecated bool `json:"deprecated,omitempty"`

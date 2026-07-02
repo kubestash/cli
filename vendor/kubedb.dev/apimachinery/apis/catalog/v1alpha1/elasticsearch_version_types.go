@@ -53,37 +53,52 @@ type ElasticsearchVersion struct {
 type ElasticsearchVersionSpec struct {
 	// Version
 	Version string `json:"version"`
+
+	// EndOfLife refers if this version reached into its end of the life or not, based on https://endoflife.date/
+	// +optional
+	EndOfLife bool `json:"endOfLife"`
+
 	// Distribution
 	Distribution ElasticsearchDistro `json:"distribution,omitempty"`
+
 	// Authentication plugin used by Elasticsearch cluster
 	AuthPlugin ElasticsearchAuthPlugin `json:"authPlugin"`
+
 	// Database Image
 	DB ElasticsearchVersionDatabase `json:"db"`
+
 	// Dashboard Image
 	// +optional
 	Dashboard ElasticsearchDashboardVersionDatabase `json:"dashboard,omitempty"`
+
 	// Exporter Image
 	Exporter ElasticsearchVersionExporter `json:"exporter"`
+
 	// Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.
 	// +optional
 	Deprecated bool `json:"deprecated,omitempty"`
+
 	// Init container Image
 	InitContainer ElasticsearchVersionInitContainer `json:"initContainer"`
+
 	// Init container Image
 	// +optional
 	DashboardInitContainer ElasticsearchVersionDashboardInitContainer `json:"dashboardInitContainer,omitempty"`
+
 	// PSP names
 	PodSecurityPolicies ElasticsearchVersionPodSecurityPolicy `json:"podSecurityPolicies"`
+
 	// Stash defines backup and restore task definitions.
 	// +optional
 	Stash appcat.StashAddonSpec `json:"stash,omitempty"`
+
 	// SecurityContext is for the additional security information for the Elasticsearch container
 	// +optional
 	SecurityContext ElasticsearchSecurityContext `json:"securityContext"`
+
 	// update constraints
 	UpdateConstraints UpdateConstraints `json:"updateConstraints,omitempty"`
-	// +optional
-	GitSyncer GitSyncer `json:"gitSyncer,omitempty"`
+
 	// +optional
 	UI []ChartInfo `json:"ui,omitempty"`
 }

@@ -53,6 +53,11 @@ type MySQLVersion struct {
 type MySQLVersionSpec struct {
 	// Version
 	Version string `json:"version"`
+
+	// EndOfLife refers if this version reached into its end of the life or not, based on https://endoflife.date/
+	// +optional
+	EndOfLife bool `json:"endOfLife"`
+
 	// Distribution
 	Distribution MySQLDistro `json:"distribution,omitempty"`
 	// Database Image
@@ -60,8 +65,7 @@ type MySQLVersionSpec struct {
 	// Exporter Image
 	Exporter MySQLVersionExporter `json:"exporter"`
 	// Coordinator Image
-	// +optional
-	Coordinator MySQLVersionCoordinator `json:"coordinator,omitempty"`
+	Coordinator MySQLVersionCoordinator `json:"coordinator"`
 	// ReplicationModeDetector Image
 	// +optional
 	ReplicationModeDetector ReplicationModeDetector `json:"replicationModeDetector,omitempty"`

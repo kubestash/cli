@@ -87,6 +87,23 @@ spec:
               components:
                 additionalProperties:
                   properties:
+                    clickHouseStats:
+                      items:
+                        properties:
+                          finishTime:
+                            format: date-time
+                            type: string
+                          host:
+                            type: string
+                          id:
+                            type: string
+                          startTime:
+                            format: date-time
+                            type: string
+                          status:
+                            type: string
+                        type: object
+                      type: array
                     driver:
                       enum:
                       - Restic
@@ -94,6 +111,8 @@ spec:
                       - VolumeSnapshotter
                       - Solr
                       - Medusa
+                      - ClickHouseBackup
+                      - Neo4jAdmin
                       type: string
                     duration:
                       type: string
@@ -113,6 +132,20 @@ spec:
                               error:
                                 type: string
                               start:
+                                type: string
+                            type: object
+                          type: array
+                        lastLogRetentionStats:
+                          items:
+                            properties:
+                              deletedLogCount:
+                                format: int64
+                                type: integer
+                              error:
+                                type: string
+                              lastExecutionTime:
+                                type: string
+                              retentionPeriodApplied:
                                 type: string
                             type: object
                           type: array
@@ -153,6 +186,33 @@ spec:
                         status:
                           type: string
                       type: object
+                    neo4jStats:
+                      items:
+                        properties:
+                          compressed:
+                            type: boolean
+                          database:
+                            type: string
+                          databaseID:
+                            type: string
+                          file:
+                            type: string
+                          full:
+                            type: boolean
+                          highestTX:
+                            format: int64
+                            type: integer
+                          lowestTX:
+                            format: int64
+                            type: integer
+                          recovered:
+                            type: boolean
+                          storeIDHash:
+                            type: string
+                          time:
+                            type: string
+                        type: object
+                      type: array
                     path:
                       type: string
                     phase:
@@ -165,20 +225,43 @@ spec:
                     resticStats:
                       items:
                         properties:
-                          endTime:
-                            format: date-time
-                            type: string
-                          hostPath:
-                            type: string
-                          id:
-                            type: string
-                          size:
-                            type: string
-                          startTime:
-                            format: date-time
-                            type: string
-                          uploaded:
-                            type: string
+                          progress:
+                            properties:
+                              backupDone:
+                                type: string
+                              filesDone:
+                                format: int64
+                                type: integer
+                              percentDone:
+                                type: string
+                              secondsElapsed:
+                                format: int64
+                                type: integer
+                              speed:
+                                type: string
+                              total:
+                                type: string
+                              totalFiles:
+                                format: int64
+                                type: integer
+                            type: object
+                          summary:
+                            properties:
+                              endTime:
+                                format: date-time
+                                type: string
+                              hostPath:
+                                type: string
+                              id:
+                                type: string
+                              size:
+                                type: string
+                              startTime:
+                                format: date-time
+                                type: string
+                              uploaded:
+                                type: string
+                            type: object
                         type: object
                       type: array
                     size:

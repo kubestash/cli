@@ -18,7 +18,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
 const (
@@ -52,30 +51,40 @@ type KafkaVersion struct {
 type KafkaVersionSpec struct {
 	// Version
 	Version string `json:"version"`
+
+	// EndOfLife refers if this version reached into its end of the life or not, based on https://endoflife.date/
+	// +optional
+	EndOfLife bool `json:"endOfLife"`
+
 	// Init Container Image
 	// From kafka version 4.0.0, we have introduced an init container to handle the database initialization.
 	// +optional
 	InitContainer KafkaInitContainer `json:"initContainer,omitempty"`
+
 	// Database Image
 	DB KafkaVersionDatabase `json:"db"`
+
 	// Connect Image
 	ConnectCluster ConnectClusterVersion `json:"connectCluster"`
+
 	// Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.
 	// +optional
 	Deprecated bool `json:"deprecated,omitempty"`
+
 	// Database Image
 	CruiseControl CruiseControlVersionDatabase `json:"cruiseControl"`
+
 	// PSP names
 	// +optional
 	PodSecurityPolicies KafkaVersionPodSecurityPolicy `json:"podSecurityPolicies"`
-	// Stash defines backup and restore task definitions.
-	// +optional
-	Stash appcat.StashAddonSpec `json:"stash,omitempty"`
+
 	// update constraints
 	UpdateConstraints UpdateConstraints `json:"updateConstraints,omitempty"`
+
 	// SecurityContext is for the additional config for the DB container
 	// +optional
 	SecurityContext SecurityContext `json:"securityContext"`
+
 	// +optional
 	UI []ChartInfo `json:"ui,omitempty"`
 }

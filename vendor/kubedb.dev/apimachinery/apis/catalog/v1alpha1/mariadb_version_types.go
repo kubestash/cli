@@ -52,6 +52,11 @@ type MariaDBVersion struct {
 type MariaDBVersionSpec struct {
 	// Version
 	Version string `json:"version"`
+
+	// EndOfLife refers if this version reached into its end of the life or not, based on https://endoflife.date/
+	// +optional
+	EndOfLife bool `json:"endOfLife"`
+
 	// Database Image
 	DB MariaDBVersionDatabase `json:"db"`
 	// Maxscale Image
@@ -60,7 +65,7 @@ type MariaDBVersionSpec struct {
 	// Exporter Image
 	Exporter MariaDBVersionExporter `json:"exporter"`
 	// Coordinator Image
-	Coordinator MariaDBVersionCoordinator `json:"coordinator,omitempty"`
+	Coordinator MariaDBVersionCoordinator `json:"coordinator"`
 	// Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.
 	// +optional
 	Deprecated bool `json:"deprecated,omitempty"`
