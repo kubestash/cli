@@ -21,6 +21,7 @@ import (
 	v "gomodules.xyz/x/version"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
+	"kubestash.dev/cli/pkg/convert"
 )
 
 func NewRootCmd() *cobra.Command {
@@ -54,7 +55,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewCmdDebug(f))
 	rootCmd.AddCommand(NewCmdClone(f))
 	rootCmd.AddCommand(NewCmdKey(f))
-	rootCmd.AddCommand(NewCmdConvert())
+	rootCmd.AddCommand(convert.NewCmdConvert(f))
 
 	return rootCmd
 }
