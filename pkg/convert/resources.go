@@ -14,24 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package pkg
+package convert
 
 import (
 	"encoding/json"
-	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	"github.com/spf13/cobra"
-	"gomodules.xyz/flags"
 	"gomodules.xyz/pointer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -41,45 +36,7 @@ import (
 	"kubestash.dev/apimachinery/apis"
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
-	"sigs.k8s.io/yaml"
 )
-
-var sourceDir, targetDir string
-
-func NewCmdConvert() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:               "convert",
-		Short:             `Convert Stash resources yaml to Kubestash resources yaml`,
-		DisableAutoGenTag: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			flags.EnsureRequiredFlags(cmd, "source-dir", "target-dir")
-			if err := parser.ProcessPath(sourceDir, convertResources); err != nil {
-				return err
-			}
-			klog.Infof("Resources convertion completed successfully")
-			return nil
-		},
-	}
-	cmd.Flags().StringVar(&sourceDir, "source-dir", sourceDir, "Source directory.")
-	cmd.Flags().StringVar(&targetDir, "target-dir", targetDir, "Target directory.")
-	return cmd
-}
-
-func convertResources(ri parser.ResourceInfo) error {
-	klog.Infof("Converting file: %s", ri.Filename)
-	switch ri.Object.GetKind() {
-	case v1alpha1.ResourceKindRepository:
-		return convertRepository(ri)
-	case v1beta1.ResourceKindBackupConfiguration:
-		return convertBackupConfiguration(ri)
-	case v1beta1.ResourceKindBackupBlueprint:
-		return convertBackupBlueprint(ri)
-	case v1beta1.ResourceKindRestoreSession:
-		return convertRestoreSession(ri)
-	default:
-		return nil
-	}
-}
 
 func convertRepository(ri parser.ResourceInfo) error {
 	repo := &v1alpha1.Repository{}
@@ -794,58 +751,5 @@ func configureRestoreHooks(rs *v1beta1.RestoreSession) *coreapi.RestoreHooks {
 	return &coreapi.RestoreHooks{
 		PreRestore:  preHook,
 		PostRestore: postHook,
-	}
-}
-
-func setValidValue(fieldName string) string {
-	return fmt.Sprintf("### Set Valid %s ###", fieldName)
-}
-
-func writeToTargetDir(srcPath string, addSeparator bool, obj any) error {
-	targetPath := strings.ReplaceAll(srcPath, sourceDir, targetDir)
-	if err := os.MkdirAll(filepath.Dir(targetPath), os.ModePerm); err != nil {
-		return err
-	}
-	klog.Infof("Writing %s to %s", srcPath, targetPath)
-
-	if addSeparator {
-		if err := addSeparatorToTargetFile(targetPath); err != nil {
-			return err
-		}
-	}
-
-	marshalled, err := yaml.Marshal(obj)
-	if err != nil {
-		return err
-	}
-
-	file, err := os.OpenFile(targetPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	defer closeFileWithLogError(file)
-	if _, err := file.Write(marshalled); err != nil {
-		return err
-	}
-	return nil
-}
-
-func addSeparatorToTargetFile(filePath string) error {
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	defer closeFileWithLogError(file)
-	separator := "\n---\n\n"
-	if _, err := file.WriteString(separator); err != nil {
-		return err
-	}
-	return nil
-}
-
-func closeFileWithLogError(file *os.File) {
-	err := file.Close()
-	if err != nil {
-		klog.Errorf("Error closing file: %v", err)
 	}
 }
