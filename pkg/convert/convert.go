@@ -86,7 +86,7 @@ func NewCmdConvert(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 }
 
 func convertResources(ri parser.ResourceInfo) error {
-	klog.Infof("Converting file: %s", ri.Filename)
+	klog.V(1).Infof("Converting file: %s", ri.Filename)
 	switch ri.Object.GetKind() {
 	case v1alpha1.ResourceKindRepository:
 		return convertRepository(ri)
@@ -114,7 +114,7 @@ func writeToTargetDirWithComments(srcPath string, obj any, comments map[string]s
 	if err := os.MkdirAll(filepath.Dir(targetPath), os.ModePerm); err != nil {
 		return err
 	}
-	klog.Infof("Writing %s to %s", srcPath, targetPath)
+	klog.V(1).Infof("Writing %s to %s", srcPath, targetPath)
 
 	hasContent, err := targetFileHasContent(targetPath)
 	if err != nil {
