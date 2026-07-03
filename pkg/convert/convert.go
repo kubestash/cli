@@ -31,12 +31,21 @@ import (
 	"k8s.io/klog/v2"
 	cu "kmodules.xyz/client-go/client"
 	"kmodules.xyz/client-go/tools/parser"
+	appcatalogapi "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
-var sourceDir, targetDir string
+var (
+	sourceDir, targetDir string
+
+	encryptionSecretName      string
+	encryptionSecretNamespace string
+
+	klient client.Client
+)
 
 func NewCmdConvert(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
 	cmd := &cobra.Command{
@@ -50,12 +59,13 @@ func NewCmdConvert(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 			if err != nil {
 				return err
 			}
-			_, err = cu.NewUncachedClient(
+			klient, err = cu.NewUncachedClient(
 				cfg,
 				v1alpha1.AddToScheme,
 				v1beta1.AddToScheme,
 				storageapi.AddToScheme,
 				coreapi.AddToScheme,
+				appcatalogapi.AddToScheme,
 			)
 			if err != nil {
 				return err
@@ -70,11 +80,13 @@ func NewCmdConvert(clientGetter genericclioptions.RESTClientGetter) *cobra.Comma
 	}
 	cmd.Flags().StringVar(&sourceDir, "source-dir", sourceDir, "Source directory.")
 	cmd.Flags().StringVar(&targetDir, "target-dir", targetDir, "Target directory.")
+	cmd.Flags().StringVar(&encryptionSecretName, "encryption-secret-name", encryptionSecretName, "Name of the encryption Secret to reference in the converted resources.")
+	cmd.Flags().StringVar(&encryptionSecretNamespace, "encryption-secret-namespace", encryptionSecretNamespace, "Namespace of the encryption Secret to reference in the converted resources.")
 	return cmd
 }
 
 func convertResources(ri parser.ResourceInfo) error {
-	klog.Infof("Converting file: %s", ri.Filename)
+	klog.V(1).Infof("Converting file: %s", ri.Filename)
 	switch ri.Object.GetKind() {
 	case v1alpha1.ResourceKindRepository:
 		return convertRepository(ri)
@@ -93,14 +105,22 @@ func setValidValue(fieldName string) string {
 	return fmt.Sprintf("### Set Valid %s ###", fieldName)
 }
 
-func writeToTargetDir(srcPath string, addSeparator bool, obj any) error {
+func writeToTargetDir(srcPath string, obj any) error {
+	return writeToTargetDirWithComments(srcPath, obj, nil)
+}
+
+func writeToTargetDirWithComments(srcPath string, obj any, comments map[string]string) error {
 	targetPath := strings.ReplaceAll(srcPath, sourceDir, targetDir)
 	if err := os.MkdirAll(filepath.Dir(targetPath), os.ModePerm); err != nil {
 		return err
 	}
-	klog.Infof("Writing %s to %s", srcPath, targetPath)
+	klog.V(1).Infof("Writing %s to %s", srcPath, targetPath)
 
-	if addSeparator {
+	hasContent, err := targetFileHasContent(targetPath)
+	if err != nil {
+		return err
+	}
+	if hasContent {
 		if err := addSeparatorToTargetFile(targetPath); err != nil {
 			return err
 		}
@@ -110,6 +130,7 @@ func writeToTargetDir(srcPath string, addSeparator bool, obj any) error {
 	if err != nil {
 		return err
 	}
+	marshalled = annotateFieldComments(marshalled, comments)
 
 	file, err := os.OpenFile(targetPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	if err != nil {
@@ -120,6 +141,39 @@ func writeToTargetDir(srcPath string, addSeparator bool, obj any) error {
 		return err
 	}
 	return nil
+}
+
+// annotateFieldComments appends a trailing YAML line-comment to every line whose key
+// matches an entry in comments (keyed by the field's YAML key, e.g. "directory").
+func annotateFieldComments(data []byte, comments map[string]string) []byte {
+	if len(comments) == 0 {
+		return data
+	}
+	lines := strings.Split(string(data), "\n")
+	for i, line := range lines {
+		if strings.Contains(line, " #") {
+			continue
+		}
+		trimmed := strings.TrimSpace(line)
+		for key, comment := range comments {
+			if strings.HasPrefix(trimmed, key+":") {
+				lines[i] = strings.TrimRight(line, " ") + " # " + comment
+				break
+			}
+		}
+	}
+	return []byte(strings.Join(lines, "\n"))
+}
+
+func targetFileHasContent(filePath string) (bool, error) {
+	info, err := os.Stat(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return info.Size() > 0, nil
 }
 
 func addSeparatorToTargetFile(filePath string) error {

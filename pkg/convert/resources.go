@@ -17,6 +17,7 @@ limitations under the License.
 package convert
 
 import (
+	"context"
 	"encoding/json"
 	"path/filepath"
 	"strings"
@@ -25,18 +26,113 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	"gomodules.xyz/pointer"
+	core "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/parser"
+	appcatalogapi "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	prober "kmodules.xyz/prober/api/v1"
+	catalog "kubedb.dev/apimachinery/apis/catalog"
 	"kubestash.dev/apimachinery/apis"
 	coreapi "kubestash.dev/apimachinery/apis/core/v1alpha1"
 	storageapi "kubestash.dev/apimachinery/apis/storage/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// resticPasswordKey is the data key holding the encryption password in a Stash
+// storage Secret; the converted KubeStash encryption Secret carries only this key.
+const resticPasswordKey = "RESTIC_PASSWORD"
+
+// resolvedTarget holds values looked up from the cluster for an AppBinding target.
+type resolvedTarget struct {
+	target    *kmapi.TypedObjectReference // from AppBinding.spec.appRef
+	addonName string                      // from <Kind>Version.spec.archiver.addon.name
+}
+
+// resolveAppBindingTarget resolves a Stash AppBinding target into the real KubeDB
+// target and its KubeStash addon by querying the cluster.
+//
+// It returns (nil, nil) when the cluster is unreachable so callers fall back to the
+// existing placeholder behaviour. It returns an error only when the cluster is
+// reachable but the referenced AppBinding/version genuinely does not exist.
+func resolveAppBindingTarget(ref v1beta1.TargetRef, defaultNS string) (*resolvedTarget, error) {
+	ns := ref.Namespace
+	if ns == "" {
+		ns = defaultNS
+	}
+
+	ab := &appcatalogapi.AppBinding{}
+	key := client.ObjectKey{Name: ref.Name, Namespace: ns}
+	if err := klient.Get(context.Background(), key, ab); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, err
+		}
+		klog.Warningf("Cluster unreachable while resolving AppBinding %s/%s, keeping placeholders. Reason: %v", ns, ref.Name, err)
+		return nil, nil
+	}
+
+	if ab.Spec.AppRef == nil {
+		klog.Warningf("AppBinding %s/%s has no spec.appRef, keeping placeholders.", ns, ref.Name)
+		return nil, nil
+	}
+
+	target := &kmapi.TypedObjectReference{
+		APIGroup:  ab.Spec.AppRef.APIGroup,
+		Kind:      ab.Spec.AppRef.Kind,
+		Name:      ab.Spec.AppRef.Name,
+		Namespace: ab.Spec.AppRef.Namespace,
+	}
+	if target.Namespace == "" {
+		target.Namespace = ab.Namespace
+	}
+
+	addonName, err := resolveAddonName(ab)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resolvedTarget{target: target, addonName: addonName}, nil
+}
+
+// resolveAddonName derives the KubeStash addon name for an AppBinding. It prefers the
+// authoritative spec.archiver.addon.name on the KubeDB catalog version object, falling
+// back to the "<kind>-addon" convention.
+func resolveAddonName(ab *appcatalogapi.AppBinding) (string, error) {
+	fallback := strings.ToLower(ab.Spec.AppRef.Kind) + "-addon"
+
+	if ab.Spec.Version == "" {
+		return fallback, nil
+	}
+
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   catalog.GroupName,
+		Version: "v1alpha1",
+		Kind:    ab.Spec.AppRef.Kind + "Version",
+	})
+	key := client.ObjectKey{Name: ab.Spec.Version}
+	if err := klient.Get(context.Background(), key, u); err != nil {
+		if apierrors.IsNotFound(err) {
+			return "", err
+		}
+		klog.Warningf("Cluster unreachable while resolving %sVersion %q, using %q. Reason: %v", ab.Spec.AppRef.Kind, ab.Spec.Version, fallback, err)
+		return fallback, nil
+	}
+
+	name, found, err := unstructured.NestedString(u.Object, "spec", "archiver", "addon", "name")
+	if err != nil || !found || name == "" {
+		return fallback, nil
+	}
+	return name, nil
+}
 
 func convertRepository(ri parser.ResourceInfo) error {
 	repo := &v1alpha1.Repository{}
@@ -44,7 +140,72 @@ func convertRepository(ri parser.ResourceInfo) error {
 		return err
 	}
 	bs := createBackupStorage(repo)
-	return writeToTargetDir(ri.Filename, false, bs)
+	if err := writeToTargetDir(ri.Filename, bs); err != nil {
+		return err
+	}
+
+	if secret := buildEncryptionSecret(repo); secret != nil {
+		return writeToTargetDir(ri.Filename, secret)
+	}
+	return nil
+}
+
+// buildEncryptionSecret returns an encryption Secret carrying only the RESTIC_PASSWORD
+// copied from the Repository's storage Secret. It returns nil when the user supplies
+// their own encryption Secret via flags, or when the RESTIC_PASSWORD cannot be read
+// from the cluster (unreachable / missing / key absent) so callers keep placeholders.
+func buildEncryptionSecret(repo *v1alpha1.Repository) *core.Secret {
+	if encryptionSecretName != "" || encryptionSecretNamespace != "" {
+		return nil
+	}
+	password, ok := resticPasswordFromStorageSecret(repo.Spec.Backend.StorageSecretName, repo.Namespace)
+	if !ok {
+		return nil
+	}
+	return &core.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: core.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      encryptionSecretNameFor(repo.Name),
+			Namespace: repo.Namespace,
+		},
+		Type: core.SecretTypeOpaque,
+		Data: map[string][]byte{
+			resticPasswordKey: password,
+		},
+	}
+}
+
+// encryptionSecretNameFor is the name of the encryption Secret generated for a Repository.
+func encryptionSecretNameFor(repoName string) string {
+	return repoName + "-encryption-secret"
+}
+
+// resticPasswordFromStorageSecret reads RESTIC_PASSWORD from a Stash storage Secret.
+// It soft-fails (returns ok=false, logs) when the cluster is unreachable, the Secret
+// is missing, or the key is absent, matching resolveAppBindingTarget's placeholder style.
+func resticPasswordFromStorageSecret(secretName, namespace string) ([]byte, bool) {
+	if secretName == "" {
+		return nil, false
+	}
+	secret := &core.Secret{}
+	key := client.ObjectKey{Name: secretName, Namespace: namespace}
+	if err := klient.Get(context.Background(), key, secret); err != nil {
+		if apierrors.IsNotFound(err) {
+			klog.Warningf("Storage Secret %s/%s not found; keeping encryption Secret placeholders.", namespace, secretName)
+		} else {
+			klog.Warningf("Cluster unreachable while reading Storage Secret %s/%s; keeping encryption Secret placeholders. Reason: %v", namespace, secretName, err)
+		}
+		return nil, false
+	}
+	password, ok := secret.Data[resticPasswordKey]
+	if !ok || len(password) == 0 {
+		klog.Warningf("Storage Secret %s/%s has no %s; keeping encryption Secret placeholders.", namespace, secretName, resticPasswordKey)
+		return nil, false
+	}
+	return password, true
 }
 
 func createBackupStorage(repo *v1alpha1.Repository) *storageapi.BackupStorage {
@@ -120,8 +281,23 @@ func convertBackupConfiguration(ri parser.ResourceInfo) error {
 		return err
 	}
 
-	newBC := createBackupConfiguration(oldBC)
-	if err := writeToTargetDir(ri.Filename, false, newBC); err != nil {
+	var rt *resolvedTarget
+	if oldBC.Spec.Target != nil && oldBC.Spec.Target.Ref.Kind == appcatalogapi.ResourceKindApp {
+		var err error
+		rt, err = resolveAppBindingTarget(oldBC.Spec.Target.Ref, oldBC.Namespace)
+		if err != nil {
+			return err
+		}
+	}
+
+	repoNS := oldBC.Spec.Repository.Namespace
+	if repoNS == "" {
+		repoNS = oldBC.Namespace
+	}
+	encRef, encResolved := encryptionSecretRef(oldBC.Spec.Repository.Name, repoNS)
+
+	newBC := createBackupConfiguration(oldBC, rt, encRef)
+	if err := writeToTargetDirWithComments(ri.Filename, newBC, repositoryComments(rt, encResolved)); err != nil {
 		return err
 	}
 
@@ -131,7 +307,7 @@ func convertBackupConfiguration(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBC.Name, "prebackup", "hook"),
 				Namespace: oldBC.Namespace,
 			}, oldBC.Spec.Hooks.PreBackup)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
@@ -141,25 +317,21 @@ func convertBackupConfiguration(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBC.Name, "postbackup", "hook"),
 				Namespace: oldBC.Namespace,
 			}, oldBC.Spec.Hooks.PostBackup.Handler)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
 	}
 
-	ns := oldBC.Spec.Repository.Namespace
-	if ns == "" {
-		ns = oldBC.Namespace
-	}
-	rp := createRetentionPolicy(oldBC.Spec.RetentionPolicy, ns)
-	if err := writeToTargetDir(ri.Filename, true, rp); err != nil {
+	rp := createRetentionPolicy(oldBC.Spec.RetentionPolicy, repoNS)
+	if err := writeToTargetDir(ri.Filename, rp); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func createBackupConfiguration(oldBC *v1beta1.BackupConfiguration) *coreapi.BackupConfiguration {
+func createBackupConfiguration(oldBC *v1beta1.BackupConfiguration, rt *resolvedTarget, encRef *kmapi.ObjectReference) *coreapi.BackupConfiguration {
 	var ref v1beta1.TargetRef
 	if oldBC.Spec.Target != nil {
 		ref = v1beta1.TargetRef{
@@ -180,9 +352,9 @@ func createBackupConfiguration(oldBC *v1beta1.BackupConfiguration) *coreapi.Back
 		},
 		Spec: coreapi.BackupConfigurationSpec{
 			Paused:   oldBC.Spec.Paused,
-			Target:   configureTarget(oldBC.Namespace, ref),
+			Target:   configureTarget(oldBC.Namespace, ref, rt),
 			Backends: []coreapi.BackendReference{configureBackend(oldBC)},
-			Sessions: []coreapi.Session{configureSession(oldBC)},
+			Sessions: []coreapi.Session{configureSession(oldBC, rt, encRef)},
 		},
 	}
 }
@@ -194,7 +366,7 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 	}
 
 	newBC := createBackupBlueprint(oldBB)
-	if err := writeToTargetDir(ri.Filename, false, newBC); err != nil {
+	if err := writeToTargetDir(ri.Filename, newBC); err != nil {
 		return err
 	}
 
@@ -204,7 +376,7 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBB.Name, "prebackup", "hook"),
 				Namespace: oldBB.Namespace,
 			}, oldBB.Spec.Hooks.PreBackup)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
@@ -214,7 +386,7 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBB.Name, "postbackup", "hook"),
 				Namespace: oldBB.Namespace,
 			}, oldBB.Spec.Hooks.PostBackup.Handler)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
@@ -225,7 +397,7 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 		ns = oldBB.Namespace
 	}
 	rp := createRetentionPolicy(oldBB.Spec.RetentionPolicy, ns)
-	if err := writeToTargetDir(ri.Filename, true, rp); err != nil {
+	if err := writeToTargetDir(ri.Filename, rp); err != nil {
 		return err
 	}
 
@@ -337,7 +509,10 @@ func configureUsagePolicy(policy *v1alpha1.UsagePolicy) *apis.UsagePolicy {
 	}
 }
 
-func configureTarget(namespace string, ref v1beta1.TargetRef) *kmapi.TypedObjectReference {
+func configureTarget(namespace string, ref v1beta1.TargetRef, rt *resolvedTarget) *kmapi.TypedObjectReference {
+	if rt != nil {
+		return rt.target
+	}
 	if isTargetWorkload(ref) {
 		if ref.Namespace != "" {
 			namespace = ref.Namespace
@@ -402,7 +577,7 @@ func configureBackendFromBlueprint(bb *v1beta1.BackupBlueprint) coreapi.BackendR
 	}
 }
 
-func configureSession(bc *v1beta1.BackupConfiguration) coreapi.Session {
+func configureSession(bc *v1beta1.BackupConfiguration, rt *resolvedTarget, encRef *kmapi.ObjectReference) coreapi.Session {
 	return coreapi.Session{
 		SessionConfig: &coreapi.SessionConfig{
 			Name:                "backup",
@@ -419,17 +594,83 @@ func configureSession(bc *v1beta1.BackupConfiguration) coreapi.Session {
 		},
 		Repositories: []coreapi.RepositoryInfo{
 			{
-				Name:      bc.Spec.Repository.Name,
-				Backend:   "storage",
-				Directory: setValidValue("Directory"),
-				EncryptionSecret: &kmapi.ObjectReference{
-					Name:      setValidValue("Name"),
-					Namespace: setValidValue("Namespace"),
-				},
+				Name:             bc.Spec.Repository.Name,
+				Backend:          "storage",
+				Directory:        repositoryDirectory(rt),
+				EncryptionSecret: encRef,
 			},
 		},
-		Addon: configureBackupAddonInfo(bc),
+		Addon: configureBackupAddonInfo(bc, rt),
 	}
+}
+
+// encryptionSecretRef returns the encryption Secret reference for a session together
+// with whether it fully resolved (no placeholder). The CLI flags win when set; when
+// both are empty it references the Secret generated from the Repository's storage
+// Secret (see buildEncryptionSecret), otherwise it falls back to placeholders.
+func encryptionSecretRef(repoName, repoNamespace string) (*kmapi.ObjectReference, bool) {
+	if encryptionSecretName != "" || encryptionSecretNamespace != "" {
+		name := encryptionSecretName
+		if name == "" {
+			name = setValidValue("Name")
+		}
+		namespace := encryptionSecretNamespace
+		if namespace == "" {
+			namespace = setValidValue("Namespace")
+		}
+		resolved := encryptionSecretName != "" && encryptionSecretNamespace != ""
+		return &kmapi.ObjectReference{Name: name, Namespace: namespace}, resolved
+	}
+
+	if generatedEncryptionSecretExists(repoName, repoNamespace) {
+		return &kmapi.ObjectReference{
+			Name:      encryptionSecretNameFor(repoName),
+			Namespace: repoNamespace,
+		}, true
+	}
+	return &kmapi.ObjectReference{
+		Name:      setValidValue("Name"),
+		Namespace: setValidValue("Namespace"),
+	}, false
+}
+
+// generatedEncryptionSecretExists reports whether convertRepository would have
+// generated an encryption Secret for the given Stash Repository, i.e. its storage
+// Secret carries a RESTIC_PASSWORD. The Repository is looked up from the cluster so
+// the session reference stays consistent with generation regardless of the order in
+// which resources are processed.
+func generatedEncryptionSecretExists(repoName, repoNamespace string) bool {
+	repo := &v1alpha1.Repository{}
+	key := client.ObjectKey{Name: repoName, Namespace: repoNamespace}
+	if err := klient.Get(context.Background(), key, repo); err != nil {
+		if !apierrors.IsNotFound(err) {
+			klog.Warningf("Cluster unreachable while reading Repository %s/%s; keeping encryption Secret placeholders. Reason: %v", repoNamespace, repoName, err)
+		}
+		return false
+	}
+	_, ok := resticPasswordFromStorageSecret(repo.Spec.Backend.StorageSecretName, repo.Namespace)
+	return ok
+}
+
+// repositoryDirectory derives the repository directory from the resolved target,
+// falling back to a placeholder when the target could not be resolved.
+func repositoryDirectory(rt *resolvedTarget) string {
+	if rt != nil {
+		return filepath.Join(rt.target.Namespace, rt.target.Name)
+	}
+	return setValidValue("Directory")
+}
+
+// repositoryComments builds the review line-comments to attach to the generated YAML.
+func repositoryComments(rt *resolvedTarget, encResolved bool) map[string]string {
+	comments := map[string]string{}
+	if rt != nil {
+		comments["directory"] = "review: <namespace>/<name> of the target database"
+	}
+	if !encResolved {
+		comments["encryptionSecret"] = "review: set via --encryption-secret-name / --encryption-secret-namespace"
+	}
+	return comments
 }
 
 func configureSessionFromBlueprint(bb *v1beta1.BackupBlueprint) coreapi.Session {
@@ -506,11 +747,23 @@ func configureHookExecutionPolicy(policy v1beta1.HookExecutionPolicy) coreapi.Ho
 	}
 }
 
-func configureBackupAddonInfo(bc *v1beta1.BackupConfiguration) *coreapi.AddonInfo {
+func configureBackupAddonInfo(bc *v1beta1.BackupConfiguration, rt *resolvedTarget) *coreapi.AddonInfo {
 	var podTemplateSpec *ofst.PodTemplateSpec
 	if bc.Spec.RuntimeSettings.Pod != nil {
 		podTemplateSpec = &ofst.PodTemplateSpec{
 			Spec: configurePodRuntimeSettings(bc.Spec.RuntimeSettings.Pod),
+		}
+	}
+	if rt != nil {
+		return &coreapi.AddonInfo{
+			Name: rt.addonName,
+			Tasks: []coreapi.TaskReference{
+				{
+					Name: apis.LogicalBackup,
+				},
+			},
+			ContainerRuntimeSettings: bc.Spec.RuntimeSettings.Container,
+			JobTemplate:              podTemplateSpec,
 		}
 	}
 	if bc.Spec.Target != nil && isTargetWorkload(bc.Spec.Target.Ref) {
@@ -623,8 +876,23 @@ func convertRestoreSession(ri parser.ResourceInfo) error {
 		return err
 	}
 
-	newRS := createRestoreSession(oldRS)
-	if err := writeToTargetDir(ri.Filename, false, newRS); err != nil {
+	var rt *resolvedTarget
+	if oldRS.Spec.Target != nil && oldRS.Spec.Target.Ref.Kind == appcatalogapi.ResourceKindApp {
+		var err error
+		rt, err = resolveAppBindingTarget(oldRS.Spec.Target.Ref, oldRS.Namespace)
+		if err != nil {
+			return err
+		}
+	}
+
+	repoNS := oldRS.Spec.Repository.Namespace
+	if repoNS == "" {
+		repoNS = oldRS.Namespace
+	}
+	encRef, encResolved := encryptionSecretRef(oldRS.Spec.Repository.Name, repoNS)
+
+	newRS := createRestoreSession(oldRS, rt, encRef)
+	if err := writeToTargetDirWithComments(ri.Filename, newRS, restoreSessionComments(encResolved)); err != nil {
 		return err
 	}
 
@@ -634,7 +902,7 @@ func convertRestoreSession(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldRS.Name, "prerestore", "hook"),
 				Namespace: oldRS.Namespace,
 			}, oldRS.Spec.Hooks.PreRestore)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
@@ -644,7 +912,7 @@ func convertRestoreSession(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldRS.Name, "postrestore", "hook"),
 				Namespace: oldRS.Namespace,
 			}, oldRS.Spec.Hooks.PostRestore.Handler)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
@@ -652,7 +920,7 @@ func convertRestoreSession(ri parser.ResourceInfo) error {
 	return nil
 }
 
-func createRestoreSession(oldRS *v1beta1.RestoreSession) *coreapi.RestoreSession {
+func createRestoreSession(oldRS *v1beta1.RestoreSession, rt *resolvedTarget, encRef *kmapi.ObjectReference) *coreapi.RestoreSession {
 	namespace := oldRS.Namespace
 	if oldRS.Spec.Repository.Namespace != "" {
 		namespace = oldRS.Spec.Repository.Namespace
@@ -673,28 +941,48 @@ func createRestoreSession(oldRS *v1beta1.RestoreSession) *coreapi.RestoreSession
 			Namespace: oldRS.Namespace,
 		},
 		Spec: coreapi.RestoreSessionSpec{
-			Target: configureTarget(oldRS.Namespace, ref),
+			Target: configureTarget(oldRS.Namespace, ref, rt),
 			DataSource: &coreapi.RestoreDataSource{
-				Namespace:  namespace,
-				Repository: oldRS.Spec.Repository.Name,
-				Snapshot:   setValidValue("Snapshot"),
-				EncryptionSecret: &kmapi.ObjectReference{
-					Name:      setValidValue("Name"),
-					Namespace: setValidValue("Namespace"),
-				},
+				Namespace:        namespace,
+				Repository:       oldRS.Spec.Repository.Name,
+				Snapshot:         setValidValue("Snapshot"),
+				EncryptionSecret: encRef,
 			},
-			Addon:          configureRestoreAddonInfo(oldRS),
+			Addon:          configureRestoreAddonInfo(oldRS, rt),
 			RestoreTimeout: oldRS.Spec.TimeOut,
 			Hooks:          configureRestoreHooks(oldRS),
 		},
 	}
 }
 
-func configureRestoreAddonInfo(rs *v1beta1.RestoreSession) *coreapi.AddonInfo {
+// restoreSessionComments builds the review line-comments for a converted RestoreSession.
+func restoreSessionComments(encResolved bool) map[string]string {
+	comments := map[string]string{
+		"snapshot": "review: set the snapshot to restore (e.g. latest)",
+	}
+	if !encResolved {
+		comments["encryptionSecret"] = "review: set via --encryption-secret-name / --encryption-secret-namespace"
+	}
+	return comments
+}
+
+func configureRestoreAddonInfo(rs *v1beta1.RestoreSession, rt *resolvedTarget) *coreapi.AddonInfo {
 	var podTemplateSpec *ofst.PodTemplateSpec
 	if rs.Spec.RuntimeSettings.Pod != nil {
 		podTemplateSpec = &ofst.PodTemplateSpec{
 			Spec: configurePodRuntimeSettings(rs.Spec.RuntimeSettings.Pod),
+		}
+	}
+	if rt != nil {
+		return &coreapi.AddonInfo{
+			Name: rt.addonName,
+			Tasks: []coreapi.TaskReference{
+				{
+					Name: apis.LogicalBackupRestore,
+				},
+			},
+			ContainerRuntimeSettings: rs.Spec.RuntimeSettings.Container,
+			JobTemplate:              podTemplateSpec,
 		}
 	}
 	if rs.Spec.Target != nil && isTargetWorkload(rs.Spec.Target.Ref) {
