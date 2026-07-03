@@ -90,7 +90,7 @@ func NewCmdUnlockRepository(clientGetter genericclioptions.RESTClientGetter) *co
 			}
 
 			if backupStorage.Spec.Storage.Local != nil {
-				if !backupStorage.LocalNetworkVolume() {
+				if !backupStorage.LocalNetworkVolume() && !backupStorage.LocalBackendPVC() {
 					return fmt.Errorf("unsupported type of local backend provided")
 				}
 

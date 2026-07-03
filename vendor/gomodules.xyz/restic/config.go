@@ -18,6 +18,7 @@ package restic
 
 import (
 	"fmt"
+	"io"
 	"maps"
 	"os"
 	"path/filepath"
@@ -78,6 +79,7 @@ type DumpOptions struct {
 	Path               string
 	FileName           string // default "stdin"
 	StdoutPipeCommands []Command
+	StdoutWriter       io.Writer
 }
 
 type SetupOptions struct {

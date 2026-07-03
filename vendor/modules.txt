@@ -997,7 +997,7 @@ gomodules.xyz/mergo
 # gomodules.xyz/pointer v0.1.0
 ## explicit; go 1.15
 gomodules.xyz/pointer
-# gomodules.xyz/restic v0.3.0
+# gomodules.xyz/restic v0.4.0
 ## explicit; go 1.25.0
 gomodules.xyz/restic
 # gomodules.xyz/runtime v0.3.0
@@ -1880,7 +1880,7 @@ kubeops.dev/petset/crds
 kubeops.dev/sidekick/apis/apps
 kubeops.dev/sidekick/apis/apps/v1alpha1
 kubeops.dev/sidekick/crds
-# kubestash.dev/apimachinery v0.28.0
+# kubestash.dev/apimachinery v0.28.1-0.20260703092035-4f2609894b7a
 ## explicit; go 1.25.0
 kubestash.dev/apimachinery/apis
 kubestash.dev/apimachinery/apis/addons/v1alpha1
