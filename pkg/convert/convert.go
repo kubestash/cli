@@ -105,18 +105,22 @@ func setValidValue(fieldName string) string {
 	return fmt.Sprintf("### Set Valid %s ###", fieldName)
 }
 
-func writeToTargetDir(srcPath string, addSeparator bool, obj any) error {
-	return writeToTargetDirWithComments(srcPath, addSeparator, obj, nil)
+func writeToTargetDir(srcPath string, obj any) error {
+	return writeToTargetDirWithComments(srcPath, obj, nil)
 }
 
-func writeToTargetDirWithComments(srcPath string, addSeparator bool, obj any, comments map[string]string) error {
+func writeToTargetDirWithComments(srcPath string, obj any, comments map[string]string) error {
 	targetPath := strings.ReplaceAll(srcPath, sourceDir, targetDir)
 	if err := os.MkdirAll(filepath.Dir(targetPath), os.ModePerm); err != nil {
 		return err
 	}
 	klog.Infof("Writing %s to %s", srcPath, targetPath)
 
-	if addSeparator {
+	hasContent, err := targetFileHasContent(targetPath)
+	if err != nil {
+		return err
+	}
+	if hasContent {
 		if err := addSeparatorToTargetFile(targetPath); err != nil {
 			return err
 		}
@@ -159,6 +163,17 @@ func annotateFieldComments(data []byte, comments map[string]string) []byte {
 		}
 	}
 	return []byte(strings.Join(lines, "\n"))
+}
+
+func targetFileHasContent(filePath string) (bool, error) {
+	info, err := os.Stat(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return info.Size() > 0, nil
 }
 
 func addSeparatorToTargetFile(filePath string) error {

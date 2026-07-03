@@ -135,7 +135,7 @@ func convertRepository(ri parser.ResourceInfo) error {
 		return err
 	}
 	bs := createBackupStorage(repo)
-	return writeToTargetDir(ri.Filename, false, bs)
+	return writeToTargetDir(ri.Filename, bs)
 }
 
 func createBackupStorage(repo *v1alpha1.Repository) *storageapi.BackupStorage {
@@ -221,7 +221,7 @@ func convertBackupConfiguration(ri parser.ResourceInfo) error {
 	}
 
 	newBC := createBackupConfiguration(oldBC, rt)
-	if err := writeToTargetDirWithComments(ri.Filename, false, newBC, repositoryComments(rt)); err != nil {
+	if err := writeToTargetDirWithComments(ri.Filename, newBC, repositoryComments(rt)); err != nil {
 		return err
 	}
 
@@ -231,7 +231,7 @@ func convertBackupConfiguration(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBC.Name, "prebackup", "hook"),
 				Namespace: oldBC.Namespace,
 			}, oldBC.Spec.Hooks.PreBackup)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
@@ -241,7 +241,7 @@ func convertBackupConfiguration(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBC.Name, "postbackup", "hook"),
 				Namespace: oldBC.Namespace,
 			}, oldBC.Spec.Hooks.PostBackup.Handler)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
@@ -252,7 +252,7 @@ func convertBackupConfiguration(ri parser.ResourceInfo) error {
 		ns = oldBC.Namespace
 	}
 	rp := createRetentionPolicy(oldBC.Spec.RetentionPolicy, ns)
-	if err := writeToTargetDir(ri.Filename, true, rp); err != nil {
+	if err := writeToTargetDir(ri.Filename, rp); err != nil {
 		return err
 	}
 
@@ -294,7 +294,7 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 	}
 
 	newBC := createBackupBlueprint(oldBB)
-	if err := writeToTargetDir(ri.Filename, false, newBC); err != nil {
+	if err := writeToTargetDir(ri.Filename, newBC); err != nil {
 		return err
 	}
 
@@ -304,7 +304,7 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBB.Name, "prebackup", "hook"),
 				Namespace: oldBB.Namespace,
 			}, oldBB.Spec.Hooks.PreBackup)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
@@ -314,7 +314,7 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBB.Name, "postbackup", "hook"),
 				Namespace: oldBB.Namespace,
 			}, oldBB.Spec.Hooks.PostBackup.Handler)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
@@ -325,7 +325,7 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 		ns = oldBB.Namespace
 	}
 	rp := createRetentionPolicy(oldBB.Spec.RetentionPolicy, ns)
-	if err := writeToTargetDir(ri.Filename, true, rp); err != nil {
+	if err := writeToTargetDir(ri.Filename, rp); err != nil {
 		return err
 	}
 
@@ -780,7 +780,7 @@ func convertRestoreSession(ri parser.ResourceInfo) error {
 	}
 
 	newRS := createRestoreSession(oldRS, rt)
-	if err := writeToTargetDirWithComments(ri.Filename, false, newRS, restoreSessionComments()); err != nil {
+	if err := writeToTargetDirWithComments(ri.Filename, newRS, restoreSessionComments()); err != nil {
 		return err
 	}
 
@@ -790,7 +790,7 @@ func convertRestoreSession(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldRS.Name, "prerestore", "hook"),
 				Namespace: oldRS.Namespace,
 			}, oldRS.Spec.Hooks.PreRestore)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
@@ -800,7 +800,7 @@ func convertRestoreSession(ri parser.ResourceInfo) error {
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldRS.Name, "postrestore", "hook"),
 				Namespace: oldRS.Namespace,
 			}, oldRS.Spec.Hooks.PostRestore.Handler)
-			if err := writeToTargetDir(ri.Filename, true, ht); err != nil {
+			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
 			}
 		}
