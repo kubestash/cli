@@ -38,6 +38,7 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/parser"
 	appcatalogapi "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
+	store "kmodules.xyz/objectstore-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	prober "kmodules.xyz/prober/api/v1"
 	catalog "kubedb.dev/apimachinery/apis/catalog"
@@ -144,21 +145,21 @@ func convertRepository(ri parser.ResourceInfo) error {
 		return err
 	}
 
-	if secret := buildEncryptionSecret(repo); secret != nil {
+	if secret := buildEncryptionSecret(repo.Name, repo.Namespace, repo.Spec.Backend.StorageSecretName); secret != nil {
 		return writeToTargetDir(ri.Filename, secret)
 	}
 	return nil
 }
 
 // buildEncryptionSecret returns an encryption Secret carrying only the RESTIC_PASSWORD
-// copied from the Repository's storage Secret. It returns nil when the user supplies
-// their own encryption Secret via flags, or when the RESTIC_PASSWORD cannot be read
-// from the cluster (unreachable / missing / key absent) so callers keep placeholders.
-func buildEncryptionSecret(repo *v1alpha1.Repository) *core.Secret {
+// copied from the given storage Secret. It returns nil when the user supplies their own
+// encryption Secret via flags, or when the RESTIC_PASSWORD cannot be read from the
+// cluster (unreachable / missing / key absent) so callers keep placeholders.
+func buildEncryptionSecret(name, namespace, storageSecretName string) *core.Secret {
 	if encryptionSecretName != "" || encryptionSecretNamespace != "" {
 		return nil
 	}
-	password, ok := resticPasswordFromStorageSecret(repo.Spec.Backend.StorageSecretName, repo.Namespace)
+	password, ok := resticPasswordFromStorageSecret(storageSecretName, namespace)
 	if !ok {
 		return nil
 	}
@@ -168,8 +169,8 @@ func buildEncryptionSecret(repo *v1alpha1.Repository) *core.Secret {
 			APIVersion: core.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      encryptionSecretNameFor(repo.Name),
-			Namespace: repo.Namespace,
+			Name:      encryptionSecretNameFor(name),
+			Namespace: namespace,
 		},
 		Type: core.SecretTypeOpaque,
 		Data: map[string][]byte{
@@ -209,61 +210,68 @@ func resticPasswordFromStorageSecret(secretName, namespace string) ([]byte, bool
 }
 
 func createBackupStorage(repo *v1alpha1.Repository) *storageapi.BackupStorage {
+	return buildBackupStorage(repo.Name, repo.Namespace, repo.Spec)
+}
+
+// buildBackupStorage builds a KubeStash BackupStorage from a Stash RepositorySpec.
+// It is shared by the Repository converter and the BackupBlueprint converter, whose
+// spec inlines the same RepositorySpec (backend, wipeOut, usagePolicy).
+func buildBackupStorage(name, namespace string, spec v1alpha1.RepositorySpec) *storageapi.BackupStorage {
 	bs := &storageapi.BackupStorage{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       storageapi.ResourceKindBackupStorage,
 			APIVersion: storageapi.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      repo.Name,
-			Namespace: repo.Namespace,
+			Name:      name,
+			Namespace: namespace,
 		},
 	}
 
-	if repo.Spec.UsagePolicy != nil {
-		bs.Spec.UsagePolicy = configureUsagePolicy(repo.Spec.UsagePolicy)
+	if spec.UsagePolicy != nil {
+		bs.Spec.UsagePolicy = configureUsagePolicy(spec.UsagePolicy)
 	}
-	if repo.Spec.WipeOut {
+	if spec.WipeOut {
 		bs.Spec.DeletionPolicy = storageapi.DeletionPolicyWipeOut
 	}
 
-	configureStorageBackend(repo, bs)
+	configureStorageBackend(spec.Backend, bs)
 	return bs
 }
 
-func configureStorageBackend(repo *v1alpha1.Repository, bs *storageapi.BackupStorage) {
+func configureStorageBackend(backend store.Backend, bs *storageapi.BackupStorage) {
 	switch {
-	case repo.Spec.Backend.S3 != nil:
+	case backend.S3 != nil:
 		bs.Spec.Storage.Provider = storageapi.ProviderS3
 		bs.Spec.Storage.S3 = &storageapi.S3Spec{
-			Endpoint:   addConnectionScheme(repo.Spec.Backend.S3.Endpoint),
-			Bucket:     repo.Spec.Backend.S3.Bucket,
-			Prefix:     repo.Spec.Backend.S3.Prefix,
-			Region:     repo.Spec.Backend.S3.Region,
-			SecretName: repo.Spec.Backend.StorageSecretName,
+			Endpoint:   addConnectionScheme(backend.S3.Endpoint),
+			Bucket:     backend.S3.Bucket,
+			Prefix:     backend.S3.Prefix,
+			Region:     backend.S3.Region,
+			SecretName: backend.StorageSecretName,
 		}
-	case repo.Spec.Backend.GCS != nil:
+	case backend.GCS != nil:
 		bs.Spec.Storage.Provider = storageapi.ProviderGCS
 		bs.Spec.Storage.GCS = &storageapi.GCSSpec{
-			Bucket:         repo.Spec.Backend.GCS.Bucket,
-			Prefix:         repo.Spec.Backend.GCS.Prefix,
-			MaxConnections: repo.Spec.Backend.GCS.MaxConnections,
-			SecretName:     repo.Spec.Backend.StorageSecretName,
+			Bucket:         backend.GCS.Bucket,
+			Prefix:         backend.GCS.Prefix,
+			MaxConnections: backend.GCS.MaxConnections,
+			SecretName:     backend.StorageSecretName,
 		}
-	case repo.Spec.Backend.Azure != nil:
+	case backend.Azure != nil:
 		bs.Spec.Storage.Provider = storageapi.ProviderAzure
 		bs.Spec.Storage.Azure = &storageapi.AzureSpec{
-			Container:      repo.Spec.Backend.Azure.Container,
-			Prefix:         repo.Spec.Backend.Azure.Prefix,
-			MaxConnections: repo.Spec.Backend.Azure.MaxConnections,
+			Container:      backend.Azure.Container,
+			Prefix:         backend.Azure.Prefix,
+			MaxConnections: backend.Azure.MaxConnections,
 			StorageAccount: setValidValue("StorageAccount"),
 		}
-	case repo.Spec.Backend.Local != nil:
+	case backend.Local != nil:
 		bs.Spec.Storage.Provider = storageapi.ProviderLocal
 		bs.Spec.Storage.Local = &storageapi.LocalSpec{
 			// TODO: Configure VolumeSource
-			MountPath: repo.Spec.Backend.Local.MountPath,
-			SubPath:   repo.Spec.Backend.Local.SubPath,
+			MountPath: backend.Local.MountPath,
+			SubPath:   backend.Local.SubPath,
 		}
 	}
 }
@@ -297,7 +305,7 @@ func convertBackupConfiguration(ri parser.ResourceInfo) error {
 	encRef, encResolved := encryptionSecretRef(oldBC.Spec.Repository.Name, repoNS)
 
 	newBC := createBackupConfiguration(oldBC, rt, encRef)
-	if err := writeToTargetDirWithComments(ri.Filename, newBC, repositoryComments(rt, encResolved)); err != nil {
+	if err := writeToTargetDirWithComments(ri.Filename, newBC, repositoryComments(oldBC, rt, encResolved)); err != nil {
 		return err
 	}
 
@@ -365,16 +373,60 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 		return err
 	}
 
-	newBC := createBackupBlueprint(oldBB)
-	if err := writeToTargetDir(ri.Filename, newBC); err != nil {
+	// A KubeStash BackupBlueprint is namespaced, and it is co-located with the resources it
+	// references: the BackupBlueprint, BackupStorage, RetentionPolicy and encryption Secret
+	// all live in the same namespace. The old Stash BackupBlueprint is cluster-scoped, so we
+	// derive that namespace from repoNamespace/backupNamespace and otherwise leave a single
+	// placeholder for the operator to fill in consistently.
+	ns := oldBB.Spec.RepoNamespace
+	if ns == "" {
+		ns = oldBB.Spec.BackupNamespace
+	}
+	if ns == "" {
+		ns = oldBB.Namespace
+	}
+	if ns == "" {
+		ns = setValidValue("Namespace")
+	}
+
+	// The Stash backend prefix mixed a static root with a per-target templated path. In
+	// KubeStash the static root stays on the BackupStorage prefix, while the templated part
+	// moves to the repository directory (the only place KubeStash resolves ${var} per-target).
+	staticPrefix, templatedTail := splitPrefix(backendPrefix(oldBB.Spec.Backend))
+	directory := translateStashPlaceholders(templatedTail)
+
+	storageName := oldBB.Name + "-storage"
+	encRef, encResolved := blueprintEncryptionSecretRef(oldBB.Name, ns, oldBB.Spec.Backend.StorageSecretName)
+
+	newBB := createBackupBlueprint(oldBB, storageName, ns, directory, encRef)
+	if err := writeToTargetDirWithComments(ri.Filename, newBB, blueprintComments(encResolved)); err != nil {
 		return err
+	}
+
+	// BackupStorage (+ encryption Secret) generated from the blueprint's inline backend. The
+	// prefix is left as a review placeholder (operators set the real storage root) with the
+	// original Stash static prefix preserved as a trailing comment; the per-target templated
+	// path already moved to the repository directory.
+	storageSpec := oldBB.Spec.RepositorySpec
+	storageSpec.Backend = backendWithPrefix(storageSpec.Backend, setValidValue("Prefix"))
+	bs := buildBackupStorage(storageName, ns, storageSpec)
+	if bs.Spec.DeletionPolicy == "" {
+		bs.Spec.DeletionPolicy = storageapi.DeletionPolicyDelete
+	}
+	if err := writeToTargetDirWithComments(ri.Filename, bs, backupStorageComments(staticPrefix)); err != nil {
+		return err
+	}
+	if secret := buildEncryptionSecret(oldBB.Name, ns, oldBB.Spec.Backend.StorageSecretName); secret != nil {
+		if err := writeToTargetDir(ri.Filename, secret); err != nil {
+			return err
+		}
 	}
 
 	if oldBB.Spec.Hooks != nil {
 		if oldBB.Spec.Hooks.PreBackup != nil {
 			ht := createHookTemplate(kmapi.ObjectReference{
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBB.Name, "prebackup", "hook"),
-				Namespace: oldBB.Namespace,
+				Namespace: ns,
 			}, oldBB.Spec.Hooks.PreBackup)
 			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
@@ -384,7 +436,7 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 		if oldBB.Spec.Hooks.PostBackup != nil {
 			ht := createHookTemplate(kmapi.ObjectReference{
 				Name:      meta_util.ValidNameWithPrefixNSuffix(oldBB.Name, "postbackup", "hook"),
-				Namespace: oldBB.Namespace,
+				Namespace: ns,
 			}, oldBB.Spec.Hooks.PostBackup.Handler)
 			if err := writeToTargetDir(ri.Filename, ht); err != nil {
 				return err
@@ -392,10 +444,6 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 		}
 	}
 
-	ns := oldBB.Spec.RepoNamespace
-	if ns == "" {
-		ns = oldBB.Namespace
-	}
 	rp := createRetentionPolicy(oldBB.Spec.RetentionPolicy, ns)
 	if err := writeToTargetDir(ri.Filename, rp); err != nil {
 		return err
@@ -404,7 +452,23 @@ func convertBackupBlueprint(ri parser.ResourceInfo) error {
 	return nil
 }
 
-func createBackupBlueprint(oldBB *v1beta1.BackupBlueprint) *coreapi.BackupBlueprint {
+func createBackupBlueprint(oldBB *v1beta1.BackupBlueprint, storageName, namespace, directory string, encRef *kmapi.ObjectReference) *coreapi.BackupBlueprint {
+	spec := coreapi.BackupBlueprintSpec{
+		// Subjects is intentionally left unset: it is optional, and KubeStash auto-backup
+		// binds a blueprint to targets via blueprint.kubestash.com/* annotations on the
+		// target (not via a subject list). See blueprint-migration.md.
+		BackupConfigurationTemplate: &coreapi.BackupConfigurationTemplate{
+			// The generated BackupConfiguration is created in the target's namespace, so the
+			// template carries no namespace of its own. DeletionPolicy=OnDelete matches the
+			// KubeStash auto-backup convention (delete the BackupConfiguration with the target).
+			DeletionPolicy: coreapi.DeletionPolicyOnDelete,
+			Backends:       []coreapi.BackendReference{configureBackendFromBlueprint(oldBB, storageName, namespace)},
+			Sessions:       []coreapi.Session{configureSessionFromBlueprint(oldBB, namespace, directory, encRef)},
+		},
+	}
+	if oldBB.Spec.UsagePolicy != nil {
+		spec.UsagePolicy = configureUsagePolicy(oldBB.Spec.UsagePolicy)
+	}
 	return &coreapi.BackupBlueprint{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       coreapi.ResourceKindBackupBlueprint,
@@ -412,17 +476,61 @@ func createBackupBlueprint(oldBB *v1beta1.BackupBlueprint) *coreapi.BackupBluepr
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      oldBB.Name,
-			Namespace: oldBB.Namespace,
+			Namespace: namespace,
 		},
-		Spec: coreapi.BackupBlueprintSpec{
-			BackupConfigurationTemplate: &coreapi.BackupConfigurationTemplate{
-				Namespace:      "",
-				DeletionPolicy: "",
-				Backends:       []coreapi.BackendReference{configureBackendFromBlueprint(oldBB)},
-				Sessions:       []coreapi.Session{configureSessionFromBlueprint(oldBB)},
-			},
-		},
+		Spec: spec,
 	}
+}
+
+// blueprintEncryptionSecretRef mirrors encryptionSecretRef for BackupBlueprints, whose
+// inline backend carries the storage Secret directly (there is no Repository to look up).
+// CLI flags win; otherwise it references the Secret generated from the storage Secret's
+// RESTIC_PASSWORD when present, else falls back to placeholders.
+func blueprintEncryptionSecretRef(baseName, namespace, storageSecretName string) (*kmapi.ObjectReference, bool) {
+	// The encryption Secret is co-located with the blueprint, so its namespace always tracks
+	// the shared blueprint namespace; only the Secret name may remain a placeholder.
+	if encryptionSecretName != "" || encryptionSecretNamespace != "" {
+		name := encryptionSecretName
+		if name == "" {
+			name = setValidValue("Name")
+		}
+		ns := encryptionSecretNamespace
+		if ns == "" {
+			ns = namespace
+		}
+		return &kmapi.ObjectReference{Name: name, Namespace: ns}, encryptionSecretName != ""
+	}
+
+	if _, ok := resticPasswordFromStorageSecret(storageSecretName, namespace); ok {
+		return &kmapi.ObjectReference{
+			Name:      encryptionSecretNameFor(baseName),
+			Namespace: namespace,
+		}, true
+	}
+	return &kmapi.ObjectReference{
+		Name:      setValidValue("Name"),
+		Namespace: namespace,
+	}, false
+}
+
+// backupStorageComments preserves the original Stash static prefix as a review comment on the
+// generated BackupStorage prefix (which is emitted as a "### Set Valid Prefix ###" placeholder).
+func backupStorageComments(originalPrefix string) map[string]string {
+	if originalPrefix == "" {
+		return nil
+	}
+	return map[string]string{"prefix": "review: set a valid prefix (Stash prefix: " + originalPrefix + ")"}
+}
+
+// blueprintComments builds the review line-comments attached to a converted BackupBlueprint.
+func blueprintComments(encResolved bool) map[string]string {
+	comments := map[string]string{
+		"directory": "review: KubeStash resolves ${var} from variables.kubestash.com/<var> annotations on the target",
+	}
+	if !encResolved {
+		comments["encryptionSecret"] = "review: set via --encryption-secret-name / --encryption-secret-namespace"
+	}
+	return comments
 }
 
 func createHookTemplate(objRef kmapi.ObjectReference, handler *prober.Handler) *coreapi.HookTemplate {
@@ -559,20 +667,16 @@ func configureBackend(bc *v1beta1.BackupConfiguration) coreapi.BackendReference 
 	}
 }
 
-func configureBackendFromBlueprint(bb *v1beta1.BackupBlueprint) coreapi.BackendReference {
-	ns := bb.Spec.RepoNamespace
-	if ns == "" {
-		ns = bb.Namespace
-	}
+func configureBackendFromBlueprint(bb *v1beta1.BackupBlueprint, storageName, storageNS string) coreapi.BackendReference {
 	return coreapi.BackendReference{
 		Name: "storage",
 		StorageRef: &kmapi.ObjectReference{
-			Name:      setValidValue("BackupStorage"),
-			Namespace: setValidValue("Namespace"),
+			Name:      storageName,
+			Namespace: storageNS,
 		},
 		RetentionPolicy: &kmapi.ObjectReference{
 			Name:      bb.Spec.RetentionPolicy.Name,
-			Namespace: ns,
+			Namespace: storageNS,
 		},
 	}
 }
@@ -596,7 +700,7 @@ func configureSession(bc *v1beta1.BackupConfiguration, rt *resolvedTarget, encRe
 			{
 				Name:             bc.Spec.Repository.Name,
 				Backend:          "storage",
-				Directory:        repositoryDirectory(rt),
+				Directory:        sessionDirectory(bc, rt),
 				EncryptionSecret: encRef,
 			},
 		},
@@ -635,10 +739,7 @@ func encryptionSecretRef(repoName, repoNamespace string) (*kmapi.ObjectReference
 }
 
 // generatedEncryptionSecretExists reports whether convertRepository would have
-// generated an encryption Secret for the given Stash Repository, i.e. its storage
-// Secret carries a RESTIC_PASSWORD. The Repository is looked up from the cluster so
-// the session reference stays consistent with generation regardless of the order in
-// which resources are processed.
+// generated an encryption Secret for the given Stash Repository
 func generatedEncryptionSecretExists(repoName, repoNamespace string) bool {
 	repo := &v1alpha1.Repository{}
 	key := client.ObjectKey{Name: repoName, Namespace: repoNamespace}
@@ -652,20 +753,31 @@ func generatedEncryptionSecretExists(repoName, repoNamespace string) bool {
 	return ok
 }
 
-// repositoryDirectory derives the repository directory from the resolved target,
-// falling back to a placeholder when the target could not be resolved.
-func repositoryDirectory(rt *resolvedTarget) string {
+// sessionDirectory derives the repository directory from the backup target
+func sessionDirectory(bc *v1beta1.BackupConfiguration, rt *resolvedTarget) string {
 	if rt != nil {
 		return filepath.Join(rt.target.Namespace, rt.target.Name)
+	}
+	if bc.Spec.Target != nil && isTargetWorkload(bc.Spec.Target.Ref) {
+		ns := bc.Namespace
+		if bc.Spec.Target.Ref.Namespace != "" {
+			ns = bc.Spec.Target.Ref.Namespace
+		}
+		return filepath.Join(ns, bc.Spec.Target.Ref.Name)
 	}
 	return setValidValue("Directory")
 }
 
+// directoryResolved reports whether sessionDirectory produced a real value (not a placeholder).
+func directoryResolved(bc *v1beta1.BackupConfiguration, rt *resolvedTarget) bool {
+	return rt != nil || (bc.Spec.Target != nil && isTargetWorkload(bc.Spec.Target.Ref))
+}
+
 // repositoryComments builds the review line-comments to attach to the generated YAML.
-func repositoryComments(rt *resolvedTarget, encResolved bool) map[string]string {
+func repositoryComments(bc *v1beta1.BackupConfiguration, rt *resolvedTarget, encResolved bool) map[string]string {
 	comments := map[string]string{}
-	if rt != nil {
-		comments["directory"] = "review: <namespace>/<name> of the target database"
+	if directoryResolved(bc, rt) {
+		comments["directory"] = "review: <namespace>/<name> of the backup target"
 	}
 	if !encResolved {
 		comments["encryptionSecret"] = "review: set via --encryption-secret-name / --encryption-secret-namespace"
@@ -673,13 +785,13 @@ func repositoryComments(rt *resolvedTarget, encResolved bool) map[string]string 
 	return comments
 }
 
-func configureSessionFromBlueprint(bb *v1beta1.BackupBlueprint) coreapi.Session {
+func configureSessionFromBlueprint(bb *v1beta1.BackupBlueprint, namespace, directory string, encRef *kmapi.ObjectReference) coreapi.Session {
 	return coreapi.Session{
 		SessionConfig: &coreapi.SessionConfig{
 			Name:                "backup",
 			SessionHistoryLimit: pointer.Int32(bb.Spec.BackupHistoryLimit),
 			BackupTimeout:       bb.Spec.TimeOut,
-			Hooks:               configureBackupHooks(bb.GetName(), bb.GetNamespace(), bb.Spec.Hooks),
+			Hooks:               configureBackupHooks(bb.GetName(), namespace, bb.Spec.Hooks),
 			Scheduler: &coreapi.SchedulerSpec{
 				Schedule: bb.Spec.Schedule,
 				JobTemplate: coreapi.JobTemplate{
@@ -690,17 +802,79 @@ func configureSessionFromBlueprint(bb *v1beta1.BackupBlueprint) coreapi.Session 
 		},
 		Repositories: []coreapi.RepositoryInfo{
 			{
-				Name:      `${repoName}`,
-				Backend:   "storage",
-				Directory: filepath.Join(setValidValue("Directory"), `${namespace}/${targetName}`),
-				EncryptionSecret: &kmapi.ObjectReference{
-					Name:      setValidValue("Name"),
-					Namespace: setValidValue("Namespace"),
-				},
+				Name:             `${repoName}`,
+				Backend:          "storage",
+				Directory:        directory,
+				EncryptionSecret: encRef,
 			},
 		},
 		Addon: configureBackupAddonInfoFromBlueprint(bb),
 	}
+}
+
+// backendPrefix returns the prefix/subPath configured on the set provider of a Stash backend.
+func backendPrefix(backend store.Backend) string {
+	switch {
+	case backend.S3 != nil:
+		return backend.S3.Prefix
+	case backend.GCS != nil:
+		return backend.GCS.Prefix
+	case backend.Azure != nil:
+		return backend.Azure.Prefix
+	case backend.Local != nil:
+		return backend.Local.SubPath
+	}
+	return ""
+}
+
+// splitPrefix divides a Stash backend prefix into its static leading segments and the
+// per-target templated tail (everything from the first ${...} placeholder onward). The
+// static head stays on the BackupStorage prefix; the tail becomes the repository directory.
+func splitPrefix(prefix string) (staticHead, templatedTail string) {
+	idx := strings.Index(prefix, "${")
+	if idx < 0 {
+		return strings.Trim(prefix, "/"), ""
+	}
+	return strings.Trim(prefix[:idx], "/"), strings.Trim(prefix[idx:], "/")
+}
+
+// backendWithPrefix returns a copy of the backend with the set provider's prefix/subPath
+// replaced. The provider struct is deep-copied so the caller's original backend is untouched.
+func backendWithPrefix(backend store.Backend, prefix string) store.Backend {
+	switch {
+	case backend.S3 != nil:
+		s3 := *backend.S3
+		s3.Prefix = prefix
+		backend.S3 = &s3
+	case backend.GCS != nil:
+		gcs := *backend.GCS
+		gcs.Prefix = prefix
+		backend.GCS = &gcs
+	case backend.Azure != nil:
+		azure := *backend.Azure
+		azure.Prefix = prefix
+		backend.Azure = &azure
+	case backend.Local != nil:
+		local := *backend.Local
+		local.SubPath = prefix
+		backend.Local = &local
+	}
+	return backend
+}
+
+// stashPlaceholderReplacer maps old Stash reserved backend-prefix placeholders to the
+// KubeStash custom-variable convention. In KubeStash these ${var} names are resolved from
+// variables.kubestash.com/<var> annotations on the target application at apply time.
+var stashPlaceholderReplacer = strings.NewReplacer(
+	"${TARGET_NAMESPACE}", "${namespace}",
+	"${TARGET_NAME}", "${targetName}",
+	"${TARGET_KIND}", "${targetKind}",
+	"${TARGET_APP_RESOURCE}", "${dbType}",
+	"${TARGET_APP_VERSION}", "${appVersion}",
+)
+
+func translateStashPlaceholders(s string) string {
+	return stashPlaceholderReplacer.Replace(s)
 }
 
 func configureBackupHooks(configName, configNs string, hooks *v1beta1.BackupHooks) *coreapi.BackupHooks {
@@ -723,7 +897,7 @@ func configureBackupHooks(configName, configNs string, hooks *v1beta1.BackupHook
 			Name: "postbackup-hook",
 			HookTemplate: &kmapi.ObjectReference{
 				Name:      meta_util.ValidNameWithPrefixNSuffix(configName, "postbackup", "hook"),
-				Namespace: configName,
+				Namespace: configNs,
 			},
 			ExecutionPolicy: configureHookExecutionPolicy(hooks.PostBackup.ExecutionPolicy),
 		})
@@ -812,16 +986,42 @@ func configureBackupAddonInfoFromBlueprint(bb *v1beta1.BackupBlueprint) *coreapi
 			Spec: configurePodRuntimeSettings(bb.Spec.RuntimeSettings.Pod),
 		}
 	}
+
+	// An empty Stash task means a KubeDB database blueprint: its KubeStash task is the standard
+	// "logical-backup" (matching the auto-backup guide). When the old blueprint names a Task
+	// (non-KubeDB target), carry its name and params instead. The addon name itself has no
+	// reliable analogue in Stash and depends on the DB type, so it stays a descriptive placeholder.
+	task := coreapi.TaskReference{Name: apis.LogicalBackup}
+	if bb.Spec.Task.Name != "" {
+		task = coreapi.TaskReference{
+			Name:   bb.Spec.Task.Name,
+			Params: taskParamsToRawExtension(bb.Spec.Task.Params),
+		}
+	}
+
 	return &coreapi.AddonInfo{
-		Name: setValidValue("Name"),
-		Tasks: []coreapi.TaskReference{
-			{
-				Name: setValidValue("Name"),
-			},
-		},
+		Name:                     setValidValue("Addon Name (e.g. postgres-addon)"),
+		Tasks:                    []coreapi.TaskReference{task},
 		ContainerRuntimeSettings: bb.Spec.RuntimeSettings.Container,
 		JobTemplate:              podTemplateSpec,
 	}
+}
+
+// taskParamsToRawExtension converts Stash task params (name/value pairs) into the free-form
+// RawExtension object KubeStash task references use.
+func taskParamsToRawExtension(params []v1beta1.Param) *runtime.RawExtension {
+	if len(params) == 0 {
+		return nil
+	}
+	m := make(map[string]any, len(params))
+	for _, p := range params {
+		m[p.Name] = p.Value
+	}
+	data, err := json.Marshal(m)
+	if err != nil {
+		return nil
+	}
+	return &runtime.RawExtension{Raw: data}
 }
 
 func configurePodRuntimeSettings(settings *ofst.PodRuntimeSettings) ofst.PodSpec {

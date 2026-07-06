@@ -24,6 +24,7 @@ require (
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	kmodules.xyz/client-go v0.34.3
 	kmodules.xyz/custom-resources v0.34.0
+	kmodules.xyz/objectstore-api v0.34.0
 	kmodules.xyz/offshoot-api v0.34.0
 	kmodules.xyz/prober v0.34.0
 	kubedb.dev/apimachinery v0.63.0
@@ -218,7 +219,6 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	kmodules.xyz/apiversion v0.2.0 // indirect
 	kmodules.xyz/monitoring-agent-api v0.34.1 // indirect
-	kmodules.xyz/objectstore-api v0.34.0 // indirect
 	kubeops.dev/operator-shard-manager v0.0.5 // indirect
 	kubeops.dev/petset v0.0.15 // indirect
 	kubeops.dev/sidekick v0.0.12 // indirect
