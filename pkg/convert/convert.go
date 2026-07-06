@@ -151,7 +151,9 @@ func annotateFieldComments(data []byte, comments map[string]string) []byte {
 	}
 	lines := strings.Split(string(data), "\n")
 	for i, line := range lines {
-		if strings.Contains(line, " #") {
+		// Skip lines that already carry an appended "# comment"; a bare "### Set Valid X ###"
+		// placeholder value contains "###" but no " # ", so it stays eligible for a comment.
+		if strings.Contains(line, " # ") {
 			continue
 		}
 		trimmed := strings.TrimSpace(line)
