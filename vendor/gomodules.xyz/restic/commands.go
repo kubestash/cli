@@ -304,6 +304,9 @@ func (w *ResticWrapper) DumpOnce(repository string, dumpOptions DumpOptions) ([]
 	// first add restic command, then add StdoutPipeCommands
 	commands := []Command{command}
 	commands = append(commands, dumpOptions.StdoutPipeCommands...)
+	if dumpOptions.StdoutWriter != nil {
+		return nil, w.runWithStdout(dumpOptions.StdoutWriter, commands...)
+	}
 	return w.run(commands...)
 }
 
@@ -424,6 +427,36 @@ func (w *ResticWrapper) run(commands ...Command) ([]byte, error) {
 		return out, formatError(err, errBuff.String())
 	}
 	return out, nil
+}
+
+func (w *ResticWrapper) runWithStdout(stdout io.Writer, commands ...Command) error {
+	// write std errors into os.Stderr and buffer
+	var err error
+	var errBuff bytes.Buffer
+	oldStderr := w.sh.Stderr
+	oldStdout := w.sh.Stdout
+	defer func() {
+		w.sh.Stderr = oldStderr
+		w.sh.Stdout = oldStdout
+	}()
+	w.sh.Stderr = io.MultiWriter(os.Stderr, &errBuff)
+	w.sh.Stdout = stdout
+	if w.Config.Timeout != nil {
+		w.sh.SetTimeout(w.Config.Timeout.Duration)
+	}
+
+	for _, cmd := range commands {
+		cmd, err = w.applyNiceSettingsIfCommandMatches(cmd, ResticCMD)
+		if err != nil {
+			return err
+		}
+		w.sh.Command(cmd.Name, cmd.Args...)
+	}
+
+	if err = w.sh.Run(); err != nil {
+		return formatError(err, errBuff.String())
+	}
+	return nil
 }
 
 func (w *ResticWrapper) applyNiceSettingsIfCommandMatches(command Command, matchingCommands ...string) (Command, error) {

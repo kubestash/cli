@@ -12,7 +12,7 @@ require (
 	gomodules.xyz/go-sh v0.3.0
 	gomodules.xyz/logs v0.0.7
 	gomodules.xyz/pointer v0.1.0
-	gomodules.xyz/restic v0.3.0
+	gomodules.xyz/restic v0.5.0
 	gomodules.xyz/runtime v0.3.0
 	gomodules.xyz/x v0.0.17
 	k8s.io/api v0.34.3
@@ -28,7 +28,7 @@ require (
 	kmodules.xyz/offshoot-api v0.34.0
 	kmodules.xyz/prober v0.34.0
 	kubedb.dev/apimachinery v0.63.0
-	kubestash.dev/apimachinery v0.28.0
+	kubestash.dev/apimachinery v0.29.0
 	sigs.k8s.io/controller-runtime v0.22.4
 	sigs.k8s.io/yaml v1.6.0
 	stash.appscode.dev/apimachinery v0.42.1

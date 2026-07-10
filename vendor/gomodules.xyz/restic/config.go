@@ -18,6 +18,7 @@ package restic
 
 import (
 	"fmt"
+	"io"
 	"maps"
 	"os"
 	"path/filepath"
@@ -78,6 +79,7 @@ type DumpOptions struct {
 	Path               string
 	FileName           string // default "stdin"
 	StdoutPipeCommands []Command
+	StdoutWriter       io.Writer
 }
 
 type SetupOptions struct {
@@ -165,6 +167,12 @@ func (s *SetupOptions) GetBackend(repository string) *Backend {
 func (w *ResticWrapper) SetEnv(key, value string) {
 	if w.sh != nil {
 		w.sh.SetEnv(key, value)
+	}
+}
+
+func (w *ResticWrapper) SetStdin(r io.Reader) {
+	if w.sh != nil {
+		w.sh.SetStdin(r)
 	}
 }
 
