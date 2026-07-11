@@ -217,16 +217,18 @@ func (opt *unlockOptions) runCmdViaDocker(args []string) error {
 		return err
 	}
 
-	unlockArgs := []string{
+	unlockArgs := make([]string, 0, 13+len(args))
+	unlockArgs = append(
+		unlockArgs,
 		"run",
 		"--rm",
 		"-u", currentUser.Uid,
-		"-v", ScratchDir + ":" + ScratchDir,
-		"--env", fmt.Sprintf("%s=", EnvHttpProxy) + os.Getenv(EnvHttpProxy),
-		"--env", fmt.Sprintf("%s=", EnvHttpsProxy) + os.Getenv(EnvHttpsProxy),
+		"-v", ScratchDir+":"+ScratchDir,
+		"--env", fmt.Sprintf("%s=", EnvHttpProxy)+os.Getenv(EnvHttpProxy),
+		"--env", fmt.Sprintf("%s=", EnvHttpsProxy)+os.Getenv(EnvHttpsProxy),
 		"--env-file", filepath.Join(ConfigDir, ResticEnvs),
 		imgRestic.Image,
-	}
+	)
 
 	unlockArgs = append(unlockArgs, args...)
 	klog.Infoln("Running docker with args:", unlockArgs)

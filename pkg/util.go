@@ -248,7 +248,8 @@ func showLogs(pod core.Pod, args ...string) error {
 	if err != nil {
 		return err
 	}
-	cmdArgs := []string{"logs", "-n", pod.Namespace, pod.Name}
+	cmdArgs := make([]string, 0, 4+len(args))
+	cmdArgs = append(cmdArgs, "logs", "-n", pod.Namespace, pod.Name)
 	cmdArgs = append(cmdArgs, args...)
 	return sh.Command(CmdKubectl, cmdArgs).Run()
 }
