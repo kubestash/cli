@@ -174,8 +174,7 @@ func (opt *keyOptions) updateResticKeyViaDocker() error {
 
 		keyArgs := []string{
 			"key",
-			"remove",
-			opt.ID,
+			"passwd",
 			"--no-cache",
 		}
 
