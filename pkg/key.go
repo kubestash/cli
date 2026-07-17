@@ -18,6 +18,7 @@ package pkg
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/user"
@@ -39,6 +40,86 @@ type keyOptions struct {
 	config *rest.Config
 	repo   *storageapi.Repository
 	paths  []string
+
+	// Alternative sources for the new password. Exactly one of
+	// opt.File (--new-password-file), newPassword (--new-password) and
+	// newPasswordStdin (--new-password-stdin) must be set. They are resolved
+	// into opt.File by preparePasswordFile() before the rest of the flow runs.
+	newPassword      string
+	newPasswordStdin bool
+}
+
+// preparePasswordFile resolves the new-password source into opt.File.
+//
+//   - --new-password-file: opt.File is used as-is; the caller's file is left
+//     intact and the returned cleanup is a no-op.
+//   - --new-password / --new-password-stdin: the value (or stdin) is written to a
+//     temporary file, opt.File is pointed at it, and the returned cleanup removes
+//     it. The temp file is created with mode 0600 by os.CreateTemp.
+//
+// Exactly one source must be provided. Because both the pod path
+// (copyPasswordFileToPod) and the docker path (runCmdViaDocker) only ever
+// consume opt.File, materializing it here keeps every downstream path working
+// unchanged.
+func (opt *keyOptions) preparePasswordFile() (func(), error) {
+	noop := func() {}
+
+	sources := 0
+	if opt.File != "" {
+		sources++
+	}
+	if opt.newPassword != "" {
+		sources++
+	}
+	if opt.newPasswordStdin {
+		sources++
+	}
+
+	if sources == 0 {
+		return noop, fmt.Errorf("one of --new-password-file, --new-password or --new-password-stdin is required")
+	}
+	if sources > 1 {
+		return noop, fmt.Errorf("at most one of --new-password-file, --new-password or --new-password-stdin may be set")
+	}
+
+	// --new-password-file: use the provided file directly.
+	if opt.File != "" {
+		return noop, nil
+	}
+
+	// --new-password / --new-password-stdin: materialize a temp file.
+	f, err := os.CreateTemp("", "kubestash-newpw-")
+	if err != nil {
+		return noop, fmt.Errorf("failed to create temp password file: %w", err)
+	}
+
+	var data []byte
+	if opt.newPasswordStdin {
+		data, err = io.ReadAll(os.Stdin)
+		if err != nil {
+			_ = f.Close()
+			_ = os.Remove(f.Name())
+			return noop, fmt.Errorf("failed to read new password from stdin: %w", err)
+		}
+	} else {
+		data = []byte(opt.newPassword)
+	}
+
+	// Write verbatim; restic trims trailing newlines from password files, so
+	// `echo 'pw' | --new-password-stdin` (data "pw\n") matches the existing
+	// `echo 'pw' > file; --new-password-file` behavior.
+	if _, err := f.Write(data); err != nil {
+		_ = f.Close()
+		_ = os.Remove(f.Name())
+		return noop, fmt.Errorf("failed to write temp password file: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		_ = os.Remove(f.Name())
+		return noop, fmt.Errorf("failed to close temp password file: %w", err)
+	}
+
+	opt.File = f.Name()
+	return func() { _ = os.Remove(f.Name()) }, nil
 }
 
 func NewCmdKey(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
