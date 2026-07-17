@@ -37,9 +37,14 @@ func NewCmdUpdateKey(opt *keyOptions) *cobra.Command {
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cleanup, err := opt.preparePasswordFile()
+			if err != nil {
+				return err
+			}
+			defer cleanup()
+
 			repoName := args[0]
 
-			var err error
 			opt.repo, err = getRepository(kmapi.ObjectReference{
 				Name:      repoName,
 				Namespace: srcNamespace,
@@ -92,6 +97,8 @@ func NewCmdUpdateKey(opt *keyOptions) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&opt.File, "new-password-file", opt.File, "File from which to read the new password")
+	cmd.Flags().StringVar(&opt.newPassword, "new-password", opt.newPassword, "New password for the restic repository (inline). Note: this exposes the password in shell history and the process list; prefer --new-password-stdin or --new-password-file")
+	cmd.Flags().BoolVar(&opt.newPasswordStdin, "new-password-stdin", opt.newPasswordStdin, "Read the new password from stdin (e.g. echo '<password>' | kubectl kubestash pw update ...)")
 	cmd.Flags().StringSliceVar(&opt.paths, "paths", opt.paths, "List of component paths (restic repositories) to update the password")
 
 	return cmd
