@@ -20,7 +20,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -302,17 +304,30 @@ func getLocalBackendAccessorPod(obj kmapi.ObjectReference) (*core.Pod, error) {
 		return nil, err
 	}
 
+	var skipped []string
 	for i := range pods.Items {
+		if pods.Items[i].Status.Phase != core.PodRunning ||
+			pods.Items[i].DeletionTimestamp != nil {
+			skipped = append(skipped, fmt.Sprintf("%s (phase=%s, terminating=%t)",
+				pods.Items[i].Name, pods.Items[i].Status.Phase, pods.Items[i].DeletionTimestamp != nil))
+			continue
+		}
 		if hasVolume(pods.Items[i].Spec.Volumes, obj.Name) {
 			for _, c := range pods.Items[i].Spec.Containers {
 				if hasVolumeMount(c.VolumeMounts, obj.Name) {
+					klog.Infof("Using local backend accessor pod %s/%s (volume: %s)",
+						pods.Items[i].Namespace, pods.Items[i].Name, obj.Name)
 					return &pods.Items[i], nil
 				}
 			}
 		}
+		skipped = append(skipped, fmt.Sprintf("%s (running, but does not mount volume %q)", pods.Items[i].Name, obj.Name))
 	}
 
-	return nil, fmt.Errorf("no local backend accessor pod found for BackupStorage: %s/%s", obj.Namespace, obj.Name)
+	return nil, fmt.Errorf("no usable local backend accessor pod found for BackupStorage %s/%s: "+
+		"listed %d pod(s) with label %s=%s in namespace %s, skipped: %v. "+
+		"Make sure the KubeStash operator has created the accessor Deployment and its pod is Running",
+		obj.Namespace, obj.Name, len(pods.Items), apis.KubeStashApp, apis.KubeStashNetVolAccessor, obj.Namespace, skipped)
 }
 
 func hasVolume(volumes []core.Volume, name string) bool {
@@ -369,7 +384,7 @@ func execOnPod(config *rest.Config, pod *core.Pod, command []string) (string, er
 		execErr bytes.Buffer
 	)
 
-	klog.V(2).Infof("Executing command %v on pod %s/%s", command, pod.Namespace, pod.Name)
+	klog.Infof("Executing command %v on pod %s/%s (container: %s)", command, pod.Namespace, pod.Name, getContainerName(pod))
 
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -394,13 +409,19 @@ func execOnPod(config *rest.Config, pod *core.Pod, command []string) (string, er
 		return "", fmt.Errorf("failed to init executor: %v", err)
 	}
 
+	// Tty must stay disabled: a tty merges stderr into stdout and can drop
+	// output of a fast-exiting process, hiding the actual error.
 	err = executor.StreamWithContext(context.Background(), remotecommand.StreamOptions{
 		Stdout: &execOut,
 		Stderr: &execErr,
-		Tty:    true,
 	})
 	if err != nil {
-		return "", fmt.Errorf("could not execute: %v, reason: %s", err, execErr.String())
+		return "", fmt.Errorf("failed to execute command %v on pod %s/%s: %w, output: %q, stderr: %q",
+			command, pod.Namespace, pod.Name, err, execOut.String(), execErr.String())
+	}
+
+	if execErr.Len() > 0 {
+		klog.Warningf("command %v on pod %s/%s wrote to stderr: %s", command, pod.Namespace, pod.Name, execErr.String())
 	}
 
 	return execOut.String(), nil
@@ -411,4 +432,82 @@ func getContainerName(pod *core.Pod) string {
 		return apis.OperatorContainer
 	}
 	return apis.KubeStashContainer
+}
+
+func execOnPodWithStreams(config *rest.Config, pod *core.Pod, command []string, stdout, stderr io.Writer) error {
+	klog.Infof("Executing command %v on pod %s/%s", command, pod.Namespace, pod.Name)
+
+	kubeClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
+	req := kubeClient.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(pod.Name).
+		Namespace(pod.Namespace).
+		SubResource("exec").
+		Timeout(5 * time.Minute)
+	req.VersionedParams(&core.PodExecOptions{
+		Container: getContainerName(pod),
+		Command:   command,
+		Stdout:    true,
+		Stderr:    true,
+	}, scheme.ParameterCodec)
+
+	executor, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
+	if err != nil {
+		return fmt.Errorf("failed to init executor: %v", err)
+	}
+
+	// Tty must stay disabled; a tty would mangle the binary stream.
+	return executor.StreamWithContext(context.Background(), remotecommand.StreamOptions{
+		Stdout: stdout,
+		Stderr: stderr,
+	})
+}
+
+// copyDataFromPodViaTar streams srcDir from the pod as a gzipped tarball
+// through the exec API and extracts it into destDir, avoiding the extra
+// kubectl binary dependency and temp files of `kubectl cp`.
+func copyDataFromPodViaTar(config *rest.Config, pod *core.Pod, srcDir, destDir string) error {
+	podCmd := []string{CmdTar, "-C", srcDir, "-czf", "-", "."}
+	klog.Infof("Streaming %s from pod %s/%s into %s (pod command: %v)", srcDir, pod.Namespace, pod.Name, destDir, podCmd)
+
+	localTar := exec.Command(CmdTar, "-C", destDir, "-xzf", "-")
+	var localTarStderr bytes.Buffer
+	localTar.Stderr = &localTarStderr
+	localTarStdin, err := localTar.StdinPipe()
+	if err != nil {
+		return fmt.Errorf("failed to pipe local tar stdin: %w", err)
+	}
+	if err := localTar.Start(); err != nil {
+		return fmt.Errorf("failed to start local tar %v: %w", localTar.Args, err)
+	}
+
+	var execStderr bytes.Buffer
+	execErr := execOnPodWithStreams(config, pod, podCmd, localTarStdin, &execStderr)
+	if closeErr := localTarStdin.Close(); closeErr != nil && execErr == nil {
+		execErr = closeErr
+	}
+	tarErr := localTar.Wait()
+
+	if execStderr.Len() > 0 {
+		klog.Warningf("tar on pod %s/%s wrote to stderr: %s", pod.Namespace, pod.Name, execStderr.String())
+	}
+	if localTarStderr.Len() > 0 {
+		klog.Warningf("local tar wrote to stderr: %s", localTarStderr.String())
+	}
+
+	if execErr != nil && tarErr != nil {
+		return fmt.Errorf("failed to stream data from pod %s/%s: %w (pod stderr: %q); local tar also failed: %v (local stderr: %q)",
+			pod.Namespace, pod.Name, execErr, execStderr.String(), tarErr, localTarStderr.String())
+	}
+	if execErr != nil {
+		return fmt.Errorf("failed to stream data from pod %s/%s: %w, stderr: %q", pod.Namespace, pod.Name, execErr, execStderr.String())
+	}
+	if tarErr != nil {
+		return fmt.Errorf("local tar failed: %w, stderr: %q", tarErr, localTarStderr.String())
+	}
+	return nil
 }

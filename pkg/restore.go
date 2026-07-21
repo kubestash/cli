@@ -112,7 +112,7 @@ func NewCmdManifestRestore(clientGetter genericclioptions.RESTClientGetter) *cob
 			}()
 
 			if backupStorage.Spec.Storage.Local != nil {
-				if !backupStorage.LocalNetworkVolume() {
+				if !backupStorage.LocalNetworkVolume() && !backupStorage.LocalBackendPVC() {
 					return fmt.Errorf("unsupported type of local backend provided")
 				}
 				accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
@@ -353,11 +353,11 @@ func (opt *options) runCmdViaPod(pod *core.Pod, snapshotName string) error {
 }
 
 func (opt *options) copyDownloadedDataToDestination(pod *core.Pod) error {
-	_, err := exec.Command(CmdKubectl, "cp", fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, SnapshotDownloadDir), opt.DataDir).CombinedOutput()
-	if err != nil {
+	if strings.EqualFold(os.Getenv(EnvCopyMode), CopyModeCP) {
+		_, err := exec.Command(CmdKubectl, "cp", fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, SnapshotDownloadDir), opt.DataDir).CombinedOutput()
 		return err
 	}
-	return nil
+	return copyDataFromPodViaTar(opt.Config, pod, SnapshotDownloadDir, opt.DataDir)
 }
 
 func (opt *options) clearDataFromPod(pod *core.Pod) error {
