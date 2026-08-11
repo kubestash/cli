@@ -37,7 +37,6 @@ func NewCmdUpdateKey(opt *keyOptions) *cobra.Command {
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			repoName := args[0]
 
 			var err error
