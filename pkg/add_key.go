@@ -37,14 +37,9 @@ func NewCmdAddKey(opt *keyOptions) *cobra.Command {
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cleanup, err := opt.preparePasswordFile()
-			if err != nil {
-				return err
-			}
-			defer cleanup()
-
 			repoName := args[0]
 
+			var err error
 			opt.repo, err = getRepository(kmapi.ObjectReference{
 				Name:      repoName,
 				Namespace: srcNamespace,
@@ -87,6 +82,12 @@ func NewCmdAddKey(opt *keyOptions) *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			cleanup, err := opt.preparePasswordFile()
+			if err != nil {
+				return err
+			}
+			defer cleanup()
 
 			if yes {
 				return opt.addResticKeyViaPod(&operatorPod)
