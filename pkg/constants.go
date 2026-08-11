@@ -22,6 +22,7 @@ import "time"
 const (
 	CmdKubectl = "kubectl"
 	CmdDocker  = "docker"
+	CmdTar     = "tar"
 
 	ScratchDir          = "/tmp/scratch"
 	DestinationDir      = "/tmp/destination"
@@ -33,6 +34,12 @@ const (
 	ResticImage   = "ghcr.io/appscode-images/restic:0.18.1"
 	EnvHttpProxy  = "HTTP_PROXY"
 	EnvHttpsProxy = "HTTPS_PROXY"
+
+	// EnvCopyMode selects how downloaded data is copied from the pod to the
+	// local destination: "tar" (default) streams a tarball through the exec
+	// API, "cp" uses `kubectl cp`.
+	EnvCopyMode = "KUBESTASH_COPY_MODE"
+	CopyModeCP  = "cp"
 )
 
 // Constants for debugging
