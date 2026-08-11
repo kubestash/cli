@@ -47,24 +47,6 @@ type keyOptions struct {
 func (opt *keyOptions) preparePasswordFile() (func(), error) {
 	noop := func() {}
 
-	sources := 0
-	if opt.File != "" {
-		sources++
-	}
-	if opt.newPassword != "" {
-		sources++
-	}
-	if opt.newPasswordStdin {
-		sources++
-	}
-
-	if sources == 0 {
-		return noop, fmt.Errorf("one of --new-password-file, --new-password or --new-password-stdin is required")
-	}
-	if sources > 1 {
-		return noop, fmt.Errorf("at most one of --new-password-file, --new-password or --new-password-stdin may be set")
-	}
-
 	// --new-password-file: use the provided file directly.
 	if opt.File != "" {
 		return noop, nil
