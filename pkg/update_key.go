@@ -83,6 +83,12 @@ func NewCmdUpdateKey(opt *keyOptions) *cobra.Command {
 				return err
 			}
 
+			cleanup, err := opt.preparePasswordFile()
+			if err != nil {
+				return err
+			}
+			defer cleanup()
+
 			if yes {
 				return opt.updateResticKeyViaPod(&operatorPod)
 			}
@@ -92,7 +98,11 @@ func NewCmdUpdateKey(opt *keyOptions) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&opt.File, "new-password-file", opt.File, "File from which to read the new password")
+	cmd.Flags().StringVar(&opt.newPassword, "new-password", opt.newPassword, "New password for the restic repository (inline). Note: this exposes the password in shell history and the process list; prefer --new-password-stdin or --new-password-file")
+	cmd.Flags().BoolVar(&opt.newPasswordStdin, "new-password-stdin", opt.newPasswordStdin, "Read the new password from stdin (e.g. echo '<password>' | kubectl kubestash pw update ...)")
 	cmd.Flags().StringSliceVar(&opt.paths, "paths", opt.paths, "List of component paths (restic repositories) to update the password")
+	cmd.MarkFlagsMutuallyExclusive("new-password-file", "new-password", "new-password-stdin")
+	cmd.MarkFlagsOneRequired("new-password-file", "new-password", "new-password-stdin")
 
 	return cmd
 }

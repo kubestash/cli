@@ -18,6 +18,7 @@ package pkg
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/user"
@@ -36,9 +37,50 @@ import (
 
 type keyOptions struct {
 	restic.KeyOptions
-	config *rest.Config
-	repo   *storageapi.Repository
-	paths  []string
+	config           *rest.Config
+	repo             *storageapi.Repository
+	paths            []string
+	newPassword      string
+	newPasswordStdin bool
+}
+
+func (opt *keyOptions) preparePasswordFile() (func(), error) {
+	noop := func() {}
+
+	// --new-password-file: use the provided file directly.
+	if opt.File != "" {
+		return noop, nil
+	}
+
+	f, err := os.CreateTemp("", "kubestash-newpw-")
+	if err != nil {
+		return noop, fmt.Errorf("failed to create temp password file: %w", err)
+	}
+
+	var data []byte
+	if opt.newPasswordStdin {
+		data, err = io.ReadAll(os.Stdin)
+		if err != nil {
+			_ = f.Close()
+			_ = os.Remove(f.Name())
+			return noop, fmt.Errorf("failed to read new password from stdin: %w", err)
+		}
+	} else {
+		data = []byte(opt.newPassword)
+	}
+
+	if _, err := f.Write(data); err != nil {
+		_ = f.Close()
+		_ = os.Remove(f.Name())
+		return noop, fmt.Errorf("failed to write temp password file: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		_ = os.Remove(f.Name())
+		return noop, fmt.Errorf("failed to close temp password file: %w", err)
+	}
+
+	opt.File = f.Name()
+	return func() { _ = os.Remove(f.Name()) }, nil
 }
 
 func NewCmdKey(clientGetter genericclioptions.RESTClientGetter) *cobra.Command {
