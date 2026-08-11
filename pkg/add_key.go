@@ -22,7 +22,6 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"gomodules.xyz/flags"
 	"gomodules.xyz/restic"
 	core "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
@@ -38,11 +37,14 @@ func NewCmdAddKey(opt *keyOptions) *cobra.Command {
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			flags.EnsureRequiredFlags(cmd, "new-password-file")
+			cleanup, err := opt.preparePasswordFile()
+			if err != nil {
+				return err
+			}
+			defer cleanup()
 
 			repoName := args[0]
 
-			var err error
 			opt.repo, err = getRepository(kmapi.ObjectReference{
 				Name:      repoName,
 				Namespace: srcNamespace,
@@ -97,7 +99,11 @@ func NewCmdAddKey(opt *keyOptions) *cobra.Command {
 	cmd.Flags().StringVar(&opt.Host, "host", opt.Host, "Host for the new key")
 	cmd.Flags().StringVar(&opt.User, "user", opt.User, "User for the new key")
 	cmd.Flags().StringVar(&opt.File, "new-password-file", opt.File, "File from which to read the new password")
+	cmd.Flags().StringVar(&opt.newPassword, "new-password", opt.newPassword, "New password for the restic repository (inline). Note: this exposes the password in shell history and the process list; prefer --new-password-stdin or --new-password-file")
+	cmd.Flags().BoolVar(&opt.newPasswordStdin, "new-password-stdin", opt.newPasswordStdin, "Read the new password from stdin (e.g. echo '<password>' | kubectl kubestash pw add ...)")
 	cmd.Flags().StringSliceVar(&opt.paths, "paths", opt.paths, "List of component paths (restic repositories) to add the new password")
+	cmd.MarkFlagsMutuallyExclusive("new-password-file", "new-password", "new-password-stdin")
+	cmd.MarkFlagsOneRequired("new-password-file", "new-password", "new-password-stdin")
 
 	return cmd
 }
