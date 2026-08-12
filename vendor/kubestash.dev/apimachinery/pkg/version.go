@@ -41,6 +41,11 @@ var hardCodedMap = map[struct{ dbVersionRegex, funcNameRegex string }]string{
 	{"10.10.*", "mariadb-physical-(backup|restore)"}: "10.11.6-jammy",
 	{"10.11.*", "mariadb-physical-(backup|restore)"}: "10.11.6-jammy",
 	{"11.*.*", "mariadb-physical-(backup|restore)"}:  "11.1.3-jammy",
+	// Percona pg_tde distribution. The suffixed db version must be matched on the
+	// RAW dbVersion (before extractDBVersion strips the suffix), and the resolved
+	// value is used only as the ${DB_VERSION} image-tag substitution, so
+	// "17.9-percona" is intentionally kept OUT of every Function's availableVersions.
+	{`^17\.9-percona$`, "postgres-.*(backup|restore)"}: "17.9-percona",
 }
 
 func foundInHardCodedMap(funcName, dbVersion string) (bool, string) {
@@ -61,6 +66,12 @@ func foundInHardCodedMap(funcName, dbVersion string) (bool, string) {
 func FindAppropriateAddonVersion(addonVersions []string, dbVersion, funcName string) (string, error) {
 	if len(addonVersions) == 0 {
 		return "", fmt.Errorf("available list of addon-versions can't be empty")
+	}
+	// Match the hard-coded map against the RAW dbVersion first, so distribution
+	// suffixes (e.g. "17.9-percona") can be matched before extractDBVersion strips
+	// them down to a bare semver.
+	if found, av := foundInHardCodedMap(funcName, dbVersion); found {
+		return av, nil
 	}
 	dbVersion = extractDBVersion(dbVersion)
 	if found, av := foundInHardCodedMap(funcName, dbVersion); found {

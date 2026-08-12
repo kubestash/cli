@@ -81,7 +81,7 @@ func (w *ResticWrapper) setupEnvsForBackend(b *Backend) error {
 
 	switch b.Provider {
 	case storage.ProviderLocal:
-		b.Envs[RESTIC_REPOSITORY] = fmt.Sprintf("%s/%s", b.Bucket, b.Directory)
+		b.Envs[RESTIC_REPOSITORY] = filepath.Join(b.Bucket, b.Directory)
 
 	case storage.ProviderS3:
 		b.Envs[RESTIC_REPOSITORY] = fmt.Sprintf("s3:%s/%s", b.Endpoint, filepath.Join(b.Bucket, b.Prefix, b.Directory))
