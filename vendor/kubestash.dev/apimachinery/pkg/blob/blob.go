@@ -51,17 +51,17 @@ import (
 )
 
 const (
-	gcsPrefix                    = "gs://"
-	azurePrefix                  = "azblob://"
-	localPrefix                  = "file:///"
-	credentialsDir               = apis.TempDirMountPath + "/credentials"
-	azureStorageAccount          = "AZURE_STORAGE_ACCOUNT"
-	azureStorageKey              = "AZURE_STORAGE_KEY"
+	GCSPrefix                    = "gs://"
+	AzurePrefix                  = "azblob://"
+	LocalPrefix                  = "file:///"
+	CredentialsDir               = apis.TempDirMountPath + "/credentials"
+	AzureStorageAccount          = "AZURE_STORAGE_ACCOUNT"
+	AzureStorageKey              = "AZURE_STORAGE_KEY"
 	AzureFederatedTokenFile      = "AZURE_FEDERATED_TOKEN_FILE"
-	googleServiceAccountJsonKey  = "GOOGLE_SERVICE_ACCOUNT_JSON_KEY"
-	googleApplicationCredentials = "GOOGLE_APPLICATION_CREDENTIALS"
-	azureAccountKey              = "AZURE_ACCOUNT_KEY"
-	caCertData                   = "CA_CERT_DATA"
+	GoogleServiceAccountJSONKey  = "GOOGLE_SERVICE_ACCOUNT_JSON_KEY"
+	GoogleApplicationCredentials = "GOOGLE_APPLICATION_CREDENTIALS"
+	AzureAccountKey              = "AZURE_ACCOUNT_KEY"
+	CACertData                   = "CA_CERT_DATA"
 	AWSAccessKeyId               = "AWS_ACCESS_KEY_ID"
 	AWSSecretAccessKey           = "AWS_SECRET_ACCESS_KEY"
 	AWSSessionToken              = "AWS_SESSION_TOKEN"
@@ -121,7 +121,7 @@ func gcsBlob(ctx context.Context, c client.Client, bs *storageapi.BackupStorage)
 		backupStorage:  bs,
 		prefix:         bs.Spec.Storage.GCS.Prefix,
 		maxConnections: bs.Spec.Storage.GCS.MaxConnections,
-		storageURL:     fmt.Sprintf("%s%s", gcsPrefix, bs.Spec.Storage.GCS.Bucket),
+		storageURL:     fmt.Sprintf("%s%s", GCSPrefix, bs.Spec.Storage.GCS.Bucket),
 	}, nil
 }
 
@@ -129,7 +129,7 @@ func azureBlob(ctx context.Context, c client.Client, bs *storageapi.BackupStorag
 	if bs.Spec.Storage.Azure.StorageAccount == "" {
 		return nil, fmt.Errorf("storageAccount is empty")
 	}
-	if err := os.Setenv(azureStorageAccount, bs.Spec.Storage.Azure.StorageAccount); err != nil {
+	if err := os.Setenv(AzureStorageAccount, bs.Spec.Storage.Azure.StorageAccount); err != nil {
 		return nil, err
 	}
 
@@ -146,7 +146,7 @@ func azureBlob(ctx context.Context, c client.Client, bs *storageapi.BackupStorag
 		backupStorage:  bs,
 		prefix:         bs.Spec.Storage.Azure.Prefix,
 		maxConnections: bs.Spec.Storage.Azure.MaxConnections,
-		storageURL:     fmt.Sprintf("%s%s", azurePrefix, bs.Spec.Storage.Azure.Container),
+		storageURL:     fmt.Sprintf("%s%s", AzurePrefix, bs.Spec.Storage.Azure.Container),
 	}, nil
 }
 
@@ -154,7 +154,7 @@ func localBlob(bs *storageapi.BackupStorage) (*Blob, error) {
 	return &Blob{
 		backupStorage:  bs,
 		maxConnections: bs.Spec.Storage.Local.MaxConnections,
-		storageURL:     fmt.Sprintf("%s%s?no_tmp_dir=true", localPrefix, bs.Spec.Storage.Local.MountPath),
+		storageURL:     fmt.Sprintf("%s%s?no_tmp_dir=true", LocalPrefix, bs.Spec.Storage.Local.MountPath),
 	}, nil
 }
 
@@ -183,14 +183,14 @@ func getStorageSecret(ctx context.Context, c client.Client, bs *storageapi.Backu
 }
 
 func setGcsCredentialsToEnv(secret *v1.Secret) error {
-	if val, ok := secret.Data[googleServiceAccountJsonKey]; !ok {
-		return fmt.Errorf("storage secret missing %s key", googleServiceAccountJsonKey)
+	if val, ok := secret.Data[GoogleServiceAccountJSONKey]; !ok {
+		return fmt.Errorf("storage secret missing %s key", GoogleServiceAccountJSONKey)
 	} else {
-		filePath := path.Join(credentialsDir, googleServiceAccountJsonKey)
+		filePath := path.Join(CredentialsDir, GoogleServiceAccountJSONKey)
 		if err := writeDataIntoFile(filePath, val); err != nil {
 			return err
 		}
-		if err := os.Setenv(googleApplicationCredentials, filePath); err != nil {
+		if err := os.Setenv(GoogleApplicationCredentials, filePath); err != nil {
 			return err
 		}
 	}
@@ -198,10 +198,10 @@ func setGcsCredentialsToEnv(secret *v1.Secret) error {
 }
 
 func setAzureCredentialsToEnv(secret *v1.Secret) error {
-	if val, ok := secret.Data[azureAccountKey]; !ok {
-		return fmt.Errorf("storage secret missing %s key", azureAccountKey)
+	if val, ok := secret.Data[AzureAccountKey]; !ok {
+		return fmt.Errorf("storage secret missing %s key", AzureAccountKey)
 	} else {
-		if err := os.Setenv(azureStorageKey, string(val)); err != nil {
+		if err := os.Setenv(AzureStorageKey, string(val)); err != nil {
 			return err
 		}
 	}
@@ -490,7 +490,8 @@ func (b *Blob) getS3Config(ctx context.Context, debug bool) (aws2.Config, error)
 
 	if debug {
 		loadOptions = append(loadOptions, config.WithClientLogMode(
-			aws2.LogRetries|aws2.LogRequestWithBody|aws2.LogResponseWithBody))
+			aws2.LogRetries|aws2.LogRequestWithBody|aws2.LogResponseWithBody,
+		))
 	}
 
 	if b.backupStorage.Spec.Storage.S3.SecretName != "" {
@@ -507,9 +508,9 @@ func (b *Blob) getS3Config(ctx context.Context, debug bool) (aws2.Config, error)
 			credentials.NewStaticCredentialsProvider(string(id), string(key), ""),
 		))
 
-		needsTLS := b.backupStorage.Spec.Storage.S3.InsecureTLS || len(b.s3Secret.Data[caCertData]) > 0
+		needsTLS := b.backupStorage.Spec.Storage.S3.InsecureTLS || len(b.s3Secret.Data[CACertData]) > 0
 		if needsTLS {
-			httpClient, err := configureTLS(b.s3Secret.Data[caCertData],
+			httpClient, err := configureTLS(b.s3Secret.Data[CACertData],
 				b.backupStorage.Spec.Storage.S3.InsecureTLS)
 			if err != nil {
 				return aws2.Config{}, err
@@ -572,11 +573,15 @@ func configureTLS(caCert []byte, insecureTLS bool) (*http.Client, error) {
 	}, nil
 }
 
+// SetPathAsDir creates an empty object with a trailing slash to represent an
+// otherwise empty directory in object storage.
 func (b *Blob) SetPathAsDir(ctx context.Context, path string) error {
-	bucket, err := b.openBucket(ctx, path)
+	bucket, err := b.openBucket(ctx, "")
 	if err != nil {
 		return err
 	}
+	defer closeBucket(ctx, bucket)
+
 	if !strings.HasSuffix(path, "/") {
 		path = fmt.Sprintf("%s/", path)
 	}
