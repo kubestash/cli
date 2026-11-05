@@ -103,9 +103,20 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 				return err
 			}
 
+			klog.Infof("Resolved Snapshot %s/%s -> Repository %s -> BackupStorage %s/%s (provider: %s)",
+				srcNamespace, snapshotName, repository.Name,
+				backupStorage.Namespace, backupStorage.Name, backupStorage.Spec.Storage.Provider)
+
 			if backupStorage.Spec.Storage.Local != nil {
-				if !backupStorage.LocalNetworkVolume() {
-					return fmt.Errorf("unsupported type of local backend provided")
+				switch {
+				case backupStorage.LocalNetworkVolume():
+					klog.Infof("Local backend type: NFS (server: %s)", backupStorage.Spec.Storage.Local.NFS.Server)
+				case backupStorage.LocalBackendPVC():
+					klog.Infof("Local backend type: PersistentVolumeClaim (claim: %s, mountPath: %s)",
+						backupStorage.Spec.Storage.Local.PersistentVolumeClaim.ClaimName, backupStorage.Spec.Storage.Local.MountPath)
+				default:
+					return fmt.Errorf("unsupported type of local backend provided: BackupStorage %s/%s uses a local volume source that is neither NFS nor PersistentVolumeClaim",
+						backupStorage.Namespace, backupStorage.Name)
 				}
 
 				accessorPod, err := getLocalBackendAccessorPod(repository.Spec.StorageRef)
@@ -127,6 +138,7 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 			}
 
 			if yes {
+				klog.Infof("Workload identity detected on operator pod %s/%s; downloading via operator pod", operatorPod.Namespace, operatorPod.Name)
 				return downloadOpt.runRestoreViaPod(&operatorPod, snapshotName)
 			}
 
@@ -226,15 +238,15 @@ func NewCmdDownload(clientGetter genericclioptions.RESTClientGetter) *cobra.Comm
 
 func (opt *downloadOptions) runRestoreViaPod(pod *core.Pod, snapshotName string) error {
 	if err := opt.runCmdViaPod(pod, snapshotName); err != nil {
-		return err
+		return fmt.Errorf("failed to run download inside pod %s/%s: %w", pod.Namespace, pod.Name, err)
 	}
 
 	if err := opt.copyDownloadedDataToDestination(pod); err != nil {
-		return err
+		return fmt.Errorf("failed to copy downloaded data from pod %s/%s to %s: %w", pod.Namespace, pod.Name, opt.destinationDir, err)
 	}
 
 	if err := opt.clearDataFromPod(pod); err != nil {
-		return err
+		return fmt.Errorf("failed to clean up temporary data from pod %s/%s: %w", pod.Namespace, pod.Name, err)
 	}
 
 	klog.Infof("Snapshot %s/%s restored in path %s", srcNamespace, snapshotName, opt.destinationDir)
@@ -265,16 +277,26 @@ func (opt *downloadOptions) runCmdViaPod(pod *core.Pod, snapshotName string) err
 	if err != nil {
 		return err
 	}
-	klog.Infoln("Output:", out)
+	if out != "" {
+		klog.Infoln("Output:", out)
+	}
 	return nil
 }
 
 func (opt *downloadOptions) copyDownloadedDataToDestination(pod *core.Pod) error {
-	_, err := exec.Command(CmdKubectl, "cp", fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, SnapshotDownloadDir), opt.destinationDir).CombinedOutput()
-	if err != nil {
-		return err
+	if strings.EqualFold(os.Getenv(EnvCopyMode), CopyModeCP) {
+		cmd := exec.Command(CmdKubectl, "cp", fmt.Sprintf("%s/%s:%s", pod.Namespace, pod.Name, SnapshotDownloadDir), opt.destinationDir)
+		klog.Infof("Copying downloaded data with: %v", cmd.Args)
+		out, err := cmd.CombinedOutput()
+		if len(out) > 0 {
+			klog.Infoln("kubectl cp output:", string(out))
+		}
+		if err != nil {
+			return fmt.Errorf("kubectl cp failed: %w, output: %q", err, string(out))
+		}
+		return nil
 	}
-	return nil
+	return copyDataFromPodViaTar(opt.restConfig, pod, SnapshotDownloadDir, opt.destinationDir)
 }
 
 func (opt *downloadOptions) clearDataFromPod(pod *core.Pod) error {

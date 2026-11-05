@@ -269,7 +269,9 @@ func configureStorageBackend(backend store.Backend, bs *storageapi.BackupStorage
 	case backend.Local != nil:
 		bs.Spec.Storage.Provider = storageapi.ProviderLocal
 		bs.Spec.Storage.Local = &storageapi.LocalSpec{
-			// TODO: Configure VolumeSource
+			VolumeSource: ofst.VolumeSource{
+				PersistentVolumeClaim: backend.Local.PersistentVolumeClaim,
+			},
 			MountPath: backend.Local.MountPath,
 			SubPath:   backend.Local.SubPath,
 		}
