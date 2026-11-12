@@ -1,7 +1,6 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/name: kubedb
   name: solropsrequests.ops.kubedb.com
@@ -72,6 +71,27 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  backup:
+                    properties:
+                      gcsSecrets:
+                        items:
+                          properties:
+                            name:
+                              default: ""
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        type: array
+                      s3Secrets:
+                        items:
+                          properties:
+                            name:
+                              default: ""
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        type: array
+                    type: object
                   configSecret:
                     properties:
                       name:
@@ -115,6 +135,45 @@ spec:
                 default: 1
                 format: int32
                 type: integer
+              migration:
+                properties:
+                  coordinator:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  data:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  node:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  overseer:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                type: object
               restart:
                 type: object
               timeout:
@@ -234,6 +293,7 @@ spec:
                 - Restart
                 - ReconfigureTLS
                 - RotateAuth
+                - StorageMigration
                 type: string
               updateVersion:
                 properties:
@@ -338,6 +398,12 @@ spec:
                         - value
                         type: object
                     type: object
+                  mode:
+                    default: Restart
+                    enum:
+                    - Restart
+                    - InPlace
+                    type: string
                   node:
                     properties:
                       nodeSelectionPolicy:

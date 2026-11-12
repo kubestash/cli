@@ -78,13 +78,12 @@ func (k *Kafka) ResourceFQN() string {
 	return fmt.Sprintf("%s.%s", k.ResourcePlural(), kubedb.GroupName)
 }
 
-// Owner returns owner reference to resources
-func (k *Kafka) Owner() *meta.OwnerReference {
-	return meta.NewControllerRef(k, SchemeGroupVersion.WithKind(k.ResourceKind()))
-}
-
 func (k *Kafka) OffshootName() string {
 	return k.Name
+}
+
+func (k *Kafka) GetStorageClassName() string {
+	return *k.Spec.Storage.StorageClassName
 }
 
 func (k *Kafka) ServiceName() string {
@@ -242,7 +241,7 @@ func (k *Kafka) GetKeystoreSecretName() string {
 
 func (k *Kafka) GetPersistentSecrets() []string {
 	var secrets []string
-	if k.Spec.AuthSecret != nil {
+	if !IsVirtualAuthSecretReferred(k.Spec.AuthSecret) && k.Spec.AuthSecret != nil && k.Spec.AuthSecret.Name != "" {
 		secrets = append(secrets, k.Spec.AuthSecret.Name)
 	}
 	if k.Spec.KeystoreCredSecret != nil {
@@ -387,7 +386,7 @@ func (k *Kafka) SetDefaults(kc client.Client) {
 			k.setDefaultContainerSecurityContext(&kfVersion, &k.Spec.Topology.Controller.PodTemplate)
 
 			dbContainer := coreutil.GetContainerByName(k.Spec.Topology.Controller.PodTemplate.Spec.Containers, kubedb.KafkaContainerName)
-			if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
+			if dbContainer != nil {
 				apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResourcesMemoryIntensive)
 			}
 		}
@@ -402,7 +401,7 @@ func (k *Kafka) SetDefaults(kc client.Client) {
 			k.setDefaultContainerSecurityContext(&kfVersion, &k.Spec.Topology.Broker.PodTemplate)
 
 			dbContainer := coreutil.GetContainerByName(k.Spec.Topology.Broker.PodTemplate.Spec.Containers, kubedb.KafkaContainerName)
-			if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
+			if dbContainer != nil {
 				apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResourcesMemoryIntensive)
 			}
 		}
@@ -413,7 +412,7 @@ func (k *Kafka) SetDefaults(kc client.Client) {
 		k.setDefaultContainerSecurityContext(&kfVersion, &k.Spec.PodTemplate)
 
 		dbContainer := coreutil.GetContainerByName(k.Spec.PodTemplate.Spec.Containers, kubedb.KafkaContainerName)
-		if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
+		if dbContainer != nil {
 			apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResourcesMemoryIntensive)
 		}
 	}
@@ -470,6 +469,8 @@ func (k *Kafka) setDefaultContainerSecurityContext(kfVersion *catalog.KafkaVersi
 		k.assignDefaultContainerSecurityContext(kfVersion, initContainer.SecurityContext)
 		podTemplate.Spec.InitContainers = coreutil.UpsertContainer(podTemplate.Spec.InitContainers, *initContainer)
 	}
+
+	apis.SetDefaultResizePolicy(podTemplate.Spec.Containers, podTemplate.Spec.InitContainers)
 }
 
 func (k *Kafka) assignDefaultContainerSecurityContext(kfVersion *catalog.KafkaVersion, sc *core.SecurityContext) {
@@ -606,4 +607,8 @@ func (k *Kafka) GetKafkaBrokerCounts() int {
 		return int(*k.Spec.Topology.Broker.Replicas)
 	}
 	return int(*k.Spec.Replicas)
+}
+
+func (k *Kafka) GetDeletionPolicy() string {
+	return string(k.Spec.DeletionPolicy)
 }

@@ -20,6 +20,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v2"
 )
 
@@ -55,6 +56,15 @@ type HanaDBMode string
 const (
 	HanaDBModeStandalone        HanaDBMode = "Standalone"
 	HanaDBModeSystemReplication HanaDBMode = "SystemReplication"
+)
+
+// +kubebuilder:validation:Enum=server;client;metrics-exporter
+type HanaDBCertificateAlias string
+
+const (
+	HanaDBServerCert          HanaDBCertificateAlias = "server"
+	HanaDBClientCert          HanaDBCertificateAlias = "client"
+	HanaDBMetricsExporterCert HanaDBCertificateAlias = "metrics-exporter"
 )
 
 // HanaDB is the Schema for the hanadbs API
@@ -103,6 +113,13 @@ type HanaDBSpec struct {
 	// Storage to specify how storage shall be used
 	Storage *core.PersistentVolumeClaimSpec `json:"storage,omitempty"`
 
+	// EnforceVolumePermission runs a root init container to make the HanaDB data
+	// volume writable by the runtime user. Use this when storage provisioners
+	// create volumes that are not writable by HanaDB. fsGroup is not used because
+	// /run_hana rejects SGID on /hana/mounts.
+	// +optional
+	EnforceVolumePermission bool `json:"enforceVolumePermission,omitempty"`
+
 	// Database authentication secret
 	// +optional
 	AuthSecret *SecretReference `json:"authSecret,omitempty"`
@@ -110,6 +127,16 @@ type HanaDBSpec struct {
 	// Configuration holds the custom config for hanadb
 	// +optional
 	Configuration *ConfigurationSpec `json:"configuration,omitempty"`
+
+	// TLS configures certificates issued from spec.tls.issuerRef for SAP HANA
+	// server-side TLS, KubeDB client connections, and metrics exporter TLS.
+	// When TLS is specified, issuerRef must be set.
+	// +optional
+	TLS *kmapi.TLSConfig `json:"tls,omitempty"`
+
+	// Monitor is used monitor database instance
+	// +optional
+	Monitor *mona.AgentSpec `json:"monitor,omitempty"`
 
 	// PodTemplate is an optional configuration for pods used to expose database
 	// +optional
@@ -127,6 +154,14 @@ type HanaDBSpec struct {
 	// +optional
 	// +kubebuilder:default={periodSeconds: 20, timeoutSeconds: 10, failureThreshold: 3}
 	HealthChecker kmapi.HealthCheckSpec `json:"healthChecker"`
+
+	// Arbiter controls spec for arbiter pods
+	// +optional
+	Arbiter *ArbiterSpec `json:"arbiter,omitempty"`
+
+	// Init is used to initialize the database from a script or git repo.
+	// +optional
+	Init *InitSpec `json:"init,omitempty"`
 }
 
 // HanaDBTopology defines the deployment mode for HanaDB
@@ -173,4 +208,22 @@ type HanaDBList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []HanaDB `json:"items"`
+}
+
+var _ Accessor = &HanaDB{}
+
+func (h *HanaDB) GetObjectMeta() metav1.ObjectMeta {
+	return h.ObjectMeta
+}
+
+func (h *HanaDB) GetConditions() []kmapi.Condition {
+	return h.Status.Conditions
+}
+
+func (h *HanaDB) SetCondition(cond kmapi.Condition) {
+	h.Status.Conditions = setCondition(h.Status.Conditions, cond)
+}
+
+func (h *HanaDB) RemoveCondition(typ string) {
+	h.Status.Conditions = removeCondition(h.Status.Conditions, typ)
 }

@@ -63,11 +63,6 @@ func (s *Solr) PetSetName(suffix string) string {
 	return strings.Join(sts, "-")
 }
 
-// Owner returns owner reference to resources
-func (s *Solr) Owner() *meta.OwnerReference {
-	return meta.NewControllerRef(s, SchemeGroupVersion.WithKind(s.ResourceKind()))
-}
-
 func (s *Solr) ResourceKind() string {
 	return ResourceKindSolr
 }
@@ -118,6 +113,36 @@ func (s *Solr) SolrInlineConfigSecretKey(key string) string {
 	return fmt.Sprintf("%s-%s", kubedb.InlineConfigKeyPrefix, key)
 }
 
+func (s *Solr) S3BackupCredentials() []v1.LocalObjectReference {
+	if s.Spec.Configuration == nil || s.Spec.Configuration.BackupSpec == nil {
+		return nil
+	}
+	return s.Spec.Configuration.BackupSpec.S3Secrets
+}
+
+func (s *Solr) GCSBackupCredentials() []v1.LocalObjectReference {
+	if s.Spec.Configuration == nil || s.Spec.Configuration.BackupSpec == nil {
+		return nil
+	}
+	return s.Spec.Configuration.BackupSpec.GCSSecrets
+}
+
+func (s *Solr) BackupCredentialsSecretName() string {
+	return meta_util.NameWithSuffix(s.Name, kubedb.SolrBackupCredentialsSecretSuffix)
+}
+
+func AWSCredentialsPath() string {
+	return filepath.Join(kubedb.SolrBackupCredentialsDir, kubedb.SolrAWSCredentialsFileName)
+}
+
+func GCSCredentialSecretKey(secretName string) string {
+	return "gcs-" + secretName + ".json"
+}
+
+func GCSCredentialPath(secretName string) string {
+	return filepath.Join(kubedb.SolrBackupCredentialsDir, "gcs", secretName+".json")
+}
+
 func (s *Solr) Merge(opt map[string]string) map[string]string {
 	if len(s.Spec.SolrOpts) == 0 {
 		return opt
@@ -133,7 +158,7 @@ func (s *Solr) Merge(opt map[string]string) map[string]string {
 }
 
 func (s *Solr) Append(opt map[string]string) string {
-	key := make([]string, 0)
+	key := make([]string, 0, len(opt))
 	for x := range opt {
 		key = append(key, x)
 	}
@@ -482,7 +507,7 @@ func (s *Solr) assignDefaultContainerSecurityContext(slVersion *catalog.SolrVers
 
 func (s *Solr) setDefaultContainerResourceLimits(podTemplate *ofst.PodTemplateSpec) {
 	dbContainer := coreutil.GetContainerByName(podTemplate.Spec.Containers, kubedb.SolrContainerName)
-	if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
+	if dbContainer != nil {
 		apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResourcesCoreAndMemoryIntensiveSolr)
 	}
 
@@ -490,6 +515,8 @@ func (s *Solr) setDefaultContainerResourceLimits(podTemplate *ofst.PodTemplateSp
 	if initContainer != nil && (initContainer.Resources.Requests == nil && initContainer.Resources.Limits == nil) {
 		apis.SetDefaultResourceLimits(&initContainer.Resources, kubedb.DefaultInitContainerResource)
 	}
+
+	apis.SetDefaultResizePolicy(podTemplate.Spec.Containers, podTemplate.Spec.InitContainers)
 }
 
 func (s *Solr) SetHealthCheckerDefaults() {
@@ -511,8 +538,9 @@ func (s *Solr) GetPersistentSecrets() []string {
 
 	var secrets []string
 	// Add Admin/Elastic user secret name
-
-	secrets = append(secrets, s.GetAuthSecretName())
+	if !IsVirtualAuthSecretReferred(s.Spec.AuthSecret) && s.Spec.AuthSecret != nil && s.Spec.AuthSecret.Name != "" {
+		secrets = append(secrets, s.GetAuthSecretName())
+	}
 
 	if s.Spec.AuthConfigSecret != nil {
 		secrets = append(secrets, s.Spec.AuthConfigSecret.Name)
@@ -591,4 +619,12 @@ func (d *SolrBind) SecretName() string {
 
 func (d *SolrBind) CertSecretName() string {
 	return d.GetCertSecretName(SolrClientCert)
+}
+
+func (s *Solr) GetDeletionPolicy() string {
+	return string(s.Spec.DeletionPolicy)
+}
+
+func (s *Solr) AsOwner() *meta.OwnerReference {
+	return meta.NewControllerRef(s, SchemeGroupVersion.WithKind(s.ResourceKind()))
 }

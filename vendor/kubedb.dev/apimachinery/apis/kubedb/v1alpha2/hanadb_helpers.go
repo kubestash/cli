@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/apiextensions"
 	coreutil "kmodules.xyz/client-go/core/v1"
 	metautil "kmodules.xyz/client-go/meta"
@@ -101,8 +102,8 @@ func (h *HanaDB) ServiceName() string {
 	return h.OffshootName()
 }
 
-func (h *HanaDB) SecondaryServiceName() string {
-	return metautil.NameWithPrefix(h.ServiceName(), string(SecondaryServiceAlias))
+func (h *HanaDB) StandbyServiceName() string {
+	return metautil.NameWithPrefix(h.ServiceName(), string(StandbyServiceAlias))
 }
 
 func (h *HanaDB) GoverningServiceName() string {
@@ -366,11 +367,6 @@ func (h *HanaDB) ServiceAccountName() string {
 	return h.OffshootName()
 }
 
-// Owner returns owner reference to resources
-func (h *HanaDB) Owner() *metav1.OwnerReference {
-	return metav1.NewControllerRef(h, SchemeGroupVersion.WithKind(h.ResourceKind()))
-}
-
 func (h *HanaDB) GetAuthSecretName() string {
 	if h.Spec.AuthSecret != nil && h.Spec.AuthSecret.Name != "" {
 		return h.Spec.AuthSecret.Name
@@ -380,8 +376,61 @@ func (h *HanaDB) GetAuthSecretName() string {
 
 func (h *HanaDB) GetPersistentSecrets() []string {
 	var secrets []string
-	secrets = append(secrets, h.GetAuthSecretName())
+	if !IsVirtualAuthSecretReferred(h.Spec.AuthSecret) && h.Spec.AuthSecret != nil && h.Spec.AuthSecret.Name != "" {
+		secrets = append(secrets, h.GetAuthSecretName())
+	}
 	return secrets
+}
+
+func (h *HanaDB) CertificateName(alias HanaDBCertificateAlias) string {
+	return metautil.NameWithSuffix(h.Name, fmt.Sprintf("%s-cert", string(alias)))
+}
+
+func (h *HanaDB) ServerCertificateDNSNames() []string {
+	names := []string{
+		h.ServiceName(),
+		fmt.Sprintf("%s.%s", h.ServiceName(), h.Namespace),
+		fmt.Sprintf("%s.%s.svc", h.ServiceName(), h.Namespace),
+		fmt.Sprintf("%s.%s.svc.%s", h.ServiceName(), h.Namespace, apiutils.FindDomain()),
+		fmt.Sprintf("%s.%s", h.StandbyServiceName(), h.Namespace),
+		fmt.Sprintf("%s.%s.svc", h.StandbyServiceName(), h.Namespace),
+		fmt.Sprintf("%s.%s.svc.%s", h.StandbyServiceName(), h.Namespace, apiutils.FindDomain()),
+		fmt.Sprintf("%s.%s", h.GoverningServiceName(), h.Namespace),
+		fmt.Sprintf("%s.%s.svc", h.GoverningServiceName(), h.Namespace),
+		fmt.Sprintf("%s.%s.svc.%s", h.GoverningServiceName(), h.Namespace, apiutils.FindDomain()),
+		fmt.Sprintf("*.%s.%s.svc", h.GoverningServiceName(), h.Namespace),
+		fmt.Sprintf("*.%s.%s.svc.%s", h.GoverningServiceName(), h.Namespace, apiutils.FindDomain()),
+	}
+
+	seen := map[string]struct{}{}
+	out := make([]string, 0, len(names))
+	for _, name := range names {
+		if name == "" {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		out = append(out, name)
+	}
+	return out
+}
+
+// GetCertSecretName returns the referenced secret name for the certificate alias.
+// If the alias exists in spec.tls.certificates with an empty secretName, the
+// conventional "<db-name>-<alias>-cert" name is returned.
+func (h *HanaDB) GetCertSecretName(alias HanaDBCertificateAlias) string {
+	if h.Spec.TLS == nil {
+		return ""
+	}
+	if _, cert := kmapi.GetCertificate(h.Spec.TLS.Certificates, string(alias)); cert != nil {
+		if cert.SecretName != "" {
+			return cert.SecretName
+		}
+		return h.CertificateName(alias)
+	}
+	return ""
 }
 
 func (h *HanaDB) GetNameSpacedName() string {
@@ -487,6 +536,19 @@ func (h *HanaDB) SetHealthCheckerDefaults() {
 	}
 }
 
+func (h *HanaDB) SetArbiterDefault() {
+	replicas := int32(0)
+	if h.Spec.Replicas != nil {
+		replicas = *h.Spec.Replicas
+	}
+	if h.IsCluster() && replicas%2 == 0 && h.Spec.Arbiter == nil {
+		h.Spec.Arbiter = &ArbiterSpec{
+			Resources: core.ResourceRequirements{},
+		}
+		apis.SetDefaultResourceLimits(&h.Spec.Arbiter.Resources, kubedb.DefaultArbiter(false))
+	}
+}
+
 func (h *HanaDB) SetDefaults(kc client.Client) {
 	if h == nil {
 		return
@@ -516,6 +578,7 @@ func (h *HanaDB) SetDefaults(kc client.Client) {
 			h.Spec.Replicas = pointer.Int32P(1)
 		}
 	}
+
 	if h.IsSystemReplication() {
 		if h.Spec.Topology.SystemReplication == nil {
 			h.Spec.Topology.SystemReplication = &HanaDBSystemReplicationSpec{}
@@ -528,11 +591,101 @@ func (h *HanaDB) SetDefaults(kc client.Client) {
 		}
 	}
 
+	h.SetArbiterDefault()
+
+	h.SetTLSDefaults()
+
 	h.setDefaultContainerSecurityContext(&hanadbVersion, h.Spec.PodTemplate)
 
 	h.SetHealthCheckerDefaults()
 
 	h.setDefaultContainerResourceLimits(h.Spec.PodTemplate)
+
+	if h.Spec.Monitor != nil {
+		if h.Spec.Monitor.Prometheus == nil {
+			h.Spec.Monitor.Prometheus = &mona.PrometheusSpec{}
+		}
+		if h.Spec.Monitor.Prometheus.Exporter.Port == 0 {
+			h.Spec.Monitor.Prometheus.Exporter.Port = kubedb.HanaDBExporterPort
+		}
+		h.Spec.Monitor.SetDefaults()
+		if h.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser == nil {
+			h.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser = hanadbVersion.Spec.SecurityContext.RunAsUser
+		}
+		if h.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsGroup == nil {
+			h.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsGroup = hanadbVersion.Spec.SecurityContext.RunAsGroup
+		}
+	}
+}
+
+func (h *HanaDB) SetTLSDefaults() {
+	if h.Spec.TLS == nil || h.Spec.TLS.IssuerRef == nil {
+		return
+	}
+
+	defaultServerOrg := []string{kubedb.KubeDBOrganization}
+	defaultServerOrgUnit := []string{string(HanaDBServerCert)}
+	_, cert := kmapi.GetCertificate(h.Spec.TLS.Certificates, string(HanaDBServerCert))
+	if cert != nil && cert.Subject != nil {
+		if cert.Subject.Organizations != nil {
+			defaultServerOrg = cert.Subject.Organizations
+		}
+		if cert.Subject.OrganizationalUnits != nil {
+			defaultServerOrgUnit = cert.Subject.OrganizationalUnits
+		}
+	}
+
+	h.Spec.TLS.Certificates = kmapi.SetMissingSpecForCertificate(h.Spec.TLS.Certificates, kmapi.CertificateSpec{
+		Alias:      string(HanaDBServerCert),
+		SecretName: h.CertificateName(HanaDBServerCert),
+		Subject: &kmapi.X509Subject{
+			Organizations:       defaultServerOrg,
+			OrganizationalUnits: defaultServerOrgUnit,
+		},
+		DNSNames: h.ServerCertificateDNSNames(),
+	})
+
+	defaultClientOrg := []string{kubedb.KubeDBOrganization}
+	defaultClientOrgUnit := []string{string(HanaDBClientCert)}
+	_, cert = kmapi.GetCertificate(h.Spec.TLS.Certificates, string(HanaDBClientCert))
+	if cert != nil && cert.Subject != nil {
+		if cert.Subject.Organizations != nil {
+			defaultClientOrg = cert.Subject.Organizations
+		}
+		if cert.Subject.OrganizationalUnits != nil {
+			defaultClientOrgUnit = cert.Subject.OrganizationalUnits
+		}
+	}
+
+	h.Spec.TLS.Certificates = kmapi.SetMissingSpecForCertificate(h.Spec.TLS.Certificates, kmapi.CertificateSpec{
+		Alias:      string(HanaDBClientCert),
+		SecretName: h.CertificateName(HanaDBClientCert),
+		Subject: &kmapi.X509Subject{
+			Organizations:       defaultClientOrg,
+			OrganizationalUnits: defaultClientOrgUnit,
+		},
+	})
+
+	defaultExporterOrg := []string{kubedb.KubeDBOrganization}
+	defaultExporterOrgUnit := []string{string(HanaDBMetricsExporterCert)}
+	_, cert = kmapi.GetCertificate(h.Spec.TLS.Certificates, string(HanaDBMetricsExporterCert))
+	if cert != nil && cert.Subject != nil {
+		if cert.Subject.Organizations != nil {
+			defaultExporterOrg = cert.Subject.Organizations
+		}
+		if cert.Subject.OrganizationalUnits != nil {
+			defaultExporterOrgUnit = cert.Subject.OrganizationalUnits
+		}
+	}
+
+	h.Spec.TLS.Certificates = kmapi.SetMissingSpecForCertificate(h.Spec.TLS.Certificates, kmapi.CertificateSpec{
+		Alias:      string(HanaDBMetricsExporterCert),
+		SecretName: h.CertificateName(HanaDBMetricsExporterCert),
+		Subject: &kmapi.X509Subject{
+			Organizations:       defaultExporterOrg,
+			OrganizationalUnits: defaultExporterOrgUnit,
+		},
+	})
 }
 
 func (h *HanaDB) setDefaultContainerSecurityContext(hanadbVersion *catalog.HanaDBVersion, podTemplate *ofst.PodTemplateSpec) {
@@ -559,6 +712,20 @@ func (h *HanaDB) setDefaultContainerSecurityContext(hanadbVersion *catalog.HanaD
 	h.assignDefaultContainerSecurityContext(hanadbVersion, container.SecurityContext)
 
 	podTemplate.Spec.Containers = coreutil.UpsertContainer(podTemplate.Spec.Containers, *container)
+
+	if h.IsCluster() {
+		coordinatorContainer := coreutil.GetContainerByName(podTemplate.Spec.Containers, kubedb.HanaDBCoordinatorContainerName)
+		if coordinatorContainer == nil {
+			coordinatorContainer = &core.Container{
+				Name: kubedb.HanaDBCoordinatorContainerName,
+			}
+		}
+		if coordinatorContainer.SecurityContext == nil {
+			coordinatorContainer.SecurityContext = &core.SecurityContext{}
+		}
+		h.assignDefaultContainerSecurityContext(hanadbVersion, coordinatorContainer.SecurityContext)
+		podTemplate.Spec.Containers = coreutil.UpsertContainer(podTemplate.Spec.Containers, *coordinatorContainer)
+	}
 }
 
 func (h *HanaDB) assignDefaultContainerSecurityContext(hanadbVersion *catalog.HanaDBVersion, sc *core.SecurityContext) {
@@ -587,13 +754,30 @@ func (h *HanaDB) assignDefaultContainerSecurityContext(hanadbVersion *catalog.Ha
 
 func (h *HanaDB) setDefaultContainerResourceLimits(podTemplate *ofst.PodTemplateSpec) {
 	dbContainer := coreutil.GetContainerByName(podTemplate.Spec.Containers, kubedb.HanaDBContainerName)
-	if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
+	if dbContainer != nil {
 		apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResourcesHanaDB)
 	}
+
+	if h.IsCluster() {
+		coordinatorContainer := coreutil.GetContainerByName(podTemplate.Spec.Containers, kubedb.HanaDBCoordinatorContainerName)
+		if coordinatorContainer != nil && (coordinatorContainer.Resources.Requests == nil && coordinatorContainer.Resources.Limits == nil) {
+			apis.SetDefaultResourceLimits(&coordinatorContainer.Resources, kubedb.CoordinatorDefaultResources)
+		}
+	}
+
+	apis.SetDefaultResizePolicy(podTemplate.Spec.Containers, podTemplate.Spec.InitContainers)
 }
 
 func (h *HanaDB) ReplicasAreReady(lister pslister.PetSetLister) (bool, string, error) {
 	// Desire number of petSets
 	expectedItems := 1
 	return checkReplicasOfPetSet(lister.PetSets(h.Namespace), labels.SelectorFromSet(h.OffshootLabels()), expectedItems)
+}
+
+func (h *HanaDB) GetDeletionPolicy() string {
+	return string(h.Spec.DeletionPolicy)
+}
+
+func (h *HanaDB) AsOwner() *metav1.OwnerReference {
+	return metav1.NewControllerRef(h, SchemeGroupVersion.WithKind(h.ResourceKind()))
 }

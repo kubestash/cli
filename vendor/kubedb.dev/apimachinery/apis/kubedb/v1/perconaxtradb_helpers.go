@@ -325,7 +325,7 @@ func (p *PerconaXtraDB) assignDefaultContainerSecurityContext(pVersion *v1alpha1
 
 func (p *PerconaXtraDB) setDefaultContainerResourceLimits(podTemplate *ofstv2.PodTemplateSpec) {
 	dbContainer := core_util.GetContainerByName(podTemplate.Spec.Containers, kubedb.PerconaXtraDBContainerName)
-	if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
+	if dbContainer != nil {
 		apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResources)
 	}
 
@@ -338,6 +338,8 @@ func (p *PerconaXtraDB) setDefaultContainerResourceLimits(podTemplate *ofstv2.Po
 	if coordinatorContainer != nil && (coordinatorContainer.Resources.Requests == nil && coordinatorContainer.Resources.Limits == nil) {
 		apis.SetDefaultResourceLimits(&coordinatorContainer.Resources, kubedb.CoordinatorDefaultResources)
 	}
+
+	apis.SetDefaultResizePolicy(podTemplate.Spec.Containers, podTemplate.Spec.InitContainers)
 }
 
 func (p *PerconaXtraDB) SetHealthCheckerDefaults() {
@@ -369,20 +371,25 @@ func (p *PerconaXtraDB) SetTLSDefaults() {
 }
 
 // CertificateName returns the default certificate name and/or certificate secret name for a certificate alias
-func (p *PerconaXtraDBSpec) GetPersistentSecrets() []string {
+func (p *PerconaXtraDB) GetPersistentSecrets() []string {
 	if p == nil {
 		return nil
 	}
 
 	var secrets []string
-	if p.AuthSecret != nil {
-		secrets = append(secrets, p.AuthSecret.Name)
+	if !IsVirtualAuthSecretReferred(p.Spec.AuthSecret) && p.Spec.AuthSecret != nil && p.Spec.AuthSecret.Name != "" {
+		secrets = append(secrets, p.Spec.AuthSecret.Name)
 	}
-	if p.SystemUserSecrets != nil && p.SystemUserSecrets.ReplicationUserSecret != nil {
-		secrets = append(secrets, p.SystemUserSecrets.ReplicationUserSecret.Name)
+	if p.Spec.SystemUserSecrets != nil && p.Spec.SystemUserSecrets.ReplicationUserSecret != nil {
+		secrets = append(secrets, p.Spec.SystemUserSecrets.ReplicationUserSecret.Name)
 	}
-	if p.SystemUserSecrets != nil && p.SystemUserSecrets.MonitorUserSecret != nil {
-		secrets = append(secrets, p.SystemUserSecrets.MonitorUserSecret.Name)
+	if p.Spec.SystemUserSecrets != nil && p.Spec.SystemUserSecrets.MonitorUserSecret != nil {
+		secrets = append(secrets, p.Spec.SystemUserSecrets.MonitorUserSecret.Name)
+	}
+
+	if p.Spec.Monitor != nil && p.Spec.TLS != nil {
+		name := meta_util.NameWithSuffix(p.Name, kubedb.MySQLMetricsExporterConfigSecretSuffix)
+		secrets = append(secrets, name)
 	}
 	return secrets
 }
@@ -421,4 +428,8 @@ func (p *PerconaXtraDB) CertFilePath(certAlias PerconaXtraDBCertificateAlias, ce
 func (p *PerconaXtraDB) ConfigSecretName() string {
 	uid := string(p.UID)
 	return meta_util.NameWithSuffix(p.OffshootName(), uid[len(uid)-6:])
+}
+
+func (p *PerconaXtraDB) GetDeletionPolicy() string {
+	return string(p.Spec.DeletionPolicy)
 }

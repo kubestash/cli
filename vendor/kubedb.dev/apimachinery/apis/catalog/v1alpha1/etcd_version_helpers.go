@@ -62,7 +62,7 @@ func (e EtcdVersion) ValidateSpecs() error {
 			"spec.db.image",
 			"spec.exporter.image",
 		}
-		return fmt.Errorf("atleast one of the following specs is not set for etcdVersion %q: %s", e.Name, strings.Join(fields, ", "))
+		return fmt.Errorf("atleast one of the following specs is not set for EtcdVersion %q: %s", e.Name, strings.Join(fields, ", "))
 	}
 	return nil
 }
