@@ -1,7 +1,6 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/name: kubedb
   name: singlestoreversions.catalog.kubedb.com
@@ -63,6 +62,13 @@ spec:
                 type: boolean
               endOfLife:
                 type: boolean
+              gitSyncer:
+                properties:
+                  image:
+                    type: string
+                required:
+                - image
+                type: object
               initContainer:
                 properties:
                   image:

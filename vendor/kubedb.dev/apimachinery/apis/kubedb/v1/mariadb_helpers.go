@@ -347,6 +347,7 @@ func (m *MariaDB) SetDefaults(mdVersion *v1alpha1.MariaDBVersion) {
 		if m.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsGroup == nil {
 			m.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsGroup = mdVersion.Spec.SecurityContext.RunAsUser
 		}
+		apis.SetDefaultResourceLimits(&m.Spec.Monitor.Prometheus.Exporter.Resources, kubedb.DefaultExporterResource)
 	}
 	if m.IsCluster() && m.IsMariaDBReplication() {
 		m.SetDefaultsMaxscale(mdVersion, m.Spec.Topology.MaxScale)
@@ -368,7 +369,7 @@ func (m *MariaDB) SetDefaults(mdVersion *v1alpha1.MariaDBVersion) {
 
 func (m *MariaDB) SetDefaultsMaxscale(mdVersion *v1alpha1.MariaDBVersion, maxscale *MaxScaleSpec) {
 	if maxscale == nil {
-		return
+		maxscale = &MaxScaleSpec{}
 	}
 	if maxscale.StorageType == "" {
 		maxscale.StorageType = StorageTypeDurable
@@ -520,7 +521,7 @@ func (m *MariaDB) assignMaxscaleDefaultContainerSecurityContext(mdVersion *v1alp
 
 func (m *MariaDB) setDefaultContainerResourceLimits(podTemplate *ofstv2.PodTemplateSpec) {
 	dbContainer := core_util.GetContainerByName(podTemplate.Spec.Containers, kubedb.MariaDBContainerName)
-	if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
+	if dbContainer != nil {
 		apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResources)
 	}
 
@@ -534,11 +535,12 @@ func (m *MariaDB) setDefaultContainerResourceLimits(podTemplate *ofstv2.PodTempl
 			apis.SetDefaultResourceLimits(&coordinatorContainer.Resources, kubedb.CoordinatorDefaultResources)
 		}
 	}
+	apis.SetDefaultResizePolicy(podTemplate.Spec.Containers, podTemplate.Spec.InitContainers)
 }
 
 func (m *MariaDB) setMaxscaleDefaultContainerResourceLimits(podTemplate *ofstv2.PodTemplateSpec) {
 	dbContainer := core_util.GetContainerByName(podTemplate.Spec.Containers, kubedb.MaxscaleContainerName)
-	if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
+	if dbContainer != nil {
 		apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultInitContainerResource)
 	}
 
@@ -546,6 +548,7 @@ func (m *MariaDB) setMaxscaleDefaultContainerResourceLimits(podTemplate *ofstv2.
 	if initContainer != nil && (initContainer.Resources.Requests == nil && initContainer.Resources.Limits == nil) {
 		apis.SetDefaultResourceLimits(&initContainer.Resources, kubedb.DefaultInitContainerResource)
 	}
+	apis.SetDefaultResizePolicy(podTemplate.Spec.Containers, podTemplate.Spec.InitContainers)
 }
 
 func (m *MariaDB) SetHealthCheckerDefaults() {
@@ -569,15 +572,21 @@ func (m *MariaDB) SetTLSDefaults() {
 	m.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(m.Spec.TLS.Certificates, string(MariaDBExporterCert), m.CertificateName(MariaDBExporterCert))
 }
 
-func (m *MariaDBSpec) GetPersistentSecrets() []string {
+func (m *MariaDB) GetPersistentSecrets() []string {
 	if m == nil {
 		return nil
 	}
 
 	var secrets []string
-	if m.AuthSecret != nil {
-		secrets = append(secrets, m.AuthSecret.Name)
+	if !IsVirtualAuthSecretReferred(m.Spec.AuthSecret) && m.Spec.AuthSecret != nil && m.Spec.AuthSecret.Name != "" {
+		secrets = append(secrets, m.Spec.AuthSecret.Name)
 	}
+
+	if m.Spec.Monitor != nil && m.Spec.TLS != nil {
+		name := meta_util.NameWithSuffix(m.Name, kubedb.MySQLMetricsExporterConfigSecretSuffix)
+		secrets = append(secrets, name)
+	}
+
 	return secrets
 }
 
@@ -615,4 +624,8 @@ func (m *MariaDB) CertMountPath(alias MariaDBCertificateAlias) string {
 
 func (m *MariaDB) CertFilePath(certAlias MariaDBCertificateAlias, certFileName string) string {
 	return filepath.Join(m.CertMountPath(certAlias), certFileName)
+}
+
+func (m *MariaDB) GetDeletionPolicy() string {
+	return string(m.Spec.DeletionPolicy)
 }

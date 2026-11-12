@@ -27,10 +27,13 @@ const (
 	ResourcePluralMilvusVersion   = "milvusversions"
 )
 
-// Package v1alpha2 contains API Schema definitions for the  v1alpha2 API group.
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:object:root=true
+// +genclient
 // +genclient:nonNamespaced
+// +genclient:skipVerbs=updateStatus
+// +k8s:openapi-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// +kubebuilder:object:root=true
 // +kubebuilder:resource:path=milvusversions,singular=milvusversion,scope=Cluster,shortName=mvversion,categories={catalog,kubedb,appscode}
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="DB_IMAGE",type="string",JSONPath=".spec.db.image"
@@ -69,11 +72,37 @@ type MilvusVersionSpec struct {
 	UI []ChartInfo `json:"ui,omitempty"`
 	// update constraints
 	UpdateConstraints UpdateConstraints `json:"updateConstraints,omitempty"`
+
+	// Archiver holds the images and KubeStash addon tasks used by the
+	// MilvusArchiver (base backup, point-in-time recovery, restore).
+	// +optional
+	Archiver ArchiverSpec `json:"archiver,omitempty"`
 }
 
 // +k8s:deepcopy-gen=true
 type MilvusDatabase struct {
 	Image string `json:"image"`
+
+	// GPU declares this image's GPU-acceleration capability, i.e. whether it
+	// was built with GPU-enabled knowhere (CUDA) support. Nil/absent is
+	// treated the same as unsupported (CPU-only). Consumed by the Milvus
+	// admission webhook to reject a GPU resource/scheduling request against
+	// a MilvusVersion that cannot serve it.
+	// +optional
+	GPU *MilvusVersionGPUSpec `json:"gpu,omitempty"`
+}
+
+// +k8s:deepcopy-gen=true
+type MilvusVersionGPUSpec struct {
+	// Supported reports whether DB.Image was built with GPU-accelerated
+	// knowhere/CUDA support.
+	Supported bool `json:"supported"`
+
+	// ComputeCapabilities optionally lists the CUDA compute-capability
+	// values this image's compiled kernels target (e.g. "7.0", "7.5", "8.0").
+	// Advisory only; not enforced against actual node GPU hardware.
+	// +optional
+	ComputeCapabilities []string `json:"computeCapabilities,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

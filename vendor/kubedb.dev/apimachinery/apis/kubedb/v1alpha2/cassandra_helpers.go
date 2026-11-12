@@ -75,11 +75,6 @@ func (c Cassandra) SidekickLabels(skName string) map[string]string {
 	})
 }
 
-// Owner returns owner reference to resources
-func (r *Cassandra) Owner() *meta.OwnerReference {
-	return meta.NewControllerRef(r, SchemeGroupVersion.WithKind(r.ResourceKind()))
-}
-
 func (r *Cassandra) ResourceKind() string {
 	return ResourceKindCassandra
 }
@@ -354,8 +349,8 @@ func (r *Cassandra) SetDefaults(kc client.Client) {
 			}
 
 			dbContainer := coreutil.GetContainerByName(rack.PodTemplate.Spec.Containers, kubedb.CassandraContainerName)
-			if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
-				apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResources)
+			if dbContainer != nil {
+				apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResourcesMemoryIntensive)
 			}
 			r.setDefaultContainerSecurityContext(&casVersion, rack.PodTemplate)
 			racks[index] = rack
@@ -374,8 +369,8 @@ func (r *Cassandra) SetDefaults(kc client.Client) {
 		}
 		r.setDefaultContainerSecurityContext(&casVersion, r.Spec.PodTemplate)
 		dbContainer := coreutil.GetContainerByName(r.Spec.PodTemplate.Spec.Containers, kubedb.CassandraContainerName)
-		if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
-			apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResources)
+		if dbContainer != nil {
+			apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResourcesMemoryIntensive)
 		}
 		r.SetHealthCheckerDefaults()
 	}
@@ -426,6 +421,8 @@ func (r *Cassandra) setDefaultContainerSecurityContext(csVersion *catalog.Cassan
 		initContainer.SecurityContext = &core.SecurityContext{}
 	}
 	r.assignDefaultContainerSecurityContext(csVersion, initContainer.SecurityContext)
+
+	apis.SetDefaultResizePolicy(podTemplate.Spec.Containers, podTemplate.Spec.InitContainers)
 }
 
 func (r *Cassandra) assignDefaultContainerSecurityContext(csVersion *catalog.CassandraVersion, rc *core.SecurityContext) {
@@ -504,4 +501,20 @@ func (c *Cassandra) CertSecretVolumeName(alias CassandraCertificateAlias) string
 // mountPath will be, "/var/cassandra/ssl/<alias>".
 func (c *Cassandra) CertSecretVolumeMountPath(configDir string, cert string) string {
 	return filepath.Join(configDir, cert)
+}
+
+func (c *Cassandra) GetPersistentSecrets() []string {
+	var secrets []string
+	if !c.Spec.DisableSecurity && !IsVirtualAuthSecretReferred(c.Spec.AuthSecret) && c.Spec.AuthSecret != nil && c.Spec.AuthSecret.Name != "" {
+		secrets = append(secrets, c.GetAuthSecretName())
+	}
+	return secrets
+}
+
+func (r *Cassandra) GetDeletionPolicy() string {
+	return string(r.Spec.DeletionPolicy)
+}
+
+func (r *Cassandra) AsOwner() *meta.OwnerReference {
+	return meta.NewControllerRef(r, SchemeGroupVersion.WithKind(r.ResourceKind()))
 }

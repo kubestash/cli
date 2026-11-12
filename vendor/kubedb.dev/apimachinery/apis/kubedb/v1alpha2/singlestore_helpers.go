@@ -82,11 +82,6 @@ func (s *Singlestore) ResourceFQN() string {
 	return fmt.Sprintf("%s.%s", s.ResourcePlural(), kubedb.GroupName)
 }
 
-// Owner returns owner reference to resources
-func (s *Singlestore) Owner() *meta.OwnerReference {
-	return meta.NewControllerRef(s, SchemeGroupVersion.WithKind(s.ResourceKind()))
-}
-
 type singlestoreStatsService struct {
 	*Singlestore
 }
@@ -310,7 +305,7 @@ func (s *Singlestore) GetAuthSecretName() string {
 
 func (s *Singlestore) GetPersistentSecrets() []string {
 	var secrets []string
-	if s.Spec.AuthSecret != nil {
+	if !IsVirtualAuthSecretReferred(s.Spec.AuthSecret) && s.Spec.AuthSecret != nil && s.Spec.AuthSecret.Name != "" {
 		secrets = append(secrets, s.Spec.AuthSecret.Name)
 	}
 	return secrets
@@ -498,7 +493,7 @@ func (s *Singlestore) assignDefaultContainerSecurityContext(sdbVersion *catalog.
 
 func (s *Singlestore) setDefaultContainerResourceLimits(podTemplate *ofst.PodTemplateSpec) {
 	dbContainer := coreutil.GetContainerByName(podTemplate.Spec.Containers, kubedb.SinglestoreContainerName)
-	if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
+	if dbContainer != nil {
 		apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResourcesMemoryIntensiveSDB)
 	}
 
@@ -513,6 +508,8 @@ func (s *Singlestore) setDefaultContainerResourceLimits(podTemplate *ofst.PodTem
 			apis.SetDefaultResourceLimits(&coordinatorContainer.Resources, kubedb.CoordinatorDefaultResources)
 		}
 	}
+
+	apis.SetDefaultResizePolicy(podTemplate.Spec.Containers, podTemplate.Spec.InitContainers)
 }
 
 func (s *Singlestore) SetTLSDefaults() {
@@ -564,4 +561,12 @@ func (d *SinglestoreBind) SecretName() string {
 
 func (d *SinglestoreBind) CertSecretName() string {
 	return d.GetCertSecretName(SinglestoreClientCert)
+}
+
+func (s *Singlestore) GetDeletionPolicy() string {
+	return string(s.Spec.DeletionPolicy)
+}
+
+func (s *Singlestore) AsOwner() *meta.OwnerReference {
+	return meta.NewControllerRef(s, SchemeGroupVersion.WithKind(s.ResourceKind()))
 }

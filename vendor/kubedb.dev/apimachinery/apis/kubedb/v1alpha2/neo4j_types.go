@@ -72,7 +72,7 @@ type Neo4jSpec struct {
 	AuthSecret *SecretReference `json:"authSecret,omitempty"`
 
 	// +optional
-	Configuration *ConfigurationSpec `json:"configuration,omitempty"`
+	Configuration *Neo4jConfiguration `json:"configuration,omitempty"`
 
 	// PodTemplate customizes the pods running Neo4j (resources, environment variables, probes, affinity, etc.).
 	// +optional
@@ -102,6 +102,44 @@ type Neo4jSpec struct {
 	// TLS contains tls configurations
 	// +optional
 	TLS *Neo4jTLSConfig `json:"tls,omitempty"`
+
+	// Init is used to initialize the database from a script or git repo.
+	// +optional
+	Init *InitSpec `json:"init,omitempty"`
+
+	// Archiver controls database backup using Archiver CR
+	// +optional
+	Archiver *Archiver `json:"archiver,omitempty"`
+}
+
+// Neo4jConfiguration holds the user supplied Neo4j configuration.
+type Neo4jConfiguration struct {
+	ConfigurationSpec `json:",inline,omitempty"`
+
+	// RemoteAliasKeystore configures the PKCS12 AES keystore used to encrypt remote database alias credentials.
+	// The referenced Secrets must be in the same namespace as the Neo4j resource.
+	// +optional
+	RemoteAliasKeystore *Neo4jRemoteAliasKeystore `json:"remoteAliasKeystore,omitempty"`
+}
+
+// Neo4jRemoteAliasKeystore configures the PKCS12 AES keystore used for remote database aliases.
+// +kubebuilder:validation:XValidation:rule="has(self.keystoreRef.name) && size(self.keystoreRef.name) > 0",message="keystoreRef.name must be non-empty"
+// +kubebuilder:validation:XValidation:rule="size(self.keystoreRef.key) > 0",message="keystoreRef.key must be non-empty"
+// +kubebuilder:validation:XValidation:rule="has(self.passwordRef.name) && size(self.passwordRef.name) > 0",message="passwordRef.name must be non-empty"
+// +kubebuilder:validation:XValidation:rule="size(self.passwordRef.key) > 0",message="passwordRef.key must be non-empty"
+type Neo4jRemoteAliasKeystore struct {
+	// KeystoreRef selects the Secret key containing the PKCS12 AES keystore.
+	// +kubebuilder:validation:Required
+	KeystoreRef core.SecretKeySelector `json:"keystoreRef"`
+
+	// PasswordRef selects the Secret key containing the keystore password.
+	// +kubebuilder:validation:Required
+	PasswordRef core.SecretKeySelector `json:"passwordRef"`
+
+	// KeyName is the name of the AES key in the keystore.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	KeyName string `json:"keyName"`
 }
 
 type Neo4jTLSConfig struct {
@@ -112,23 +150,11 @@ type Neo4jTLSConfig struct {
 	HTTP *ProtocolTLSConfig `json:"http,omitempty"`
 	// +optional
 	Cluster *ProtocolTLSConfig `json:"cluster,omitempty"`
+	// +optional
+	Backup *ProtocolTLSConfig `json:"backup,omitempty"`
 	// Keystore encryption secret
 	// +optional
 	KeystoreCredSecret *SecretReference `json:"keystoreCredSecret,omitempty"`
-}
-
-type TLSMode string
-
-const (
-	TLSModeDisabled TLSMode = "Disabled"
-	TLSModeTLS      TLSMode = "TLS"
-	TLSModeMTLS     TLSMode = "mTLS"
-)
-
-type ProtocolTLSConfig struct {
-	// +kubebuilder:validation:Enum=Disabled;TLS;mTLS
-	// +optional
-	Mode TLSMode `json:"mode,omitempty"`
 }
 
 // Neo4jStatus defines the observed state of Neo4j.
@@ -183,4 +209,22 @@ type Neo4jList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Neo4j `json:"items"`
+}
+
+var _ Accessor = &Neo4j{}
+
+func (m *Neo4j) GetObjectMeta() metav1.ObjectMeta {
+	return m.ObjectMeta
+}
+
+func (m *Neo4j) GetConditions() []kmapi.Condition {
+	return m.Status.Conditions
+}
+
+func (m *Neo4j) SetCondition(cond kmapi.Condition) {
+	m.Status.Conditions = setCondition(m.Status.Conditions, cond)
+}
+
+func (m *Neo4j) RemoveCondition(typ string) {
+	m.Status.Conditions = removeCondition(m.Status.Conditions, typ)
 }

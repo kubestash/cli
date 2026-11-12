@@ -53,21 +53,24 @@ func Resource(resource string) schema.GroupResource {
 
 // Adds the list of known types to api.Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(SchemeGroupVersion,
+	scheme.AddKnownTypes(
+		SchemeGroupVersion,
+		&AerospikeVersion{},
+		&AerospikeVersionList{},
 		&CassandraVersion{},
 		&CassandraVersionList{},
 		&ClickHouseVersion{},
 		&ClickHouseVersionList{},
 		&DB2Version{},
 		&DB2VersionList{},
+		&DocumentDBVersion{},
+		&DocumentDBVersionList{},
 		&DruidVersion{},
 		&DruidVersionList{},
 		&ElasticsearchVersion{},
 		&ElasticsearchVersionList{},
 		&EtcdVersion{},
 		&EtcdVersionList{},
-		&FerretDBVersion{},
-		&FerretDBVersionList{},
 		&HanaDBVersion{},
 		&HanaDBVersionList{},
 		&HazelcastVersion{},
@@ -82,6 +85,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&MariaDBVersionList{},
 		&MemcachedVersion{},
 		&MemcachedVersionList{},
+		&MilvusVersion{},
+		&MilvusVersionList{},
 		&MongoDBVersion{},
 		&MongoDBVersionList{},
 		&MSSQLServerVersion{},
@@ -118,11 +123,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&WeaviateVersionList{},
 		&ZooKeeperVersion{},
 		&ZooKeeperVersionList{},
-		&MilvusVersion{},
-		&MilvusVersionList{},
 	)
 
-	scheme.AddKnownTypes(SchemeGroupVersion,
+	scheme.AddKnownTypes(
+		SchemeGroupVersion,
 		&metav1.Status{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)

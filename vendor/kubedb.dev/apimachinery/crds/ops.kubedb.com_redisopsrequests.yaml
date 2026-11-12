@@ -1,7 +1,6 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/name: kubedb
   name: redisopsrequests.ops.kubedb.com
@@ -163,6 +162,15 @@ spec:
                 default: 1
                 format: int32
                 type: integer
+              migration:
+                properties:
+                  oldPVReclaimPolicy:
+                    type: string
+                  storageClassName:
+                    type: string
+                required:
+                - storageClassName
+                type: object
               restart:
                 type: object
               sentinel:
@@ -312,6 +320,7 @@ spec:
                 - ReplaceSentinel
                 - RotateAuth
                 - Announce
+                - StorageMigration
                 type: string
               updateVersion:
                 properties:
@@ -394,6 +403,12 @@ spec:
                             type: object
                         type: object
                     type: object
+                  mode:
+                    default: Restart
+                    enum:
+                    - Restart
+                    - InPlace
+                    type: string
                   redis:
                     properties:
                       nodeSelectionPolicy:

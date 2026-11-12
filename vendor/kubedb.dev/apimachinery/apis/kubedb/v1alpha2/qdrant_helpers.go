@@ -80,13 +80,14 @@ func (q QdrantApp) Type() appcat.AppType {
 }
 
 func (q *Qdrant) GetConnectionScheme() string {
-	scheme := "grpc"
-	return scheme
-}
+	var scheme string
+	if q.Spec.TLS == nil {
+		scheme = "http"
+	} else {
+		scheme = "https"
+	}
 
-// Owner returns owner reference to resources
-func (q *Qdrant) Owner() *meta.OwnerReference {
-	return meta.NewControllerRef(q, SchemeGroupVersion.WithKind(q.ResourceKind()))
+	return scheme
 }
 
 func (q *Qdrant) OffshootName() string {
@@ -115,13 +116,13 @@ func (q *Qdrant) ServiceDNS() string {
 	return fmt.Sprintf("%s.%s.svc", q.ServiceName(), q.Namespace)
 }
 
-func (q *Qdrant) GetPodAddress(i int) string {
-	return fmt.Sprintf("%s-%d.%s.%s.svc:%d",
+func (q *Qdrant) PodDNS(ordinal string) string {
+	return fmt.Sprintf(
+		"%s-%s.%s.%s.svc",
 		q.OffshootName(),
-		i,
+		ordinal,
 		q.GoverningServiceName(),
 		q.Namespace,
-		kubedb.QdrantHTTPPort,
 	)
 }
 
@@ -159,8 +160,10 @@ func (q *Qdrant) ConfigSecretName() string {
 
 func (q *Qdrant) GetPersistentSecrets() []string {
 	var secrets []string
-	if q.Spec.AuthSecret != nil {
+	if !IsVirtualAuthSecretReferred(q.Spec.AuthSecret) && q.Spec.AuthSecret != nil && q.Spec.AuthSecret.Name != "" {
 		secrets = append(secrets, q.GetAuthSecretName())
+	}
+	if q.Spec.AuthSecret != nil {
 		secrets = append(secrets, q.ConfigSecretName())
 	}
 	return secrets
@@ -191,6 +194,10 @@ func (q *Qdrant) PodLabels(extraLabels ...map[string]string) map[string]string {
 func (q *Qdrant) ServiceLabels(alias ServiceAlias, extraLabels ...map[string]string) map[string]string {
 	svcTemplate := GetServiceTemplate(q.Spec.ServiceTemplates, alias)
 	return q.offshootLabels(meta_util.OverwriteKeys(q.OffshootSelectors(), extraLabels...), svcTemplate.Labels)
+}
+
+func (q *Qdrant) GetStorageClassName() string {
+	return *q.Spec.Storage.StorageClassName
 }
 
 type qdrantStatsService struct {
@@ -345,6 +352,8 @@ func (q *Qdrant) SetDefaults(kc client.Client) {
 		apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResources)
 	}
 
+	q.Spec.Monitor.SetDefaults()
+
 	q.SetHealthCheckerDefaults()
 
 	q.setDefaultContainerResourceLimits(q.Spec.PodTemplate)
@@ -413,7 +422,39 @@ func (q *Qdrant) assignDefaultContainerSecurityContext(qdVersion *catalog.Qdrant
 
 func (q *Qdrant) setDefaultContainerResourceLimits(podTemplate *ofst.PodTemplateSpec) {
 	dbContainer := coreutil.GetContainerByName(podTemplate.Spec.Containers, kubedb.QdrantContainerName)
-	if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
+	if dbContainer != nil {
 		apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResources)
 	}
+
+	apis.SetDefaultResizePolicy(podTemplate.Spec.Containers, podTemplate.Spec.InitContainers)
+}
+
+type QdrantBind struct {
+	*Qdrant
+}
+
+var _ DBBindInterface = &QdrantBind{}
+
+func (q *QdrantBind) ServiceNames() (string, string) {
+	return q.ServiceName(), q.ServiceName()
+}
+
+func (q *QdrantBind) Ports() (int, int) {
+	return kubedb.QdrantHTTPPort, kubedb.QdrantHTTPPort
+}
+
+func (q *QdrantBind) SecretName() string {
+	return q.GetAuthSecretName()
+}
+
+func (q *QdrantBind) CertSecretName() string {
+	return q.GetCertSecretName(QdrantClientCert)
+}
+
+func (q *Qdrant) GetDeletionPolicy() string {
+	return string(q.Spec.DeletionPolicy)
+}
+
+func (q *Qdrant) AsOwner() *meta.OwnerReference {
+	return meta.NewControllerRef(q, SchemeGroupVersion.WithKind(q.ResourceKind()))
 }

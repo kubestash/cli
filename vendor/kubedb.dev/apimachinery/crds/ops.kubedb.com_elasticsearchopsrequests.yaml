@@ -1,7 +1,6 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/name: kubedb
   name: elasticsearchopsrequests.ops.kubedb.com
@@ -147,10 +146,133 @@ spec:
                         type: integer
                     type: object
                 type: object
+              license:
+                properties:
+                  secretRef:
+                    properties:
+                      name:
+                        default: ""
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  trial:
+                    type: boolean
+                type: object
               maxRetries:
                 default: 1
                 format: int32
                 type: integer
+              migration:
+                properties:
+                  coordinating:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  data:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  dataCold:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  dataContent:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  dataFrozen:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  dataHot:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  dataWarm:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  ingest:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  master:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  ml:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  node:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                  transform:
+                    properties:
+                      oldPVReclaimPolicy:
+                        type: string
+                      storageClassName:
+                        type: string
+                    required:
+                    - storageClassName
+                    type: object
+                type: object
               restart:
                 type: object
               timeout:
@@ -262,7 +384,6 @@ spec:
                 type: object
               type:
                 enum:
-                - Upgrade
                 - UpdateVersion
                 - HorizontalScaling
                 - VerticalScaling
@@ -271,6 +392,8 @@ spec:
                 - Reconfigure
                 - ReconfigureTLS
                 - RotateAuth
+                - StorageMigration
+                - RotateLicense
                 type: string
               updateVersion:
                 properties:
@@ -795,6 +918,12 @@ spec:
                         - value
                         type: object
                     type: object
+                  mode:
+                    default: Restart
+                    enum:
+                    - Restart
+                    - InPlace
+                    type: string
                   node:
                     properties:
                       nodeSelectionPolicy:
